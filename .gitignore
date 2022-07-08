@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+# MacOS
+.DS_Store
+
+# VSCode
+.vscode
+
+# Bazel
+bazel-*
