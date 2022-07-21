@@ -13,15 +13,26 @@
 # limitations under the License.
 
 cc_library(
-    name = "trace_monitor",
+    name = "consumer",
     srcs = [
-        "trace_monitor.cpp",
+        "consumer.cpp",
     ],
     hdrs = [
-        "trace_monitor.hpp",
+        "consumer.hpp",
     ],
     deps = [
         "//cpp:inspector",
+    ],
+)
+
+cc_test(
+    name = "consumer_test",
+    srcs = [
+        "consumer_test.cpp",
+    ],
+    deps = [
+        ":consumer",
+        "@gtest//:gtest_main",
     ],
 )
 
@@ -31,6 +42,7 @@ cc_binary(
         "main.cpp",
     ],
     deps = [
-        ":monitor",
+        ":consumer",
+        "@com_github_google_glog//:glog",
     ],
 )

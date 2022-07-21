@@ -1,4 +1,3 @@
-
 /**
  * Copyright 2022 Ketan Goyal
  *
@@ -15,17 +14,8 @@
  * limitations under the License.
  */
 
-#pragma once
+#include <gtest/gtest.h>
 
-#include <inspector/details/common.hpp>
-#include <inspector/details/shared_object.hpp>
+#include "monitor/consumer.hpp"
 
-namespace inspector {
-
-class TraceMonitor {
- public:
- private:
-  details::TraceQueue* queue_;
-};
-
-}  // namespace inspector
+TEST(ConsumerTestFixture, Consume) { inspector::Consumer consumer; }

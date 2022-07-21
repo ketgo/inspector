@@ -45,17 +45,17 @@ template <class T, class... Args>
 T* Create(const std::string& name, Args&&... args) {
   static_assert(std::is_trivial<T>::value,
                 "The data type used does not have a trivial memory layout.");
+  auto size = sizeof(T);
 
   auto fd =
       shm_open(name.c_str(), O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);
   if (fd == -1) {
     throw std::system_error(errno, std::generic_category(), "shm_open");
   }
-  if (ftruncate(fd, sizeof(T)) == -1) {
+  if (ftruncate(fd, size) == -1) {
     throw std::system_error(errno, std::generic_category(), "ftruncate");
   }
-  auto addr =
-      mmap(nullptr, sizeof(T), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  auto addr = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if (addr == MAP_FAILED) {
     throw std::system_error(errno, std::generic_category(), "mmap");
   }
@@ -75,13 +75,13 @@ template <class T>
 T* Get(const std::string& name) {
   static_assert(std::is_trivial<T>::value,
                 "The data type used does not have a trivial memory layout.");
+  auto size = sizeof(T);
 
   auto fd = shm_open(name.c_str(), O_RDWR, S_IRUSR | S_IWUSR);
   if (fd == -1) {
     throw std::system_error(errno, std::generic_category(), "shm_open");
   }
-  auto addr =
-      mmap(nullptr, sizeof(T), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  auto addr = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   if (addr == MAP_FAILED) {
     throw std::system_error(errno, std::generic_category(), "mmap");
   }

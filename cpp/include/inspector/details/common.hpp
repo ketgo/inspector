@@ -23,24 +23,24 @@
 namespace inspector {
 namespace details {
 
-// Size of the trace queue in bytes.
-constexpr auto kTraceQueueSize = 64 * 1024;  // 64 MB
+// Size of the event queue in bytes.
+constexpr auto kQueueSize = 64 * 1024;  // 64 MB
 
-// Maximum number of trace producers that can concurrently publish to the
-// trace queue in a lock-free manner.
-constexpr auto kMaxTraceProducers = 1024;
+// Maximum number of producers allowed to concurrently publish events in a
+// lock-free manner.
+constexpr auto kMaxProducers = 1024;
 
-// Maximum number of trace monitors that can concurrently consume from the
-// trace queue in a lock-free manner.
-constexpr auto kMaxTraceMonitors = 1024;
+// Maximum number of consumers allowed to concurrently consume events in a
+// lock-free manner.
+constexpr auto kMaxConsumers = 1024;
 
-// Queue of trace events published by the different trace producers.
-using TraceQueue = CircularQueue<unsigned char, kTraceQueueSize,
-                                 kMaxTraceProducers, kMaxTraceMonitors>;
+// Queue of trace and metric events published by the different producers.
+using EventQueue =
+    CircularQueue<unsigned char, kQueueSize, kMaxProducers, kMaxConsumers>;
 
-// System unique name of the trace queue used for sharing the queue between
-// different processes.
-constexpr auto kTraceQueueSystemUniqueName = "/inspector-56027e94-trace_events";
+// System unique name of the event queue used for sharing it between different
+// processes.
+constexpr auto kTraceQueueSystemUniqueName = "/inspector-56027e94-events";
 
 }  // namespace details
 }  // namespace inspector
