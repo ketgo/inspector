@@ -14,6 +14,36 @@
 
 package(default_visibility = ["//visibility:public"])
 
-licenses(["notice"])
+cc_library(
+    name = "random",
+    hdrs = [
+        "random.hpp",
+    ],
+    deps = [],
+)
 
-exports_files(["LICENSE"])
+cc_library(
+    name = "threads",
+    hdrs = [
+        "threads.hpp",
+    ],
+    deps = [],
+)
+
+cc_library(
+    name = "chrono",
+    hdrs = [
+        "chrono.hpp",
+    ],
+    deps = [
+        ":random",
+    ],
+)
+
+cc_library(
+    name = "dprint",
+    hdrs = [
+        "dprint.hpp",
+    ],
+    deps = [],
+)

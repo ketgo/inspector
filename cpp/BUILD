@@ -14,6 +14,12 @@
 
 package(default_visibility = ["//visibility:public"])
 
-licenses(["notice"])
-
-exports_files(["LICENSE"])
+cc_library(
+    name = "inspector",
+    hdrs = glob(["include/**"]),
+    includes = ["include"],
+    linkopts = select({
+        "@platforms//os:linux": ["-lrt"],
+        "//conditions:default": [],
+    }),
+)

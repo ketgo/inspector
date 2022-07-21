@@ -12,8 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(default_visibility = ["//visibility:public"])
+cc_test(
+    name = "cursor_test",
+    srcs = [
+        "cursor_test.cpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+        "@gtest//:gtest_main",
+    ],
+)
 
-licenses(["notice"])
-
-exports_files(["LICENSE"])
+cc_test(
+    name = "cursor_pool_test",
+    srcs = [
+        "cursor_pool_test.cpp",
+    ],
+    args = ["--gtest_repeat=10"],
+    deps = [
+        "//cpp:inspector",
+        "//utils:random",
+        "//utils:threads",
+        "@gtest//:gtest_main",
+    ],
+)

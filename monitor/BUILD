@@ -12,8 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(default_visibility = ["//visibility:public"])
+cc_library(
+    name = "trace_monitor",
+    srcs = [
+        "trace_monitor.cpp",
+    ],
+    hdrs = [
+        "trace_monitor.hpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+    ],
+)
 
-licenses(["notice"])
-
-exports_files(["LICENSE"])
+cc_binary(
+    name = "run",
+    srcs = [
+        "main.cpp",
+    ],
+    deps = [
+        ":monitor",
+    ],
+)
