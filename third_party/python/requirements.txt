@@ -1,0 +1,7 @@
+# Packages
+flask==2.1.3
+celery==5.2.7
+Flask-SocketIO==5.2.0
+
+# Test
+pytest==6.1.2

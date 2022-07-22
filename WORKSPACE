@@ -27,6 +27,13 @@ http_archive(
     url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.10.2.tar.gz",
 )
 
+load("@rules_python//python:pip.bzl", "pip_install")
+
+pip_install(
+    name = "deps_python",
+    requirements = "//third_party/python:requirements.txt",
+)
+
 # --------------------------------------
 # PyBind11
 # --------------------------------------

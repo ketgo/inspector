@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_python//python:defs.bzl", "py_library")
-load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
+load("//third_party/pybind11:defs.bzl", "pybind_library")
+load("//third_party/python:defs.bzl", "pytest_test")
 
 cc_library(
     name = "consumer_cc",
@@ -39,19 +39,23 @@ cc_test(
     ],
 )
 
-pybind_extension(
-    name = "consumer",
+pybind_library(
+    name = "consumer_py",
     srcs = [
         "consumer_py.cpp",
     ],
+    soname = "consumer",
     deps = [
         ":consumer_cc",
     ],
 )
 
-py_library(
-    name = "consumer_py",
-    data = [":consumer.so"],
+pytest_test(
+    name = "sample_test",
+    srcs = [
+        "sample_test.py",
+    ],
+    deps = [],
 )
 
 py_binary(

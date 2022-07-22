@@ -23,13 +23,15 @@ using namespace inspector;
 
 TEST(ConsumerTestFixture, Consume) {
   Consumer consumer;
-  std::string test_message = "testing";
+
+  // Consuming message from empty queue
+  ASSERT_TRUE(consumer.Consume().empty());
 
   // Publishing test message
+  std::string test_message = "testing";
   auto queue = details::shared_object::Get<details::EventQueue>(
       details::kTraceQueueSystemUniqueName);
   ASSERT_EQ(queue->Publish(test_message), details::EventQueue::Result::SUCCESS);
-
   // Consume message
   ASSERT_EQ(consumer.Consume(), test_message);
 }
