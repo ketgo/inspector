@@ -1,4 +1,4 @@
-<!--
+"""
  Copyright 2022 Ketan Goyal
  
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,8 +12,5 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
--->
+"""
 
-# Headers
-
-The folder contains public header files which can be used in C++ applications to capture user-space traces.

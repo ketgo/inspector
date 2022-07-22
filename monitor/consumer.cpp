@@ -25,6 +25,19 @@ Consumer::Consumer(bool remove)
       queue_(details::shared_object::GetOrCreate<details::EventQueue>(
           details::kTraceQueueSystemUniqueName)) {}
 
-Consumer::~Consumer() {}
+std::string Consumer::Consume(const std::size_t max_attempts) {
+  details::EventQueue::ReadSpan span;
+  auto result = queue_->Consume(span, max_attempts);
+  if (result != details::EventQueue::Result::SUCCESS) {
+    return {};
+  }
+  return {span.Data(), span.Size()};
+}
+
+Consumer::~Consumer() {
+  if (remove_) {
+    details::shared_object::Remove(details::kTraceQueueSystemUniqueName);
+  }
+}
 
 }  // namespace inspector

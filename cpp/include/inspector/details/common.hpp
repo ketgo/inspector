@@ -36,7 +36,7 @@ constexpr auto kMaxConsumers = 1024;
 
 // Queue of trace and metric events published by the different producers.
 using EventQueue =
-    CircularQueue<unsigned char, kQueueSize, kMaxProducers, kMaxConsumers>;
+    CircularQueue<char, kQueueSize, kMaxProducers, kMaxConsumers>;
 
 // System unique name of the event queue used for sharing it between different
 // processes.

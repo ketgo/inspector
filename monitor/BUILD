@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_python//python:defs.bzl", "py_library")
+load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
+
 cc_library(
-    name = "consumer",
+    name = "consumer_cc",
     srcs = [
         "consumer.cpp",
     ],
@@ -31,18 +34,33 @@ cc_test(
         "consumer_test.cpp",
     ],
     deps = [
-        ":consumer",
+        ":consumer_cc",
         "@gtest//:gtest_main",
     ],
 )
 
-cc_binary(
-    name = "run",
+pybind_extension(
+    name = "consumer",
     srcs = [
-        "main.cpp",
+        "consumer_py.cpp",
     ],
     deps = [
-        ":consumer",
-        "@com_github_google_glog//:glog",
+        ":consumer_cc",
+    ],
+)
+
+py_library(
+    name = "consumer_py",
+    data = [":consumer.so"],
+)
+
+py_binary(
+    name = "run",
+    srcs = [
+        "main.py",
+    ],
+    main = "main.py",
+    deps = [
+        ":consumer_py",
     ],
 )

@@ -120,26 +120,26 @@ class Cursor {
 // Cursor Implementation
 // ---------------------------------------
 
-Cursor::Cursor(const bool overflow, const std::size_t location)
+inline Cursor::Cursor(const bool overflow, const std::size_t location)
     : overflow_(overflow), location_(location) {}
 
-bool Cursor::Overflow() const { return overflow_; }
+inline bool Cursor::Overflow() const { return overflow_; }
 
-void Cursor::FlipOverflow() { overflow_ = !overflow_; }
+inline void Cursor::FlipOverflow() { overflow_ = !overflow_; }
 
-uint64_t Cursor::Location() const { return location_; }
+inline uint64_t Cursor::Location() const { return location_; }
 
-bool Cursor::operator<(const Cursor &cursor) const {
+inline bool Cursor::operator<(const Cursor &cursor) const {
   return overflow_ == cursor.overflow_ ? location_ < cursor.location_
                                        : location_ > cursor.location_;
 }
 
-bool Cursor::operator<=(const Cursor &cursor) const {
+inline bool Cursor::operator<=(const Cursor &cursor) const {
   return overflow_ == cursor.overflow_ ? location_ <= cursor.location_
                                        : location_ > cursor.location_;
 }
 
-Cursor Cursor::operator+(const std::size_t value) const {
+inline Cursor Cursor::operator+(const std::size_t value) const {
   Cursor rvalue(overflow_, location_ + value);
   if (rvalue.location_ < location_) {
     rvalue.FlipOverflow();
@@ -147,7 +147,7 @@ Cursor Cursor::operator+(const std::size_t value) const {
   return rvalue;
 }
 
-Cursor Cursor::operator-(const std::size_t value) const {
+inline Cursor Cursor::operator-(const std::size_t value) const {
   Cursor rvalue(overflow_, location_ - value);
   if (rvalue.location_ > location_) {
     rvalue.FlipOverflow();

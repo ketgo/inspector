@@ -17,5 +17,19 @@
 #include <gtest/gtest.h>
 
 #include "monitor/consumer.hpp"
+#include <inspector/details/shared_object.hpp>
 
-TEST(ConsumerTestFixture, Consume) { inspector::Consumer consumer; }
+using namespace inspector;
+
+TEST(ConsumerTestFixture, Consume) {
+  Consumer consumer;
+  std::string test_message = "testing";
+
+  // Publishing test message
+  auto queue = details::shared_object::Get<details::EventQueue>(
+      details::kTraceQueueSystemUniqueName);
+  ASSERT_EQ(queue->Publish(test_message), details::EventQueue::Result::SUCCESS);
+
+  // Consume message
+  ASSERT_EQ(consumer.Consume(), test_message);
+}

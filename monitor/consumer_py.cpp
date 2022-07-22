@@ -14,12 +14,19 @@
  * limitations under the License.
  */
 
-//#include <glog/logging.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
-int main(int argc, char *argv[]) {
-  // Initialize Google's logging library.
-  //google::InitGoogleLogging(argv[0]);
-  // Install failure handlers
-  //google::InstallFailureSignalHandler();
-  return 0;
+#include "monitor/consumer.hpp"
+
+namespace py = pybind11;
+
+PYBIND11_MODULE(consumer, m) {
+  m.doc() = "Trace monitor consumer";
+
+  py::class_<inspector::Consumer>(m, "Consumer")
+      .def(py::init<bool>())
+      .def("consume", &inspector::Consumer::Consume,
+           "Consume and return a raw event from the queue. If no event is "
+           "found then an empty event is returned.");
 }
