@@ -91,7 +91,7 @@ copy_to_bin(
 react_scripts_test(
     name = "test",
     args = [
-        "--node_options=--require=$(rootpath chdir.js)",
+        "--node_options=--require=./$(rootpath chdir.js)",
         "test",
         # ibazel is the watch mode for Bazel when running tests
         # Because Bazel is really a CI system that runs locally
@@ -115,7 +115,7 @@ react_scripts_test(
 react_scripts(
     name = "start",
     args = [
-        "--node_options=--require=$(rootpath chdir.js)",
+        "--node_options=--require=./$(rootpath chdir.js)",
         "start",
     ],
     data = _RUNTIME_DEPS + [

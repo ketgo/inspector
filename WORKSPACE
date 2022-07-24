@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-workspace(
-    name = "inspector",
-    managed_directories = {"@npm": ["node_modules"]},
-)
+workspace(name = "inspector")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -39,7 +36,6 @@ node_repositories()
 
 npm_install(
     name = "npm",
-    exports_directories_only = True,
     package_json = "//monitor/frontend:package.json",
     package_lock_json = "//monitor/frontend:package-lock.json",
 )
