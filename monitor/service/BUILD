@@ -12,48 +12,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//third_party/pybind11:defs.bzl", "pybind_library")
-load("//third_party/python:defs.bzl", "pytest_test")
+load("@rules_python//python:defs.bzl", "py_library")
+load("@deps_python//:requirements.bzl", "requirement")
 
-cc_library(
-    name = "consumer_cc",
+py_library(
+    name = "config",
     srcs = [
-        "consumer.cpp",
-    ],
-    hdrs = [
-        "consumer.hpp",
-    ],
-    deps = [
-        "//cpp:inspector",
-    ],
-)
-
-cc_test(
-    name = "consumer_test",
-    srcs = [
-        "consumer_test.cpp",
-    ],
-    deps = [
-        ":consumer_cc",
-        "@gtest//:gtest_main",
-    ],
-)
-
-pybind_library(
-    name = "consumer_py",
-    srcs = [
-        "consumer_py.cpp",
-    ],
-    soname = "consumer",
-    deps = [
-        ":consumer_cc",
-    ],
-)
-
-pytest_test(
-    name = "sample_test",
-    srcs = [
-        "sample_test.py",
+        "config.py",
     ],
     deps = [],
+)
+
+py_library(
+    name = "app",
+    srcs = [
+        "app/__init__.py",
+    ],
+    imports = ["monitor/service"],
+    deps = [
+        requirement("flask"),
+        requirement("flask-cors"),
+        requirement("py-healthcheck"),
+        requirement("Flask-SocketIO"),
+        requirement("gevent"),
+        requirement("gevent-websocket"),
+    ],
+)
+
+py_binary(
+    name = "run",
+    srcs = [
+        "main.py",
+    ],
+    imports = ["monitor/service"],
+    main = "main.py",
+    deps = [
+        ":app",
+        ":config",
+    ],
 )

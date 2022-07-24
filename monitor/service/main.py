@@ -14,3 +14,16 @@
  limitations under the License.
 """
 
+import os
+
+from app import create_app, socketio
+from config import CONFIG
+
+# Getting environment type
+env = os.environ.get("FLASK_ENV", "default")
+
+# Creating flask application
+app = create_app(CONFIG.get(env))
+
+if __name__ == '__main__':
+    socketio.run(app, host="0.0.0.0", port=8000)
