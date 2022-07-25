@@ -14,16 +14,22 @@
  limitations under the License.
 """
 
-import os
+"""
+    Background celery tasks
+"""
 
-from app import create_app, socketio
-from config import CONFIG
+import time
 
-# Getting environment type
-env = os.environ.get("FLASK_ENV", "default")
+from app import ext
+from flask_socketio import SocketIO
 
-# Creating flask application
-app = create_app(CONFIG.get(env))
 
-if __name__ == '__main__':
-    socketio.run(app, host="0.0.0.0", port=8000)
+@ext.celery.task()
+def message_to_client(name, room):
+    socketio = SocketIO(message_queue="amqp://")
+    count = 5
+    while count > 1:
+        count -= 1
+        socketio.emit("response", {"count": count}, namespace="/test", room=room)
+        time.sleep(1)
+    socketio.emit("response", {"name": name}, namespace="/test", room=room)

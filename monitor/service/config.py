@@ -18,38 +18,46 @@
     Service configuration file
 """
 
+import os
+
 
 class Config:
     """
-        Default configurations
+    Default configurations
     """
+
     # Default flask configuration settings
     DEBUG = True
     TESTING = False
 
+    # Celery settings
+    CELERY_BROKER_URL = os.environ.get("INSPECTOR_BROKER_URL", "amqp://")
+    CELERY_RESULT_BACKEND = os.environ.get("INSPECTOR_RESULT_BACKEND", "rpc")
+
 
 class TestConfig(Config):
     """
-        Test configuration
+    Test configuration
     """
+
     TESTING = True
 
 
 class DevConfig(Config):
     """
-        Dev environment configuration
+    Dev environment configuration
     """
 
 
 class QaConfig(Config):
     """
-        QA environment configuration
+    QA environment configuration
     """
 
 
 class ProdConfig(Config):
     """
-        Production environment configuration
+    Production environment configuration
     """
 
 
@@ -58,5 +66,5 @@ CONFIG = {
     "test": TestConfig,
     "dev": DevConfig,
     "qa": QaConfig,
-    "prod": ProdConfig
+    "prod": ProdConfig,
 }

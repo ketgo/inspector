@@ -55,6 +55,8 @@ _RUNTIME_DEPS = [
     "copy_static_files",
     "@npm//react",
     "@npm//react-dom",
+    "@npm//web-vitals",
+    "@npm//socket.io",
 ]
 
 react_scripts(

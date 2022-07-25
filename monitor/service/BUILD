@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("@rules_python//python:defs.bzl", "py_library")
-load("@deps_python//:requirements.bzl", "requirement")
+load("@deps_python//:requirements.bzl", "entry_point", "requirement")
 
 py_library(
     name = "config",
@@ -25,29 +25,48 @@ py_library(
 
 py_library(
     name = "app",
-    srcs = [
-        "app/__init__.py",
-    ],
+    srcs = glob(["app/**/*.py"]),
+    data = ["templates/index.html"],
     imports = ["monitor/service"],
     deps = [
         requirement("flask"),
         requirement("flask-cors"),
         requirement("py-healthcheck"),
-        requirement("Flask-SocketIO"),
         requirement("gevent"),
         requirement("gevent-websocket"),
+        requirement("Flask-SocketIO"),
+        requirement("Flask-CeleryExt"),
+        requirement("python-engineio"),
     ],
 )
 
 py_binary(
-    name = "run",
+    name = "server",
     srcs = [
-        "main.py",
+        "server.py",
     ],
     imports = ["monitor/service"],
-    main = "main.py",
+    main = "server.py",
     deps = [
         ":app",
         ":config",
     ],
+)
+
+py_binary(
+    name = "worker",
+    srcs = [
+        "worker.py",
+    ],
+    imports = ["monitor/service"],
+    main = "worker.py",
+    deps = [
+        ":app",
+        ":config",
+    ],
+)
+
+alias(
+    name = "celery",
+    actual = entry_point("celery"),
 )
