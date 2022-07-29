@@ -21,7 +21,7 @@
 
 using namespace inspector;
 
-TEST(ConsumerTestFixture, Consume) {
+TEST(ConsumerTestFixture, BasicConsumer) {
   Consumer consumer;
 
   // Consuming message from empty queue
@@ -35,3 +35,5 @@ TEST(ConsumerTestFixture, Consume) {
   // Consume message
   ASSERT_EQ(consumer.Consume(), test_message);
 }
+
+TEST(ConsumerTestFixture, PeriodicConsumer) {}

@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include <chrono>
+#include <string>
+
 #include <inspector/details/common.hpp>
 
 namespace inspector {
@@ -45,7 +48,7 @@ class Consumer {
    * @param remove Flag to indicate removal of the queue on DTOR.
    *
    */
-  Consumer(bool remove = false);
+  explicit Consumer(bool remove = false);
 
   /**
    * @brief Destroy the Consumer object. The event queue is marked for removal
@@ -80,9 +83,38 @@ class Consumer {
  */
 class PeriodicConsumer {
  public:
-  class Callback {};
+  /**
+   * @brief Construct a new PeriodicConsumer object.
+   *
+   * @param period Constant reference to the duration in milliseconds to wait
+   * between each attempt to consume events from the event queue.
+   * @param max_attempt Maximum number of attempts to make when consuming event.
+   * @param remove Flag to indicate removal of the queue on DTOR.
+   */
+  PeriodicConsumer(
+      const std::chrono::microseconds& period,
+      const std::size_t max_attempt = details::EventQueue::defaultMaxAttempt(),
+      bool remove = false);
+
+  /**
+   * @brief Start the periodic consumer.
+   *
+   * The method is blocking and will call the given event handler on successful
+   * consumption of an event from the queue. If the handler returns a `false`
+   * the consumer stops and the method returns. Otherwise the execution will
+   * continues. Thus the event handler is required to be a callable taking the
+   * consumed event as input and returning a boolean.
+   *
+   * @tparam EventHandler Event handler type.
+   * @param handler Reference to the event handler.
+   */
+  template <class EventHandler>
+  void Start(EventHandler& handler);
 
  private:
+  const std::chrono::microseconds period_;
+  const std::size_t max_attempt_;
+  Consumer consumer_;
 };
 
 }  // namespace inspector

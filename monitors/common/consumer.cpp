@@ -16,9 +16,15 @@
 
 #include "monitors/common/consumer.hpp"
 
+#include <thread>
+
 #include <inspector/details/shared_object.hpp>
 
 namespace inspector {
+
+// --------------------------------
+// Basic Consumer
+// --------------------------------
 
 Consumer::Consumer(bool remove)
     : remove_(remove),
@@ -37,6 +43,25 @@ std::string Consumer::Consume(const std::size_t max_attempts) {
 Consumer::~Consumer() {
   if (remove_) {
     details::shared_object::Remove(details::kTraceQueueSystemUniqueName);
+  }
+}
+
+// --------------------------------
+// Periodic Consumer
+// --------------------------------
+
+PeriodicConsumer::PeriodicConsumer(const std::chrono::microseconds& period,
+                                   const std::size_t max_attempt, bool remove)
+    : period_(period), max_attempt_(max_attempt), consumer_(remove) {}
+
+template <class EventHandler>
+void PeriodicConsumer::Start(EventHandler& handler) {
+  while (true) {
+    auto event = consumer_.Consume(max_attempt_);
+    if (!handler(event)) {
+      break;
+    }
+    std::this_thread::sleep_for(period_);
   }
 }
 

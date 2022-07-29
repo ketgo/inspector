@@ -36,8 +36,8 @@ node_repositories()
 
 npm_install(
     name = "npm",
-    package_json = "//monitor/frontend:package.json",
-    package_lock_json = "//monitor/frontend:package-lock.json",
+    package_json = "//monitors/web/frontend:package.json",
+    package_lock_json = "//monitors/web/frontend:package-lock.json",
 )
 
 http_archive(
@@ -85,6 +85,7 @@ http_archive(
 http_archive(
     name = "pybind11",
     build_file = "@pybind11_bazel//:pybind11.BUILD",
+    sha256 = "eacf582fa8f696227988d08cfc46121770823839fe9e301a20fbce67e7cd70ec",
     strip_prefix = "pybind11-2.10.0",
     urls = ["https://github.com/pybind/pybind11/archive/v2.10.0.tar.gz"],
 )
@@ -96,6 +97,13 @@ python_configure(name = "local_config_python")
 # --------------------------------------
 # Gtest
 # --------------------------------------
+
+http_archive(
+  name = "com_google_absl",
+  sha256 = "6764f226bd6e2d8ab9fe2f3cab5f45fb1a4a15c04b58b87ba7fa87456054f98b",
+  urls = ["https://github.com/abseil/abseil-cpp/archive/273292d1cfc0a94a65082ee350509af1d113344d.zip"],
+  strip_prefix = "abseil-cpp-273292d1cfc0a94a65082ee350509af1d113344d",
+)
 
 http_archive(
     name = "gtest",
