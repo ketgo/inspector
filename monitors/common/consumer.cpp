@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "monitor/consumer.hpp"
+#include "monitors/common/consumer.hpp"
 
 #include <inspector/details/shared_object.hpp>
 

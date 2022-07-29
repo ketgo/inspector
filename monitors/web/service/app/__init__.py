@@ -18,40 +18,36 @@
     Security service application
 """
 
-import os
+from gevent import monkey
 
-from flask import Flask, render_template
+monkey.patch_all()
+
+from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from flask_celeryext import FlaskCeleryExt
 from healthcheck import HealthCheck
 
-socketio = SocketIO(logger=True, engineio_logger=True)
+from config import Config
+
+socketio = SocketIO()
 ext = FlaskCeleryExt()
 health = HealthCheck()
 
 
-def create_app(config_file=None) -> Flask:
+def create_app(config: Config = None) -> Flask:
     """
     Create Flask app object after initialization of service.
 
-    :param config_file: configuration file
+    :param config: configuration object
     :return: flask app object
     """
 
     # Create flask app
-    app = Flask(
-        __name__, template_folder="{}/monitor/service/templates".format(os.getcwd())
-    )
-    # app = Flask(__name__)
+    app = Flask(__name__)
 
     # Configure flask app
-    app.config.from_object(config_file)
-
-    # Setting HTML routes
-    @app.route("/")
-    def index():
-        return render_template("index.html")
+    app.config.from_object(config)
 
     # Setting health check endpoint
     app.add_url_rule("/health", view_func=lambda: health.run())
@@ -63,7 +59,13 @@ def create_app(config_file=None) -> Flask:
     ext.init_app(app)
 
     # Register SocketIO extension
-    socketio.init_app(app, message_queue="amqp://", cors_allowed_origins="*")
+    socketio.init_app(
+        app,
+        logger=config.SOCKETIO_LOGGER,
+        engineio_logger=config.SOCKETIO_ENGINEIO_LOGGER,
+        message_queue=config.SOCKETIO_BROKER_URL,
+        cors_allowed_origins="*",
+    )
 
     from app.controller import SocketAPI
 

@@ -13,7 +13,8 @@
 # limitations under the License.
 
 load("//third_party/pybind11:defs.bzl", "pybind_library")
-load("//third_party/python:defs.bzl", "pytest_test")
+
+package(default_visibility = ["//monitors:__subpackages__"])
 
 cc_library(
     name = "consumer_cc",
@@ -48,12 +49,4 @@ pybind_library(
     deps = [
         ":consumer_cc",
     ],
-)
-
-pytest_test(
-    name = "sample_test",
-    srcs = [
-        "sample_test.py",
-    ],
-    deps = [],
 )

@@ -17,7 +17,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "monitor/consumer.hpp"
+#include "monitors/common/consumer.hpp"
 
 namespace py = pybind11;
 

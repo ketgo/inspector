@@ -16,7 +16,7 @@
 
 #include <gtest/gtest.h>
 
-#include "monitor/consumer.hpp"
+#include "monitors/common/consumer.hpp"
 #include <inspector/details/shared_object.hpp>
 
 using namespace inspector;

@@ -12,21 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_python//python:defs.bzl", "py_library")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 load("@deps_python//:requirements.bzl", "entry_point", "requirement")
 
 py_library(
-    name = "config",
-    srcs = [
-        "config.py",
-    ],
-    deps = [],
-)
-
-py_library(
     name = "app",
-    srcs = glob(["app/**/*.py"]),
-    data = ["templates/index.html"],
+    srcs = glob(["app/**/*.py"]) + ["config.py"],
     imports = ["monitor/service"],
     deps = [
         requirement("flask"),
@@ -43,26 +34,26 @@ py_library(
 py_binary(
     name = "server",
     srcs = [
-        "server.py",
+        "manage.py",
     ],
+    args = ["--type server"],
     imports = ["monitor/service"],
-    main = "server.py",
+    main = "manage.py",
     deps = [
         ":app",
-        ":config",
     ],
 )
 
 py_binary(
     name = "worker",
     srcs = [
-        "worker.py",
+        "manage.py",
     ],
+    args = ["--type worker"],
     imports = ["monitor/service"],
-    main = "worker.py",
+    main = "manage.py",
     deps = [
-        ":app",
-        ":config",
+        ":server",
     ],
 )
 

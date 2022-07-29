@@ -34,6 +34,11 @@ class Config:
     CELERY_BROKER_URL = os.environ.get("INSPECTOR_BROKER_URL", "amqp://")
     CELERY_RESULT_BACKEND = os.environ.get("INSPECTOR_RESULT_BACKEND", "rpc")
 
+    # SocketIO settings
+    SOCKETIO_BROKER_URL = os.environ.get("INSPECTOR_BROKER_URL", "amqp://")
+    SOCKETIO_LOGGER = True
+    SOCKETIO_ENGINEIO_LOGGER = True
+
 
 class TestConfig(Config):
     """

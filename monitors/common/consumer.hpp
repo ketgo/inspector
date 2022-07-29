@@ -27,6 +27,10 @@ namespace inspector {
  */
 using RawEvent = std::string;
 
+// --------------------------------
+// Basic Consumer
+// --------------------------------
+
 /**
  * @brief The class `Consumer` consumes events from event queue for further
  * processing.
@@ -63,6 +67,22 @@ class Consumer {
  private:
   bool remove_;
   details::EventQueue* queue_;
+};
+
+// --------------------------------
+// Periodic Consumer
+// --------------------------------
+
+/**
+ * @brief The class `PeriodicConsumer` consumes events from event queue for
+ * further processing periodically with specified time interval.
+ *
+ */
+class PeriodicConsumer {
+ public:
+  class Callback {};
+
+ private:
 };
 
 }  // namespace inspector
