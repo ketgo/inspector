@@ -26,6 +26,7 @@ cc_library(
     ],
     deps = [
         "//cpp:inspector",
+        "@glog",
     ],
 )
 

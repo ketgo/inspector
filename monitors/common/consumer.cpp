@@ -18,6 +18,7 @@
 
 #include <thread>
 
+#include <glog/logging.h>
 #include <inspector/details/shared_object.hpp>
 
 namespace inspector {
@@ -31,17 +32,26 @@ Consumer::Consumer(bool remove)
       queue_(details::shared_object::GetOrCreate<details::EventQueue>(
           details::kTraceQueueSystemUniqueName)) {}
 
-std::string Consumer::Consume(const std::size_t max_attempts) {
-  details::EventQueue::ReadSpan span;
-  auto result = queue_->Consume(span, max_attempts);
-  if (result != details::EventQueue::Result::SUCCESS) {
-    return {};
+std::vector<std::string> Consumer::Consume(const std::size_t batch_size,
+                                           const std::size_t max_attempts) {
+  std::vector<std::string> rvalue;
+  rvalue.reserve(batch_size);
+  for (std::size_t idx = 0; idx < batch_size; ++idx) {
+    details::EventQueue::ReadSpan span;
+    auto result = queue_->Consume(span, max_attempts);
+    // TODO: Better error handling required.
+    if (result != details::EventQueue::Status::OK) {
+      VLOG(2) << "No more events found.";
+      break;
+    }
+    rvalue.emplace_back(span.Data(), span.Size());
   }
-  return {span.Data(), span.Size()};
+  return rvalue;
 }
 
 Consumer::~Consumer() {
   if (remove_) {
+    VLOG(2) << "Removing shared event queue...";
     details::shared_object::Remove(details::kTraceQueueSystemUniqueName);
   }
 }
@@ -51,13 +61,17 @@ Consumer::~Consumer() {
 // --------------------------------
 
 PeriodicConsumer::PeriodicConsumer(const std::chrono::microseconds& period,
+                                   const std::size_t batch_size,
                                    const std::size_t max_attempt, bool remove)
-    : period_(period), max_attempt_(max_attempt), consumer_(remove) {}
+    : period_(period),
+      batch_size_(batch_size),
+      max_attempt_(max_attempt),
+      consumer_(remove) {}
 
 template <class EventHandler>
 void PeriodicConsumer::Start(EventHandler& handler) {
   while (true) {
-    auto event = consumer_.Consume(max_attempt_);
+    auto event = consumer_.Consume(batch_size_, max_attempt_);
     if (!handler(event)) {
       break;
     }

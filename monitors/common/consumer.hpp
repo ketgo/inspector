@@ -19,8 +19,9 @@
 
 #include <chrono>
 #include <string>
+#include <vector>
 
-#include <inspector/details/common.hpp>
+#include <inspector/details/config.hpp>
 
 namespace inspector {
 
@@ -58,13 +59,15 @@ class Consumer {
   ~Consumer();
 
   /**
-   * @brief Consume and return a raw event from the queue. If no event is found
-   * then an empty event is returned.
+   * @brief Consume and return a batch of events from the queue. If no events
+   * are found then an empty batch is returned.
    *
+   * @param batch_size Maximum number of events to consume in a batch.
    * @param max_attempt Maximum number of attempts to make when consuming event.
    * @returns Consumed raw event.
    */
-  RawEvent Consume(
+  std::vector<std::string> Consume(
+      const std::size_t batch_size,
       const std::size_t max_attempt = details::EventQueue::defaultMaxAttempt());
 
  private:
@@ -87,12 +90,13 @@ class PeriodicConsumer {
    * @brief Construct a new PeriodicConsumer object.
    *
    * @param period Constant reference to the duration in milliseconds to wait
-   * between each attempt to consume events from the event queue.
+   * between each consume attempt.
+   * @param batch_size Maximum number of events to consume in a batch.
    * @param max_attempt Maximum number of attempts to make when consuming event.
    * @param remove Flag to indicate removal of the queue on DTOR.
    */
   PeriodicConsumer(
-      const std::chrono::microseconds& period,
+      const std::chrono::microseconds& period, const std::size_t batch_size,
       const std::size_t max_attempt = details::EventQueue::defaultMaxAttempt(),
       bool remove = false);
 
@@ -100,10 +104,10 @@ class PeriodicConsumer {
    * @brief Start the periodic consumer.
    *
    * The method is blocking and will call the given event handler on successful
-   * consumption of an event from the queue. If the handler returns a `false`
-   * the consumer stops and the method returns. Otherwise the execution will
-   * continues. Thus the event handler is required to be a callable taking the
-   * consumed event as input and returning a boolean.
+   * consumption of a batch of events from the queue. If the handler returns
+   * `false` then the consumer stops, otherwise the execution continues. Thus
+   * the event handler is required to be a callable taking the consumed events
+   * as input and returning a boolean.
    *
    * @tparam EventHandler Event handler type.
    * @param handler Reference to the event handler.
@@ -113,6 +117,7 @@ class PeriodicConsumer {
 
  private:
   const std::chrono::microseconds period_;
+  const std::size_t batch_size_;
   const std::size_t max_attempt_;
   Consumer consumer_;
 };

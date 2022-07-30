@@ -20,16 +20,16 @@
 #include <inspector/details/circular_queue/allocator.hpp>
 
 // TODO: Release cursors for stale processes which have abruptly died. Note that
-// if we reprocess the message block pointed by these cursors we implement the
-// AtleastOnce delivery and if we ignore these messages we implement the
+// if we reprocess the message pointed by these cursors, we have the
+// AtleastOnce delivery. If we ignore these messages then we have the
 // AtmostOnce delivery.
 
 namespace inspector {
 namespace details {
 
 /**
- * @brief The class `CircularQueue` is a lock-free and wait-free circular
- * queue supporting multiple concurrent consumers and producers.
+ * @brief The class `CircularQueue` is a lock-free and wait-free circular queue
+ * supporting multiple concurrent consumers and producers.
  *
  * The circular queue is designed to be lock-free and wait-free supporting
  * multiple consumers and producers. It exposes two operations, `Publish` for
@@ -45,15 +45,15 @@ namespace details {
  * MemoryBlock
  * -----------
  *
- * Data is written on a ring buffer in the form of `MemoryBlock` data structure.
- * The data structure contains two parts: header and body. The header contains
- * the size of the body and possibly a checksum. The body contains the data
- * published by a producer.
+ * Data is written on a circular queue in the form of `MemoryBlock` data
+ * structure. The data structure contains two parts: header and body. The header
+ * contains the size of the body and possibly a checksum. The body contains the
+ * data published by a producer.
  *
  * Write
  * -----
  *
- * In order to support multiple producers, the ring buffer contains multiple
+ * In order to support multiple producers, the circular queue contains multiple
  * write cursors and a write head. When writing a message of size s, a producer
  * is required to reserves a memory block of size S bytes on the buffer. The
  * following steps are performed for allocation:
@@ -77,7 +77,7 @@ namespace details {
  * Read
  * ----
  *
- * In order to support multiple consumers, the ring buffer contains multiple
+ * In order to support multiple consumers, the circular queue contains multiple
  * read cursors and a read head. When reading a message, a consumer is required
  * to request for a read cursor. The following steps are performed for
  * allotment:
@@ -108,13 +108,13 @@ template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
 class CircularQueue {
  public:
   /**
-   * @brief Enumerated set of results.
+   * @brief Enumerated set of possible status.
    *
    */
-  enum class Result {
-    SUCCESS = 0,             // Successful completion of operation
-    ERROR_BUFFER_FULL = 1,   // Queue full error
-    ERROR_BUFFER_EMPTY = 2,  // Queue empty error
+  enum class Status {
+    OK = 0,     // Queue is ok for publishing and consumption
+    FULL = 1,   // Queue is full so can not publish
+    EMPTY = 2,  // Queue is empty so can not consume
   };
 
   /**
@@ -125,46 +125,47 @@ class CircularQueue {
       const T, circular_queue::CursorPool<MAX_CONSUMERS>>;
 
   /**
-   * @brief Span encapsulating memory block to write in the circular queue.
+   * @brief Span encapsulating memory block in the circular queue for writing.
    *
    */
   using WriteSpan = Span<T>;
 
   /**
    * @brief Default maximum number of attempts made when publishing or consuming
-   * data from the ring buffer.
+   * data from the circular queue.
    *
    */
   constexpr static std::size_t defaultMaxAttempt() { return 32; }
 
   /**
-   * @brief Publish data to ring buffer.
+   * @brief Publish data to circular queue.
    *
    * The method copies the data stored in the given memory location onto the
-   * ring buffer.
+   * circular queue.
    *
    * @param span Constant reference to the write span.
    * @param max_attempt Maximum number of attempts to perform.
-   * @returns Result of the operation.
+   * @returns Status of the queue.
    */
-  Result Publish(const WriteSpan &span,
+  Status Publish(const WriteSpan &span,
                  size_t max_attempt = defaultMaxAttempt());
 
   /**
-   * @brief Consume from ring buffer.
+   * @brief Consume data from circular queue.
    *
    * The method fills the passed span object such that it encapsulates the
-   * stored data on the ring buffer for consumption.
+   * stored data on the circular queue for consumption.
    *
    * @param span Reference to the read span.
    * @param max_attempt Maximum number of attempts to perform.
-   * @returns Result of the operation.
+   * @returns Status of the queue.
    */
-  Result Consume(ReadSpan &span,
+  Status Consume(ReadSpan &span,
                  size_t max_attempt = defaultMaxAttempt()) const;
 
   /**
-   * @brief Get the raw data in the circular queue.
+   * @brief Get raw data in the circular queue. Only intended for testing and
+   * debugging.
    *
    */
   const unsigned char *Data() const;
@@ -180,7 +181,7 @@ class CircularQueue {
 
 template <class T, size_t BUFFER_SIZE, size_t MAX_PRODUCERS,
           size_t MAX_CONSUMERS>
-typename CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Result
+typename CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Status
 CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Publish(
     const WriteSpan &span, size_t max_attempt) {
   // Attempt writing of data
@@ -190,17 +191,17 @@ CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Publish(
     if (handle) {
       // Write data
       memcpy(handle.Data(), span.Data(), span.Size() * sizeof(T));
-      return Result::SUCCESS;
+      return Status::OK;
     }
     // Could not allocate chunk so attempt again
     --max_attempt;
   }
-  return Result::ERROR_BUFFER_FULL;
+  return Status::FULL;
 }
 
 template <class T, size_t BUFFER_SIZE, size_t MAX_PRODUCERS,
           size_t MAX_CONSUMERS>
-typename CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Result
+typename CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Status
 CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Consume(
     ReadSpan &span, size_t max_attempt) const {
   // Attempt reading of data
@@ -209,12 +210,12 @@ CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Consume(
     auto handle = allocator_.Allocate(max_attempt);
     if (handle) {
       span = std::move(handle);
-      return Result::SUCCESS;
+      return Status::OK;
     }
     // Could not allocate chunk so attempt again
     --max_attempt;
   }
-  return Result::ERROR_BUFFER_EMPTY;
+  return Status::EMPTY;
 }
 
 template <class T, size_t BUFFER_SIZE, size_t MAX_PRODUCERS,

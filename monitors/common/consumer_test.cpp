@@ -21,19 +21,26 @@
 
 using namespace inspector;
 
+namespace {
+constexpr auto kBatchSize = 10;
+}
+
 TEST(ConsumerTestFixture, BasicConsumer) {
   Consumer consumer;
 
-  // Consuming message from empty queue
-  ASSERT_TRUE(consumer.Consume().empty());
+  // Consuming events from an empty queue
+  ASSERT_TRUE(consumer.Consume(kBatchSize).empty());
 
-  // Publishing test message
-  std::string test_message = "testing";
+  // Preparing queue by publishing a test event for testing.
+  std::string test_event = "testing";
   auto queue = details::shared_object::Get<details::EventQueue>(
       details::kTraceQueueSystemUniqueName);
-  ASSERT_EQ(queue->Publish(test_message), details::EventQueue::Result::SUCCESS);
-  // Consume message
-  ASSERT_EQ(consumer.Consume(), test_message);
+  ASSERT_EQ(queue->Publish(test_event), details::EventQueue::Status::OK);
+
+  // Consume events from queue.
+  auto events = consumer.Consume(kBatchSize);
+  ASSERT_EQ(events.size(), 1);
+  ASSERT_EQ(events[0], test_event);
 }
 
 TEST(ConsumerTestFixture, PeriodicConsumer) {}

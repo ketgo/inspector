@@ -16,6 +16,18 @@
 
 #pragma once
 
+#include <inspector/details/logging.hpp>
+
 namespace inspector {
-namespace details {}
+
+/**
+ * @brief Register the given logger for the specified log level.
+ *
+ * @param level Log level.
+ * @param logger Reference to the logger to use for logging.
+ */
+inline void RegisterLogger(LogLevel level, Logger& logger) {
+  details::Log::RegisterLogger(level, logger);
+}
+
 }  // namespace inspector

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// The file contains common constants and types between the lib and monitor.
+// The file contains configuration settings for the inspector library.
 
 #pragma once
 
@@ -34,11 +34,11 @@ constexpr auto kMaxProducers = 1024;
 // lock-free manner.
 constexpr auto kMaxConsumers = 1024;
 
-// Queue of trace and metric events published by the different producers.
+// Queue of trace and metric events.
 using EventQueue =
     CircularQueue<char, kQueueSize, kMaxProducers, kMaxConsumers>;
 
-// System unique name of the event queue used for sharing it between different
+// System unique name of the event queue for sharing between different
 // processes.
 constexpr auto kTraceQueueSystemUniqueName = "/inspector-56027e94-events";
 

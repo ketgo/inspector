@@ -41,7 +41,7 @@ class CircularQueueTestFixture : public ::testing::Test {
                std::chrono::microseconds delay = std::chrono::microseconds{0}) {
     while (true) {
       std::this_thread::sleep_for(delay);
-      if (queue_.Publish(data) == Queue::Result::SUCCESS) {
+      if (queue_.Publish(data) == Queue::Status::OK) {
         break;
       }
       std::this_thread::yield();
@@ -55,7 +55,7 @@ class CircularQueueTestFixture : public ::testing::Test {
     Queue::ReadSpan span;
     while (true) {
       std::this_thread::sleep_for(delay);
-      if (queue_.Consume(span) == Queue::Result::SUCCESS) {
+      if (queue_.Consume(span) == Queue::Status::OK) {
         break;
       }
       std::this_thread::yield();
@@ -70,13 +70,13 @@ TEST_F(CircularQueueTestFixture, TestPublishConsumeSingleThread) {
   std::unordered_set<std::string> write_data;
   for (size_t i = 0; i < kMessageCount; ++i) {
     std::string data = "testing_" + std::to_string(i);
-    ASSERT_EQ(queue_.Publish(data), Queue::Result::SUCCESS);
+    ASSERT_EQ(queue_.Publish(data), Queue::Status::OK);
     write_data.insert(data);
   }
 
   for (size_t i = 0; i < kMessageCount; ++i) {
     Queue::ReadSpan span;
-    ASSERT_EQ(queue_.Consume(span), Queue::Result::SUCCESS);
+    ASSERT_EQ(queue_.Consume(span), Queue::Status::OK);
     std::string data(span.Data(), span.Size());
     ASSERT_TRUE(write_data.find(data) != write_data.end());
   }

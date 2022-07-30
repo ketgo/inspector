@@ -99,10 +99,10 @@ python_configure(name = "local_config_python")
 # --------------------------------------
 
 http_archive(
-  name = "com_google_absl",
-  sha256 = "6764f226bd6e2d8ab9fe2f3cab5f45fb1a4a15c04b58b87ba7fa87456054f98b",
-  urls = ["https://github.com/abseil/abseil-cpp/archive/273292d1cfc0a94a65082ee350509af1d113344d.zip"],
-  strip_prefix = "abseil-cpp-273292d1cfc0a94a65082ee350509af1d113344d",
+    name = "com_google_absl",
+    sha256 = "6764f226bd6e2d8ab9fe2f3cab5f45fb1a4a15c04b58b87ba7fa87456054f98b",
+    strip_prefix = "abseil-cpp-273292d1cfc0a94a65082ee350509af1d113344d",
+    urls = ["https://github.com/abseil/abseil-cpp/archive/273292d1cfc0a94a65082ee350509af1d113344d.zip"],
 )
 
 http_archive(
@@ -110,4 +110,22 @@ http_archive(
     sha256 = "5cf189eb6847b4f8fc603a3ffff3b0771c08eec7dd4bd961bfd45477dd13eb73",
     strip_prefix = "googletest-609281088cfefc76f9d0ce82e1ff6c30cc3591e5",
     urls = ["https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip"],
+)
+
+# ---------------------------------------
+# Glog
+# ---------------------------------------
+
+http_archive(
+    name = "com_github_gflags_gflags",
+    sha256 = "34af2f15cf7367513b352bdcd2493ab14ce43692d2dcd9dfc499492966c64dcf",
+    strip_prefix = "gflags-2.2.2",
+    urls = ["https://github.com/gflags/gflags/archive/v2.2.2.tar.gz"],
+)
+
+http_archive(
+    name = "glog",
+    sha256 = "122fb6b712808ef43fbf80f75c52a21c9760683dae470154f02bddfc61135022",
+    strip_prefix = "glog-0.6.0",
+    urls = ["https://github.com/google/glog/archive/v0.6.0.zip"],
 )
