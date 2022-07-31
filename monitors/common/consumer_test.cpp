@@ -34,7 +34,7 @@ TEST(ConsumerTestFixture, BasicConsumer) {
   // Preparing queue by publishing a test event for testing.
   std::string test_event = "testing";
   auto queue = details::shared_object::Get<details::EventQueue>(
-      details::kTraceQueueSystemUniqueName);
+      details::kEventQueueSystemUniqueName);
   ASSERT_EQ(queue->Publish(test_event), details::EventQueue::Status::OK);
 
   // Consume events from queue.

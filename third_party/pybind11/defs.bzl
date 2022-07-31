@@ -28,6 +28,7 @@ def pybind_library(
     pybind_extension(
         name = _soname,
         visibility = ["//visibility:private"],
+        local_defines = ["INSPECTOR_PYTHON_MODULE={}".format(_soname)],
         **kwargs
     )
     py_library(

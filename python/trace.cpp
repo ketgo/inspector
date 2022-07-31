@@ -1,12 +1,12 @@
 /**
  * Copyright 2022 Ketan Goyal
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,16 +17,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "monitors/common/consumer.hpp"
-
 namespace py = pybind11;
 
-PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
-  m.doc() = "Trace monitor consumer";
-
-  py::class_<inspector::Consumer>(m, "Consumer")
-      .def(py::init<bool>())
-      .def("consume", &inspector::Consumer::Consume,
-           "Consume and return a raw event from the queue. If no event is "
-           "found then an empty event is returned.");
-}
+void BindTrace(py::module& m) {}

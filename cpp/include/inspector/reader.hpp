@@ -24,7 +24,7 @@ namespace inspector {
 
 /**
  * @brief The class `Reader` can be used to consume events from the shared queue
- * containing tracing or metrics events. It exposes the standard iterator
+ * containing trace or metrics events. It exposes the standard iterator
  * interface which can be used in a for loop to consume events.
  *
  */
@@ -33,12 +33,14 @@ class Reader {
   /**
    * @brief Construct a new Reader object.
    *
-   * @param max_attempt Maximum number of attempts to make when consuming event.
    * @param remove Flag for removal of the queue on DTOR.
+   * @param max_attempt Maximum number of attempts to make when consuming event.
+   * @param queue_name System unique name of the shared event queue.
    */
   Reader(
+      const bool remove = false,
       const std::size_t max_attempt = details::EventQueue::defaultMaxAttempt(),
-      const bool remove = false);
+      const std::string& queue_name = details::kEventQueueSystemUniqueName);
 
   /**
    * @brief Destroy the Reader object.
@@ -57,8 +59,9 @@ class Reader {
   details::Iterator end() const;
 
  private:
-  const std::size_t max_attempt_;
   const bool remove_;
+  const std::size_t max_attempt_;
+  const std::string queue_name_;
   details::EventQueue* queue_;
 };
 
@@ -66,16 +69,18 @@ class Reader {
 // Reader Implementation
 // ---------------------------------
 
-inline Reader::Reader(const std::size_t max_attempt, const bool remove)
-    : max_attempt_(max_attempt),
-      remove_(remove),
+inline Reader::Reader(const bool remove, const std::size_t max_attempt,
+                      const std::string& queue_name)
+    : remove_(remove),
+      max_attempt_(max_attempt),
+      queue_name_(queue_name),
       queue_(details::shared_object::GetOrCreate<details::EventQueue>(
-          details::kTraceQueueSystemUniqueName)) {}
+          queue_name_)) {}
 
 inline Reader::~Reader() {
   if (remove_) {
-    LOG_INFO << "Removing shared event queue...";
-    details::shared_object::Remove(details::kTraceQueueSystemUniqueName);
+    LOG_INFO << "Marking the shared event queue for removal.";
+    details::shared_object::Remove(queue_name_);
   }
 }
 

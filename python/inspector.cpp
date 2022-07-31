@@ -17,16 +17,18 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "monitors/common/consumer.hpp"
-
 namespace py = pybind11;
 
-PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
-  m.doc() = "Trace monitor consumer";
+void BindLogging(py::module& m);
+void BindReader(py::module& m);
+void BindWriter(py::module& m);
+void BindTrace(py::module& m);
 
-  py::class_<inspector::Consumer>(m, "Consumer")
-      .def(py::init<bool>())
-      .def("consume", &inspector::Consumer::Consume,
-           "Consume and return a raw event from the queue. If no event is "
-           "found then an empty event is returned.");
+PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
+  m.doc() = "Tool set to capture real time application traces for inspection.";
+
+  BindLogging(m);
+  BindReader(m);
+  BindWriter(m);
+  BindTrace(m);
 }

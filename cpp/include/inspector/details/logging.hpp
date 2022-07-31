@@ -41,7 +41,7 @@ enum class LogLevel {
 class Logger {
  public:
   virtual ~Logger() = default;
-  virtual void operator<<(const std::string& log) {}  // NOP
+  virtual void operator<<(const std::string& message) {}  // NOP
 };
 
 /**

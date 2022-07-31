@@ -15,6 +15,6 @@
 -->
 
 [x] Generic logging where the user can provide their own logger.
-[] Event writer to publish trace events on event queue.
-[] Event reader to consume trace events from event queue.
+[x] Event writer to publish trace events on event queue.
+[x] Event reader to consume trace events from event queue.
 [] User facing tracing methods

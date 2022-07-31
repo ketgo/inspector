@@ -40,7 +40,7 @@ using EventQueue =
 
 // System unique name of the event queue for sharing between different
 // processes.
-constexpr auto kTraceQueueSystemUniqueName = "/inspector-56027e94-events";
+constexpr auto kEventQueueSystemUniqueName = "/inspector-56027e94-events";
 
 }  // namespace details
 }  // namespace inspector

@@ -37,9 +37,11 @@ TEST(ReaderTestFixture, IterateEmptyQueue) {
 TEST(ReaderTestFixture, IterateNonEmptyQueue) {
   // Preparing queue by publishing a test event for testing.
   auto queue = details::shared_object::GetOrCreate<details::EventQueue>(
-      details::kTraceQueueSystemUniqueName);
-  std::string test_event = "testing";
-  ASSERT_EQ(queue->Publish(test_event), details::EventQueue::Status::OK);
+      details::kEventQueueSystemUniqueName);
+  std::string test_event_1 = "testing_1";
+  ASSERT_EQ(queue->Publish(test_event_1), details::EventQueue::Status::OK);
+  std::string test_event_2 = "testing_2";
+  ASSERT_EQ(queue->Publish(test_event_2), details::EventQueue::Status::OK);
 
   Reader reader(kMaxAttempt, true);
   std::vector<std::string> events;
@@ -47,6 +49,7 @@ TEST(ReaderTestFixture, IterateNonEmptyQueue) {
     events.push_back(std::move(event));
   }
 
-  ASSERT_EQ(events.size(), 1);
-  ASSERT_EQ(events[0], test_event);
+  ASSERT_EQ(events.size(), 2);
+  ASSERT_EQ(events[0], test_event_1);
+  ASSERT_EQ(events[1], test_event_2);
 }

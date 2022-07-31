@@ -28,7 +28,10 @@ class Reader;
 namespace details {
 
 /**
- * @brief
+ * @brief Iterator to iterate over events in the event queue.
+ *
+ * The Iterator class is a forward-only direction iterator. It consumes events
+ * from the event queue while iterating.
  *
  */
 class Iterator {

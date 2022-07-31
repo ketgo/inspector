@@ -30,7 +30,7 @@ namespace inspector {
 Consumer::Consumer(bool remove)
     : remove_(remove),
       queue_(details::shared_object::GetOrCreate<details::EventQueue>(
-          details::kTraceQueueSystemUniqueName)) {}
+          details::kEventQueueSystemUniqueName)) {}
 
 std::vector<std::string> Consumer::Consume(const std::size_t batch_size,
                                            const std::size_t max_attempts) {
@@ -52,7 +52,7 @@ std::vector<std::string> Consumer::Consume(const std::size_t batch_size,
 Consumer::~Consumer() {
   if (remove_) {
     VLOG(2) << "Removing shared event queue...";
-    details::shared_object::Remove(details::kTraceQueueSystemUniqueName);
+    details::shared_object::Remove(details::kEventQueueSystemUniqueName);
   }
 }
 
