@@ -63,7 +63,7 @@ class Reader {
 };
 
 // ---------------------------------
-// Reader implementation
+// Reader Implementation
 // ---------------------------------
 
 inline Reader::Reader(const std::size_t max_attempt, const bool remove)
@@ -77,6 +77,15 @@ inline Reader::~Reader() {
     LOG_INFO << "Removing shared event queue...";
     details::shared_object::Remove(details::kTraceQueueSystemUniqueName);
   }
+}
+
+details::Iterator Reader::begin() const {
+  details::Iterator it(queue_, max_attempt_, details::EventQueue::Status::OK);
+  return ++it;
+}
+
+details::Iterator Reader::end() const {
+  return {queue_, max_attempt_, details::EventQueue::Status::EMPTY};
 }
 
 // ---------------------------------

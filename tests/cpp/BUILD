@@ -22,3 +22,14 @@ cc_test(
         "@gtest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "reader_test",
+    srcs = [
+        "reader_test.cpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+        "@gtest//:gtest_main",
+    ],
+)

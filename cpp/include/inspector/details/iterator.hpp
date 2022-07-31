@@ -16,9 +16,15 @@
 
 #pragma once
 
+#include <cstring>
+
 #include <inspector/details/config.hpp>
 
 namespace inspector {
+
+// Forward declared reader class so that it can be friended
+class Reader;
+
 namespace details {
 
 /**
@@ -26,17 +32,20 @@ namespace details {
  *
  */
 class Iterator {
-  friend class Reader;
+  // Reader needs to access the private CTOR
+  friend class ::inspector::Reader;
 
  public:
   Iterator();
+  std::string* operator->();
+  std::string& operator*();
   Iterator& operator++();
   Iterator operator++(int);
-  std::string* operator->() const;
-  std::string& operator*() const;
+  bool operator==(const Iterator& other) const;
+  bool operator!=(const Iterator& other) const;
 
  private:
-  Iterator(EventQueue* queue_, const std::size_t max_attempt,
+  Iterator(const EventQueue* queue, const std::size_t max_attempt,
            EventQueue::Status status);
 
   void Next();
@@ -44,8 +53,56 @@ class Iterator {
   EventQueue* queue_;
   std::size_t max_attempt_;
   EventQueue::Status status_;
-  std::string events_;
+  std::string event_;
 };
+
+// ---------------------------------
+// Iterator Implementation
+// ---------------------------------
+
+Iterator::Iterator(const EventQueue* queue, const std::size_t max_attempt,
+                   EventQueue::Status status)
+    : queue_(const_cast<EventQueue*>(queue)),
+      max_attempt_(max_attempt),
+      status_(status) {}
+
+void Iterator::Next() {
+  EventQueue::ReadSpan span;
+  status_ = queue_->Consume(span, max_attempt_);
+  if (status_ == EventQueue::Status::OK) {
+    event_ = {span.Data(), span.Size()};
+  }
+}
+
+// ------------ public -------------
+
+Iterator::Iterator()
+    : queue_(nullptr), max_attempt_(0), status_(EventQueue::Status::OK) {}
+
+std::string* Iterator::operator->() { return &event_; }
+
+std::string& Iterator::operator*() { return event_; }
+
+Iterator& Iterator::operator++() {
+  Next();
+  return *this;
+}
+
+Iterator Iterator::operator++(int) {
+  Iterator rvalue = *this;
+  Next();
+  return rvalue;
+}
+
+bool Iterator::operator==(const Iterator& other) const {
+  return queue_ == other.queue_ && status_ == other.status_;
+}
+
+bool Iterator::operator!=(const Iterator& other) const {
+  return !(*this == other);
+}
+
+// ---------------------------------
 
 }  // namespace details
 }  // namespace inspector
