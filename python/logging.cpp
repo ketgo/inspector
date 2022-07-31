@@ -27,20 +27,24 @@ namespace py = pybind11;
  */
 class PythonLogger : public inspector::Logger {
  public:
-  PythonLogger(py::object& log);
+  PythonLogger(const std::string& level, py::object& logger);
   void operator<<(const std::string& message) override;
 
  private:
-  py::object log_;
+  const std::string level_;
+  py::object logger_;
 };
 
 // ---------------------------------
 // PythonLogger Implementation
 // ---------------------------------
 
-PythonLogger::PythonLogger(py::object& log) : log_(log) {}
+PythonLogger::PythonLogger(const std::string& level, py::object& logger)
+    : level_(level), logger_(logger) {}
 
-void PythonLogger::operator<<(const std::string& message) { log_(message); }
+void PythonLogger::operator<<(const std::string& message) {
+  logger_.attr(level_.c_str())(message);
+}
 
 // ---------------------------------
 
@@ -52,10 +56,13 @@ void PythonLogger::operator<<(const std::string& message) { log_(message); }
 void BindLogging(py::module& m) {
   auto logging = py::module::import("logging");
   auto py_logger = logging.attr("getLogger")(m.attr("__name__"));
-  static PythonLogger info_logger(py_logger.attr("info")),
-      warn_logger(py_logger.attr("warn")),
-      error_logger(py_logger.attr("error"));
+
+  static PythonLogger info_logger("info", py_logger);
   inspector::RegisterLogger(inspector::LogLevel::INFO, info_logger);
+
+  static PythonLogger warn_logger("warn", py_logger);
   inspector::RegisterLogger(inspector::LogLevel::WARN, warn_logger);
+
+  static PythonLogger error_logger("error", py_logger);
   inspector::RegisterLogger(inspector::LogLevel::ERROR, error_logger);
 }
