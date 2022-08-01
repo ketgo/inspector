@@ -17,6 +17,23 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <inspector/writer.hpp>
+
 namespace py = pybind11;
 
-void BindWriter(py::module& m) {}
+/**
+ * @brief Binding event writer to the given python module.
+ *
+ * @param m Reference to the python module.
+ */
+void BindWriter(py::module& m) {
+  py::class_<inspector::Writer>(m, "Writer")
+      .def(py::init<const bool, const std::size_t, const std::string&>(),
+           py::arg("remove") = false,
+           py::arg("max_attempt") =
+               inspector::details::EventQueue::defaultMaxAttempt(),
+           py::arg("queue_name") =
+               inspector::details::kEventQueueSystemUniqueName)
+      .def("write", &inspector::Writer::Write,
+           "Write the given event to the shared event queue.");
+}

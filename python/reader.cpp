@@ -17,6 +17,27 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <inspector/reader.hpp>
+
 namespace py = pybind11;
 
-void BindReader(py::module& m) {}
+/**
+ * @brief Binding event reader to the given python module.
+ *
+ * @param m Reference to the python module.
+ */
+void BindReader(py::module& m) {
+  py::class_<inspector::Reader>(m, "Reader")
+      .def(py::init<const bool, const std::size_t, const std::string&>(),
+           py::arg("remove") = false,
+           py::arg("max_attempt") =
+               inspector::details::EventQueue::defaultMaxAttempt(),
+           py::arg("queue_name") =
+               inspector::details::kEventQueueSystemUniqueName)
+      .def(
+          "__iter__",
+          [](const inspector::Reader& reader) {
+            return py::make_iterator(reader.begin(), reader.end());
+          },
+          py::keep_alive<0, 1>());
+}

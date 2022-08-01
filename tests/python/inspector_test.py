@@ -1,4 +1,4 @@
-<!--
+"""
  Copyright 2022 Ketan Goyal
  
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,9 +12,18 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
--->
+"""
 
-[x] Generic logging where the user can provide their own logger.
-[x] Event writer to publish trace events on event queue.
-[x] Event reader to consume trace events from event queue.
-[] User facing tracing methods
+from python.inspector import Writer, Reader
+
+
+def test_writer_reader():
+    writer = Writer(remove=True)
+    writer.write("testing_1")
+    writer.write("testing_2")
+
+    reader = Reader()
+    events = [event for event in reader]
+    assert len(events) == 2
+    assert events[0] == "testing_1"
+    assert events[1] == "testing_2"

@@ -14,10 +14,13 @@
 
 load("//third_party/pybind11:defs.bzl", "pybind_library")
 
+package(default_visibility = ["//visibility:public"])
+
 pybind_library(
     name = "inspector",
     srcs = [
         "logging.cpp",
+        "module.cpp",
         "reader.cpp",
         "trace.cpp",
         "writer.cpp",
