@@ -14,11 +14,14 @@
  limitations under the License.
 """
 
-from python.inspector import Writer, Reader
+from python.inspector import Writer, Reader, Config
 
 
 def test_writer_reader():
-    writer = Writer(remove=True)
+    config = Config()
+    config.REMOVE = True
+    Writer.set_config(config)
+    writer = Writer()
     writer.write("testing_1")
     writer.write("testing_2")
 

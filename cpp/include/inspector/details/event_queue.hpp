@@ -16,22 +16,25 @@
 
 #pragma once
 
-#include <string>
+#include <inspector/details/circular_queue.hpp>
 
 namespace inspector {
 namespace details {
 
-/**
- * @brief Default event queue system unique name.
- *
- */
-constexpr auto kEventQueueSystemUniqueName = "/inspector-56027e94-events";
+// Size of the event queue in bytes.
+constexpr auto kEventQueueSize = 64 * 1024;  // 64 MB
 
-/**
- * @brief Max attempt when consuming or publishing events.
- *
- */
-constexpr auto kMaxAttempt = 32;
+// Maximum number of producers allowed to concurrently publish events in a
+// lock-free manner.
+constexpr auto kMaxProducers = 1024;
+
+// Maximum number of consumers allowed to concurrently consume events in a
+// lock-free manner.
+constexpr auto kMaxConsumers = 1024;
+
+// Queue of trace and metric events.
+using EventQueue =
+    CircularQueue<char, kEventQueueSize, kMaxProducers, kMaxConsumers>;
 
 }  // namespace details
 }  // namespace inspector

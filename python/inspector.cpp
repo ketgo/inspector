@@ -17,23 +17,22 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include <inspector/reader.hpp>
+#include <inspector/config.hpp>
 
 namespace py = pybind11;
 
-/**
- * @brief Binding event reader to the given python module.
- *
- * @param m Reference to the python module.
- */
-void BindReader(py::module& m) {
-  py::class_<inspector::Reader>(m, "Reader")
-      .def_static("set_config", &inspector::Reader::SetConfig)
-      .def(py::init())
-      .def(
-          "__iter__",
-          [](const inspector::Reader& reader) {
-            return py::make_iterator(reader.begin(), reader.end());
-          },
-          py::keep_alive<0, 1>());
+void BindConfig(py::module& m);
+void BindLogging(py::module& m);
+void BindReader(py::module& m);
+void BindTrace(py::module& m);
+void BindWriter(py::module& m);
+
+PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
+  m.doc() = "Tool set to capture real time application traces for inspection.";
+
+  BindConfig(m);
+  BindLogging(m);
+  BindReader(m);
+  BindTrace(m);
+  BindWriter(m);
 }

@@ -16,7 +16,8 @@
 
 #pragma once
 
-#include <inspector/details/config.hpp>
+#include <inspector/config.hpp>
+#include <inspector/details/event_queue.hpp>
 #include <inspector/details/logging.hpp>
 #include <inspector/details/shared_object.hpp>
 
@@ -30,16 +31,20 @@ namespace inspector {
 class Writer {
  public:
   /**
+   * @brief Set writer configuration.
+   *
+   * NOTE: Writer configuration must be set before any method or classes in the
+   * inpector is used.
+   *
+   * @param config Constant reference to the new configuration.
+   */
+  static void SetConfig(const Config& config);
+
+  /**
    * @brief Construct a new Writer object.
    *
-   * @param remove Flag for removal of the queue on DTOR.
-   * @param max_attempt Maximum number of attempts to make when consuming event.
-   * @param queue_name System unique name of the shared event queue.
    */
-  Writer(
-      const bool remove = false,
-      const std::size_t max_attempt = details::EventQueue::defaultMaxAttempt(),
-      const std::string& queue_name = details::kEventQueueSystemUniqueName);
+  Writer();
 
   /**
    * @brief Destroy the Writer object.
@@ -58,6 +63,12 @@ class Writer {
   void Write(const std::string& event);
 
  private:
+  /**
+   * @brief Get writer configuration instance.
+   *
+   */
+  static Config& ConfigInstance();
+
   const bool remove_;
   const std::size_t max_attempt_;
   const std::string queue_name_;
@@ -68,11 +79,23 @@ class Writer {
 // Writer Implementation
 // -----------------------------------
 
-Writer::Writer(const bool remove, const std::size_t max_attempt,
-               const std::string& queue_name)
-    : remove_(remove),
-      max_attempt_(max_attempt),
-      queue_name_(queue_name),
+// static
+inline Config& Writer::ConfigInstance() {
+  static Config config;
+  return config;
+}
+
+// ------------- public --------------
+
+// static
+inline void Writer::SetConfig(const Config& config) {
+  ConfigInstance() = config;
+}
+
+Writer::Writer()
+    : remove_(ConfigInstance().remove),
+      max_attempt_(ConfigInstance().max_attempt),
+      queue_name_(ConfigInstance().queue_system_unique_name),
       queue_(details::shared_object::GetOrCreate<details::EventQueue>(
           queue_name_)) {}
 

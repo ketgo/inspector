@@ -19,8 +19,9 @@ package(default_visibility = ["//visibility:public"])
 pybind_library(
     name = "inspector",
     srcs = [
+        "config.cpp",
+        "inspector.cpp",
         "logging.cpp",
-        "module.cpp",
         "reader.cpp",
         "trace.cpp",
         "writer.cpp",

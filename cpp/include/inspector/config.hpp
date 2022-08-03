@@ -18,20 +18,27 @@
 
 #include <string>
 
+#include <inspector/details/config.hpp>
+
 namespace inspector {
-namespace details {
 
 /**
- * @brief Default event queue system unique name.
+ * @brief The `Config` class contains settings to configure the event writer and
+ * reader.
  *
  */
-constexpr auto kEventQueueSystemUniqueName = "/inspector-56027e94-events";
+struct Config {
+  std::string queue_system_unique_name;
+  std::size_t max_attempt;
+  bool remove;
 
-/**
- * @brief Max attempt when consuming or publishing events.
- *
- */
-constexpr auto kMaxAttempt = 32;
+  Config(const std::string& queue_system_unique_name_ =
+             details::kEventQueueSystemUniqueName,
+         const std::size_t max_attempt_ = details::kMaxAttempt,
+         bool remove_ = false)
+      : queue_system_unique_name(queue_system_unique_name_),
+        max_attempt(max_attempt_),
+        remove(remove_) {}
+};
 
-}  // namespace details
 }  // namespace inspector

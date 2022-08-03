@@ -17,18 +17,20 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <inspector/config.hpp>
+
 namespace py = pybind11;
 
-void BindLogging(py::module& m);
-void BindReader(py::module& m);
-void BindWriter(py::module& m);
-void BindTrace(py::module& m);
-
-PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
-  m.doc() = "Tool set to capture real time application traces for inspection.";
-
-  BindLogging(m);
-  BindReader(m);
-  BindWriter(m);
-  BindTrace(m);
+/**
+ * @brief Binding the C++ config module to the given python module.
+ *
+ * @param m Reference to the python module.
+ */
+void BindConfig(py::module& m) {
+  py::class_<inspector::Config>(m, "Config")
+      .def(py::init())
+      .def_readwrite("EVENT_QUEUE_SYSTEM_UNIQUE_NAME",
+                     &inspector::Config::queue_system_unique_name)
+      .def_readwrite("MAX_ATTEMPT", &inspector::Config::max_attempt)
+      .def_readwrite("REMOVE", &inspector::Config::remove);
 }

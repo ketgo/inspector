@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <inspector/config.hpp>
 #include <inspector/details/iterator.hpp>
 #include <inspector/details/logging.hpp>
 #include <inspector/details/shared_object.hpp>
@@ -31,16 +32,20 @@ namespace inspector {
 class Reader {
  public:
   /**
+   * @brief Set reader configuration.
+   *
+   * NOTE: Reader configuration must be set before any method or classes in the
+   * inpector is used.
+   *
+   * @param config Constant reference to the new configuration.
+   */
+  static void SetConfig(const Config& config);
+
+  /**
    * @brief Construct a new Reader object.
    *
-   * @param remove Flag for removal of the queue on DTOR.
-   * @param max_attempt Maximum number of attempts to make when consuming event.
-   * @param queue_name System unique name of the shared event queue.
    */
-  Reader(
-      const bool remove = false,
-      const std::size_t max_attempt = details::EventQueue::defaultMaxAttempt(),
-      const std::string& queue_name = details::kEventQueueSystemUniqueName);
+  Reader();
 
   /**
    * @brief Destroy the Reader object.
@@ -59,6 +64,12 @@ class Reader {
   details::Iterator end() const;
 
  private:
+  /**
+   * @brief Get writer configuration instance.
+   *
+   */
+  static Config& ConfigInstance();
+
   const bool remove_;
   const std::size_t max_attempt_;
   const std::string queue_name_;
@@ -69,11 +80,23 @@ class Reader {
 // Reader Implementation
 // ---------------------------------
 
-inline Reader::Reader(const bool remove, const std::size_t max_attempt,
-                      const std::string& queue_name)
-    : remove_(remove),
-      max_attempt_(max_attempt),
-      queue_name_(queue_name),
+// static
+inline Config& Reader::ConfigInstance() {
+  static Config config;
+  return config;
+}
+
+// ------------- public --------------
+
+// static
+inline void Reader::SetConfig(const Config& config) {
+  ConfigInstance() = config;
+}
+
+inline Reader::Reader()
+    : remove_(ConfigInstance().remove),
+      max_attempt_(ConfigInstance().max_attempt),
+      queue_name_(ConfigInstance().queue_system_unique_name),
       queue_(details::shared_object::GetOrCreate<details::EventQueue>(
           queue_name_)) {}
 

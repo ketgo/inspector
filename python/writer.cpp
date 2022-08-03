@@ -28,12 +28,8 @@ namespace py = pybind11;
  */
 void BindWriter(py::module& m) {
   py::class_<inspector::Writer>(m, "Writer")
-      .def(py::init<const bool, const std::size_t, const std::string&>(),
-           py::arg("remove") = false,
-           py::arg("max_attempt") =
-               inspector::details::EventQueue::defaultMaxAttempt(),
-           py::arg("queue_name") =
-               inspector::details::kEventQueueSystemUniqueName)
+      .def_static("set_config", &inspector::Writer::SetConfig)
+      .def(py::init())
       .def("write", &inspector::Writer::Write,
            "Write the given event to the shared event queue.");
 }

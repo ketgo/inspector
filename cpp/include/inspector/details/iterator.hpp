@@ -18,7 +18,7 @@
 
 #include <cstring>
 
-#include <inspector/details/config.hpp>
+#include <inspector/details/event_queue.hpp>
 
 namespace inspector {
 

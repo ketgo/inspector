@@ -25,7 +25,11 @@ constexpr auto kMaxAttempt = 32;
 }
 
 TEST(ReaderTestFixture, IterateEmptyQueue) {
-  Reader reader(kMaxAttempt, true);
+  Config config;
+  config.max_attempt = kMaxAttempt;
+  config.remove = true;
+  Reader::SetConfig(config);
+  Reader reader;
   std::vector<std::string> events;
   for (auto&& event : reader) {
     events.push_back(std::move(event));
@@ -35,15 +39,20 @@ TEST(ReaderTestFixture, IterateEmptyQueue) {
 }
 
 TEST(ReaderTestFixture, IterateNonEmptyQueue) {
+  Config config;
+  config.max_attempt = kMaxAttempt;
+  config.remove = true;
+  Reader::SetConfig(config);
+
   // Preparing queue by publishing a test event for testing.
   auto queue = details::shared_object::GetOrCreate<details::EventQueue>(
-      details::kEventQueueSystemUniqueName);
+      config.queue_system_unique_name);
   std::string test_event_1 = "testing_1";
   ASSERT_EQ(queue->Publish(test_event_1), details::EventQueue::Status::OK);
   std::string test_event_2 = "testing_2";
   ASSERT_EQ(queue->Publish(test_event_2), details::EventQueue::Status::OK);
 
-  Reader reader(kMaxAttempt, true);
+  Reader reader;
   std::vector<std::string> events;
   for (auto&& event : reader) {
     events.push_back(std::move(event));
