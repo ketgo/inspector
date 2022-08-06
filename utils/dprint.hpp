@@ -66,25 +66,11 @@ class ScopedStream {
 // ScopedStream Implementation
 // ------------------------------------
 
-ScopedStream::ScopedStream(std::mutex& mutex) : lock_(mutex) {
-  std::cout << std::this_thread::get_id() << ": ";
-}
-
-// --------- public ----------------
-
-// static
-ScopedStream ScopedStream::Create() {
-  static std::mutex mutex;
-  return {mutex};
-}
-
 template <class T>
 ScopedStream& ScopedStream::operator<<(const T& event) {
   std::cout << event;
   return *this;
 }
-
-ScopedStream::~ScopedStream() { std::cout << "\n"; }
 
 // ------------------------------------
 

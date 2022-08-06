@@ -40,7 +40,7 @@ class Threads {
    *
    * @param n Number of threads to run.
    */
-  Threads(const size_t n) : threads_(n) {}
+  Threads(const size_t n);
 
   /**
    * @brief Destroy the Threads object.
@@ -48,37 +48,31 @@ class Threads {
    * Calls the `wait` method.
    *
    */
-  ~Threads() { Wait(); }
+  ~Threads();
 
   /**
    * @brief Get iterator to the first thread in the thread pool managed by the
    * runner.
    */
-  iterator begin() { return threads_.begin(); }
+  iterator begin();
 
   /**
    * @brief Get iterator to one past the last thread in the thread pool managed
    * by the runner.
    */
-  iterator end() { return threads_.end(); }
+  iterator end();
 
   /**
    * @brief Get reference to the thread at given offset.
    *
    */
-  std::thread& operator[](const size_t idx) { return threads_[idx]; }
+  std::thread& operator[](const size_t idx);
 
   /**
    * @brief Wait till all the tasks are completed.
    *
    */
-  void Wait() {
-    for (auto& thread : threads_) {
-      if (thread.joinable()) {
-        thread.join();
-      }
-    }
-  }
+  void Wait();
 
  private:
   ThreadPool threads_;

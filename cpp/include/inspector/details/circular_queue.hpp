@@ -24,6 +24,10 @@
 // AtleastOnce delivery. If we ignore these messages then we have the
 // AtmostOnce delivery.
 
+// TODO: Implement API to return write handle for publishing data. This API will
+// allow the user to write data inplace instead of first creating a temporary
+// copy.
+
 namespace inspector {
 namespace details {
 

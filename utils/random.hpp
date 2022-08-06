@@ -34,14 +34,33 @@ class RandomNumberGenerator {
    * @param min Minimum possible value.
    * @param max Maximum possible value.
    */
-  RandomNumberGenerator(const size_t min, const size_t max)
-      : eng_(std::random_device{}()), dist_(min, max) {}
+  RandomNumberGenerator(const size_t min, const size_t max);
 
-  T operator()() { return T{dist_(eng_)}; }
+  /**
+   * @brief Generate random number.
+   *
+   */
+  T operator()();
 
  private:
   std::mt19937_64 eng_;
   std::uniform_int_distribution<size_t> dist_;
 };
+
+// ------------------------------------
+// RandomNumberGenerator Implementation
+// ------------------------------------
+
+template <class T>
+RandomNumberGenerator<T>::RandomNumberGenerator(const size_t min,
+                                                const size_t max)
+    : eng_(std::random_device{}()), dist_(min, max) {}
+
+template <class T>
+T RandomNumberGenerator<T>::operator()() {
+  return T{dist_(eng_)};
+}
+
+// ------------------------------------
 
 }  // namespace utils

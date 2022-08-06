@@ -24,6 +24,9 @@ cc_library(
 
 cc_library(
     name = "threads",
+    srcs = [
+        "threads.cpp",
+    ],
     hdrs = [
         "threads.hpp",
     ],
@@ -42,8 +45,22 @@ cc_library(
 
 cc_library(
     name = "dprint",
+    srcs = [
+        "dprint.cpp",
+    ],
     hdrs = [
         "dprint.hpp",
+    ],
+    deps = [],
+)
+
+cc_library(
+    name = "strings",
+    srcs = [
+        "strings.cpp",
+    ],
+    hdrs = [
+        "strings.hpp",
     ],
     deps = [],
 )

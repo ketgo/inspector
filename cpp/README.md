@@ -17,3 +17,5 @@
 # C++ Inspector Lib
 
 The C++ inspector library is a header only library.
+
+__NOTE__: Currently only POSIX complient system are supported, e.g. Linux and MacOS.
