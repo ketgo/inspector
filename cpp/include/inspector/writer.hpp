@@ -31,6 +31,13 @@ namespace inspector {
 class Writer {
  public:
   /**
+   * @brief Span encapsulating memory block in the event queue to write an
+   * event.
+   *
+   */
+  using Span = details::EventQueue::WriteSpan;
+
+  /**
    * @brief Set writer configuration.
    *
    * NOTE: Writer configuration must be set before any method or classes in the
@@ -54,6 +61,17 @@ class Writer {
    *
    */
   ~Writer();
+
+  /**
+   * @brief Reserve space in the event queue to write an event of given size.
+   *
+   * The method sets the passed span object so that it can be used to write the
+   * event onto the queue.
+   *
+   * @param span Reference to the span.
+   * @param size Number of bytes to write.
+   */
+  void Reserve(Span& span, const std::size_t size);
 
   /**
    * @brief Write the given event to the shared event queue.
@@ -103,6 +121,13 @@ Writer::~Writer() {
   if (remove_) {
     LOG_INFO << "Marking the shared event queue for removal.";
     details::shared_object::Remove(queue_name_);
+  }
+}
+
+void Writer::Reserve(Span& span, const std::size_t size) {
+  auto status = queue_->Reserve(span, size, max_attempt_);
+  if (status == details::EventQueue::Status::FULL) {
+    LOG_ERROR << "Unable to write event as the shared event queue is full.";
   }
 }
 

@@ -24,10 +24,6 @@
 // AtleastOnce delivery. If we ignore these messages then we have the
 // AtmostOnce delivery.
 
-// TODO: Implement API to return write handle for publishing data. This API will
-// allow the user to write data inplace instead of first creating a temporary
-// copy.
-
 namespace inspector {
 namespace details {
 
@@ -122,17 +118,20 @@ class CircularQueue {
   };
 
   /**
-   * @brief Span encapsulating memory block in the circular queue for reading.
+   * @brief Span encapsulating a memory block in the circular queue reserved for
+   * reading.
    *
    */
   using ReadSpan = circular_queue::MemoryBlockHandle<
       const T, circular_queue::CursorPool<MAX_CONSUMERS>>;
 
   /**
-   * @brief Span encapsulating memory block in the circular queue for writing.
+   * @brief Span encapsulating a memory block in the circular queue reserved for
+   * writing.
    *
    */
-  using WriteSpan = Span<T>;
+  using WriteSpan = circular_queue::MemoryBlockHandle<
+      T, circular_queue::CursorPool<MAX_CONSUMERS>>;
 
   /**
    * @brief Default maximum number of attempts made when publishing or consuming
@@ -142,23 +141,36 @@ class CircularQueue {
   constexpr static std::size_t defaultMaxAttempt() { return 32; }
 
   /**
-   * @brief Publish data to circular queue.
+   * @brief Reserve memory span in the circular queue for writing.
    *
-   * The method copies the data stored in the given memory location onto the
-   * circular queue.
+   * The method sets the passed span object so that it can be used to write
+   * data onto the circular queue.
    *
-   * @param span Constant reference to the write span.
+   * @param span Reference to the write span.
+   * @param size Number of objects to write.
    * @param max_attempt Maximum number of attempts to perform.
    * @returns Status of the queue.
    */
-  Status Publish(const WriteSpan &span,
+  Status Reserve(WriteSpan &span, const std::size_t size,
                  size_t max_attempt = defaultMaxAttempt());
+
+  /**
+   * @brief Publish data to circular queue.
+   *
+   * The method writes the data in the given span object onto the circular
+   * queue.
+   *
+   * @param span Constant reference to the span.
+   * @param max_attempt Maximum number of attempts to perform.
+   * @returns Status of the queue.
+   */
+  Status Publish(const Span<T> &span, size_t max_attempt = defaultMaxAttempt());
 
   /**
    * @brief Consume data from circular queue.
    *
-   * The method fills the passed span object such that it encapsulates the
-   * stored data on the circular queue for consumption.
+   * The method sets the passed span object such that it can be used to read
+   * data from the circular queue.
    *
    * @param span Reference to the read span.
    * @param max_attempt Maximum number of attempts to perform.
@@ -186,15 +198,13 @@ class CircularQueue {
 template <class T, size_t BUFFER_SIZE, size_t MAX_PRODUCERS,
           size_t MAX_CONSUMERS>
 typename CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Status
-CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Publish(
-    const WriteSpan &span, size_t max_attempt) {
+CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Reserve(
+    WriteSpan &span, const std::size_t size, size_t max_attempt) {
   // Attempt writing of data
   while (max_attempt) {
     // Allocate a write block on the buffer
-    auto handle = allocator_.Allocate(span.Size(), max_attempt);
-    if (handle) {
-      // Write data
-      memcpy(handle.Data(), span.Data(), span.Size() * sizeof(T));
+    span = std::move(allocator_.Allocate(size, max_attempt));
+    if (span) {
       return Status::OK;
     }
     // Could not allocate chunk so attempt again
@@ -206,14 +216,26 @@ CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Publish(
 template <class T, size_t BUFFER_SIZE, size_t MAX_PRODUCERS,
           size_t MAX_CONSUMERS>
 typename CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Status
+CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Publish(
+    const Span<T> &span, size_t max_attempt) {
+  WriteSpan span_;
+  auto status = Reserve(span_, span.Size(), max_attempt);
+  if (status == Status::OK) {
+    memcpy(span_.Data(), span.Data(), span.Size() * sizeof(T));
+  }
+  return status;
+}
+
+template <class T, size_t BUFFER_SIZE, size_t MAX_PRODUCERS,
+          size_t MAX_CONSUMERS>
+typename CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Status
 CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Consume(
     ReadSpan &span, size_t max_attempt) const {
   // Attempt reading of data
   while (max_attempt) {
     // Allocate a read block on the buffer
-    auto handle = allocator_.Allocate(max_attempt);
-    if (handle) {
-      span = std::move(handle);
+    span = std::move(allocator_.Allocate(max_attempt));
+    if (span) {
       return Status::OK;
     }
     // Could not allocate chunk so attempt again

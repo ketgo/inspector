@@ -31,4 +31,15 @@ namespace utils {
 std::vector<std::string> Split(const std::string& string,
                                const std::string& delimeter);
 
+/**
+ * @brief Split a given string once into two sub-strings on the first found
+ * delimeter.
+ *
+ * @param string Constant reference to the string to split.
+ * @param delimeter Constant reference to the delimeter.
+ * @returns Pair of substrings.
+ */
+std::pair<std::string, std::string> SplitOnce(const std::string& string,
+                                              const std::string& delimeter);
+
 }  // namespace utils

@@ -64,6 +64,26 @@ class CircularQueueTestFixture : public ::testing::Test {
   }
 };
 
+TEST_F(CircularQueueTestFixture, TestReserve) {
+  constexpr auto kMessageCount = 10;
+
+  std::unordered_set<std::string> write_data;
+  for (size_t i = 0; i < kMessageCount; ++i) {
+    std::string data = "testing_" + std::to_string(i);
+    Queue::WriteSpan span;
+    ASSERT_EQ(queue_.Reserve(span, data.size()), Queue::Status::OK);
+    memcpy(span.Data(), data.data(), span.Size() * sizeof(char));
+    write_data.insert(data);
+  }
+
+  for (size_t i = 0; i < kMessageCount; ++i) {
+    Queue::ReadSpan span;
+    ASSERT_EQ(queue_.Consume(span), Queue::Status::OK);
+    std::string data(span.Data(), span.Size());
+    ASSERT_TRUE(write_data.find(data) != write_data.end());
+  }
+}
+
 TEST_F(CircularQueueTestFixture, TestPublishConsumeSingleThread) {
   constexpr auto kMessageCount = 10;
 

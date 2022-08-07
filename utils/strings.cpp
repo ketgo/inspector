@@ -20,7 +20,7 @@ namespace utils {
 
 std::vector<std::string> Split(const std::string& string,
                                const std::string& delimeter) {
-  std::vector<std::string> splits = {};
+  std::vector<std::string> splits;
   std::size_t pos_start = 0, pos_end = 0;
 
   while ((pos_end = string.find(delimeter, pos_start)) != std::string::npos) {
@@ -31,6 +31,20 @@ std::vector<std::string> Split(const std::string& string,
   std::string token = string.substr(pos_start);
   splits.push_back(token);
 
+  return splits;
+}
+
+std::pair<std::string, std::string> SplitOnce(const std::string& string,
+                                              const std::string& delimeter) {
+  std::pair<std::string, std::string> splits;
+
+  auto pos = string.find(delimeter);
+  if (pos == std::string::npos) {
+    splits.first = string;
+    return splits;
+  }
+  splits.first = string.substr(0, pos);
+  splits.second = string.substr(pos + delimeter.length());
   return splits;
 }
 

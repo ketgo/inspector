@@ -18,8 +18,6 @@
 
 #include <inspector/details/tracer.hpp>
 
-// TODO: Better serialization and deserialization of the catapult schema.
-
 namespace inspector {
 
 /**
@@ -32,14 +30,36 @@ namespace inspector {
  * https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU
  *
  */
-constexpr auto kSyncBeginTag = "B";
-constexpr auto kSyncEndTag = "E";
-constexpr auto kAsyncBeginTag = "b";
-constexpr auto kAsyncInstanceTag = "n";
-constexpr auto kAsyncEndTag = "e";
-constexpr auto kFlowBeginTag = "s";
-constexpr auto kFlowInstanceTag = "t";
-constexpr auto kFLowEndTag = "f";
+constexpr auto kSyncBeginTag = 'B';
+constexpr auto kSyncEndTag = 'E';
+constexpr auto kAsyncBeginTag = 'b';
+constexpr auto kAsyncInstanceTag = 'n';
+constexpr auto kAsyncEndTag = 'e';
+constexpr auto kFlowBeginTag = 's';
+constexpr auto kFlowInstanceTag = 't';
+constexpr auto kFLowEndTag = 'f';
+
+/**
+ * @brief Keyword argument type.
+ *
+ * @tparam T The type of argument.
+ */
+template <class T>
+using Kwarg = details::TraceEvent::Kwarg<T>;
+
+/**
+ * @brief Utility method to create a keyword argument from the given name and
+ * value.
+ *
+ * @tparam T The type of argument.
+ * @param name Name of the argument.
+ * @param value Constant reference to the value of the argument.
+ * @returns Keyword argument object.
+ */
+template <class T>
+Kwarg<T> MakeKwarg(const char* name, const T& value) {
+  return details::TraceEvent::MakeKwarg(name, value);
+}
 
 // ------------------------------------
 // Synchronus Scope Trace Events
@@ -57,7 +77,15 @@ constexpr auto kFLowEndTag = "f";
  */
 template <class... Args>
 void SyncBegin(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kSyncBeginTag, name, args...);
+  details::TraceEvent event(kSyncBeginTag, name);
+  event.SetArgs(args...);
+  details::TraceWriter().Write(event.String());
+}
+
+template <class... Args>
+void SyncBegin(const std::string& name, const Kwarg<Args>&... args) {
+  details::TraceEvent event(kSyncBeginTag, name);
+  event.SetKwargs(args...);
   details::TraceWriter().Write(event.String());
 }
 
@@ -84,7 +112,8 @@ inline void SyncEnd(const std::string& name) {
  */
 template <class... Args>
 void AsyncBegin(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kAsyncBeginTag, name, args...);
+  details::TraceEvent event(kAsyncBeginTag, name);
+  event.SetArgs(args...);
   details::TraceWriter().Write(event.String());
 }
 
@@ -97,7 +126,8 @@ void AsyncBegin(const std::string& name, const Args&... args) {
  */
 template <class... Args>
 void AsyncInstance(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kAsyncInstanceTag, name, args...);
+  details::TraceEvent event(kAsyncInstanceTag, name);
+  event.SetArgs(args...);
   details::TraceWriter().Write(event.String());
 }
 
@@ -110,7 +140,8 @@ void AsyncInstance(const std::string& name, const Args&... args) {
  */
 template <class... Args>
 void AsyncEnd(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kAsyncEndTag, name, args...);
+  details::TraceEvent event(kAsyncEndTag, name);
+  event.SetArgs(args...);
   details::TraceWriter().Write(event.String());
 }
 
@@ -127,7 +158,8 @@ void AsyncEnd(const std::string& name, const Args&... args) {
  */
 template <class... Args>
 void FlowBegin(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kFlowBeginTag, name, args...);
+  details::TraceEvent event(kFlowBeginTag, name);
+  event.SetArgs(args...);
   details::TraceWriter().Write(event.String());
 }
 
@@ -140,7 +172,8 @@ void FlowBegin(const std::string& name, const Args&... args) {
  */
 template <class... Args>
 void FlowInstance(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kFlowInstanceTag, name, args...);
+  details::TraceEvent event(kFlowInstanceTag, name);
+  event.SetArgs(args...);
   details::TraceWriter().Write(event.String());
 }
 
@@ -153,7 +186,8 @@ void FlowInstance(const std::string& name, const Args&... args) {
  */
 template <class... Args>
 void FlowEnd(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kFLowEndTag, name, args...);
+  details::TraceEvent event(kFLowEndTag, name);
+  event.SetArgs(args...);
   details::TraceWriter().Write(event.String());
 }
 

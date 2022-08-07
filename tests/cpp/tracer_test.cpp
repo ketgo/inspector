@@ -16,53 +16,68 @@
 
 #include <gtest/gtest.h>
 
-#include <memory>
-
 #include <inspector/tracer.hpp>
 #include <inspector/reader.hpp>
 
-#include "utils/strings.hpp"
+#include "tests/cpp/trace_event.hpp"
 
 using namespace inspector;
 
 class TracerTestFixture : public ::testing::Test {
  protected:
   static constexpr auto kMaxAttempt = 32;
-  std::shared_ptr<Reader> reader_;
+  static Reader reader_;
 
-  void SetUp() override {
+  static void SetUpTestSuite() {
     Config config;
     config.max_attempt = kMaxAttempt;
     config.remove = true;
-    Reader::SetConfig(config);
-    reader_ = std::make_shared<Reader>();
+    Writer::SetConfig(config);
   }
 
-  std::vector<std::string> Consume() {
+  static void TearDownTestSuite() {}
+
+  static std::vector<std::string> Consume() {
     std::vector<std::string> events;
-    for (auto&& event : *reader_) {
+    for (auto&& event : reader_) {
       events.push_back(std::move(event));
     }
     return events;
   }
+
+  void SetUp() override {}
+  void TearDown() override {}
 };
 
-TEST_F(TracerTestFixture, TestSyncEvent) {
-  SyncBegin("TestSync", 'a', 1, 3.54);
+Reader TracerTestFixture::reader_;
+
+TEST_F(TracerTestFixture, TestSyncEventWithArgs) {
+  SyncBegin("TestSync", "testing", 'a', 1, 3.54);
 
   auto events = Consume();
   ASSERT_EQ(events.size(), 1);
-  int64_t timestamp;
-  int32_t pid, tid;
-  char type, delimeter;
-  std::string event;
-  std::istringstream stream(events[0]);
-  stream >> timestamp >> delimeter >> pid >> delimeter >> tid >> delimeter >>
-      type >> delimeter >> event;
-  ASSERT_EQ(delimeter, '|');
-  ASSERT_NE(timestamp, 0);
-  ASSERT_NE(pid, 0);
-  ASSERT_NE(tid, 0);
-  ASSERT_EQ(type, 'B');
-  ASSERT_EQ(event, "TestSync|a|1|3.54");
+  auto event = inspector::testing::TraceEvent::Parse(events[0]);
+
+  ASSERT_NE(event.timestamp, 0);
+  ASSERT_EQ(event.pid, getpid());
+  ASSERT_EQ(event.tid, gettid());
+  ASSERT_EQ(event.type, 'B');
+  ASSERT_EQ(event.name, "TestSync");
+  ASSERT_EQ(event.payload, "testing|a|1|3.54");
+}
+
+TEST_F(TracerTestFixture, TestSyncEventWithKwargs) {
+  SyncBegin("TestSync", MakeKwarg("a", "testing"), MakeKwarg("b", 'a'),
+            MakeKwarg("c", 1), MakeKwarg("d", 3.54));
+
+  auto events = Consume();
+  ASSERT_EQ(events.size(), 1);
+  auto event = inspector::testing::TraceEvent::Parse(events[0]);
+
+  ASSERT_NE(event.timestamp, 0);
+  ASSERT_EQ(event.pid, getpid());
+  ASSERT_EQ(event.tid, gettid());
+  ASSERT_EQ(event.type, 'B');
+  ASSERT_EQ(event.name, "TestSync");
+  ASSERT_EQ(event.payload, "a=testing|b=a|c=1|d=3.54");
 }

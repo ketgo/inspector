@@ -34,14 +34,30 @@ cc_test(
     ],
 )
 
+cc_library(
+    name = "trace_event",
+    srcs = [
+        "trace_event.cpp",
+    ],
+    hdrs = [
+        "trace_event.hpp",
+    ],
+    visibility = [
+        ":__subpackages__",
+    ],
+    deps = [
+        "//utils:strings",
+    ],
+)
+
 cc_test(
     name = "tracer_test",
     srcs = [
         "tracer_test.cpp",
     ],
     deps = [
+        ":trace_event",
         "//cpp:inspector",
-        "//utils:strings",
         "@gtest//:gtest_main",
     ],
 )

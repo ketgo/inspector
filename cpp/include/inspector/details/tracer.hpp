@@ -46,17 +46,72 @@ inline Writer& TraceWriter() {
  */
 class TraceEvent {
   // Delimiter used to seprate arguments which make up the trace event.
-  static constexpr auto delimiter_ = "|";
+  static constexpr auto delimiter_ = '|';
 
  public:
   /**
    * @brief Construct a new TraceEvent object
    *
-   * @tparam Args Type of arguments to attach to the event.
-   * @param args Constant reference to the argument values.
+   * @param type Constant reference to the trace event type.
+   * @param name Constant reference to the event name.
    */
-  template <class... Args>
-  TraceEvent(const Args&... args);
+  TraceEvent(const char type, const std::string& name);
+
+  /**
+   * @brief Method used for recursive parameter pack expansion.
+   *
+   * @note No operation performed.
+   */
+  void SetArgs();
+
+  /**
+   * @brief Set additional arguments in the trace event.
+   *
+   * @tparam T Type of first argument.
+   * @tparam Args Type of other arguments.
+   * @param arg Constant reference to the first argument.
+   * @param args Constant reference to the other arguments.
+   */
+  template <class T, class... Args>
+  void SetArgs(const T& arg, const Args&... args);
+
+  /**
+   * @brief Keyword argument type.
+   *
+   * @tparam T The type of argument.
+   */
+  template <class T>
+  using Kwarg = std::pair<const char*, const T&>;
+
+  /**
+   * @brief Utility method to create a keyword argument from the given name and
+   * value.
+   *
+   * @tparam T The type of argument.
+   * @param name Name of the argument.
+   * @param value Constant reference to the value of the argument.
+   * @returns Keyword argument object.
+   */
+  template <class T>
+  static Kwarg<T> MakeKwarg(const char* name, const T& value);
+
+  /**
+   * @brief Method used for recursive parameter pack expansion.
+   *
+   * @note No operation performed.
+   */
+  void SetKwargs();
+
+  /**
+   * @brief Set additional keyword arguments in the trace event.
+   *
+   * @tparam T Type of first argument.
+   * @tparam Args Type of other arguments.
+   * @param arg Constant reference to the first keyword argument.
+   * @param args Constant reference to the other keyword arguments.
+   */
+  template <class T, class... Args>
+  void SetKwargs(const Kwarg<T>& arg, const Kwarg<Args>&... args);
 
   /**
    * @brief Get string representation of the trace event.
@@ -65,26 +120,6 @@ class TraceEvent {
   std::string String() const;
 
  private:
-  /**
-   * @brief Append given argument to the trace event.
-   *
-   * @tparam T Type of argument.
-   * @param arg Constant reference to the argument.
-   */
-  template <class T>
-  void Append(const T& arg);
-
-  /**
-   * @brief Append given arguments to the trace event.
-   *
-   * @tparam T Type of argument.
-   * @tparam Args Type of arguments.
-   * @param arg Constant reference to the first argument.
-   * @param args COnstant reference to the reset of the arguments.
-   */
-  template <class T, class... Args>
-  void Append(const T& arg, const Args&... args);
-
   std::stringstream stream_;
 };
 
@@ -92,30 +127,40 @@ class TraceEvent {
 // TraceEvent Implementation
 // -------------------------------------------
 
-template <class T>
-void TraceEvent::Append(const T& arg) {
-  stream_ << delimiter_ << arg;
-}
-
-template <class T, class... Args>
-void TraceEvent::Append(const T& arg, const Args&... args) {
-  stream_ << delimiter_ << arg;
-  Append(args...);
-}
-
-// ------------ public -----------------------
-
-template <class... Args>
-TraceEvent::TraceEvent(const Args&... args) : stream_() {
+inline TraceEvent::TraceEvent(const char type, const std::string& name)
+    : stream_() {
   auto timestamp =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
   auto pid = getpid();
   auto tid = gettid();
-  stream_ << timestamp << delimiter_ << pid << delimiter_ << tid;
-  Append(args...);
+  stream_ << timestamp << delimiter_ << pid << delimiter_ << tid << delimiter_
+          << type << delimiter_ << name;
 }
 
-std::string TraceEvent::String() const { return stream_.str(); }
+inline void TraceEvent::SetArgs() {}
+
+template <class T, class... Args>
+void TraceEvent::SetArgs(const T& arg, const Args&... args) {
+  stream_ << delimiter_ << arg;
+  SetArgs(args...);
+}
+
+// static
+template <class T>
+typename TraceEvent::Kwarg<T> TraceEvent::MakeKwarg(const char* name,
+                                                    const T& value) {
+  return {name, value};
+}
+
+inline void TraceEvent::SetKwargs() {}
+
+template <class T, class... Args>
+void TraceEvent::SetKwargs(const Kwarg<T>& arg, const Kwarg<Args>&... args) {
+  stream_ << delimiter_ << arg.first << "=" << arg.second;
+  SetKwargs(args...);
+}
+
+inline std::string TraceEvent::String() const { return stream_.str(); }
 
 // -------------------------------------------
 
