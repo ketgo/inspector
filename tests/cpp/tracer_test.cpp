@@ -59,8 +59,8 @@ TEST_F(TracerTestFixture, TestSyncEventWithArgs) {
   auto event = inspector::testing::TraceEvent::Parse(events[0]);
 
   ASSERT_NE(event.timestamp, 0);
-  ASSERT_EQ(event.pid, getpid());
-  ASSERT_EQ(event.tid, gettid());
+  ASSERT_EQ(event.pid, details::TraceEvent::GetProcessId());
+  ASSERT_EQ(event.tid, details::TraceEvent::GetThreadId());
   ASSERT_EQ(event.type, 'B');
   ASSERT_EQ(event.name, "TestSync");
   ASSERT_EQ(event.payload, "testing|a|1|3.54");
@@ -75,8 +75,8 @@ TEST_F(TracerTestFixture, TestSyncEventWithKwargs) {
   auto event = inspector::testing::TraceEvent::Parse(events[0]);
 
   ASSERT_NE(event.timestamp, 0);
-  ASSERT_EQ(event.pid, getpid());
-  ASSERT_EQ(event.tid, gettid());
+  ASSERT_EQ(event.pid, details::TraceEvent::GetProcessId());
+  ASSERT_EQ(event.tid, details::TraceEvent::GetThreadId());
   ASSERT_EQ(event.type, 'B');
   ASSERT_EQ(event.name, "TestSync");
   ASSERT_EQ(event.payload, "a=testing|b=a|c=1|d=3.54");

@@ -18,6 +18,9 @@
 
 #include <sys/types.h>
 #include <unistd.h>
+#ifdef __APPLE__
+#include <sys/syscall.h>
+#endif
 
 #include <chrono>
 #include <sstream>
@@ -45,10 +48,22 @@ inline Writer& TraceWriter() {
  *
  */
 class TraceEvent {
-  // Delimiter used to seprate arguments which make up the trace event.
+  // Delimiter used to separate arguments which make up the trace event.
   static constexpr auto delimiter_ = '|';
 
  public:
+  /**
+   * @brief Get the process identifier.
+   *
+   */
+  static int32_t GetProcessId();
+
+  /**
+   * @brief Get the thread identifier.
+   *
+   */
+  static int32_t GetThreadId();
+
   /**
    * @brief Construct a new TraceEvent object
    *
@@ -127,12 +142,24 @@ class TraceEvent {
 // TraceEvent Implementation
 // -------------------------------------------
 
+// static
+inline int32_t TraceEvent::GetProcessId() { return getpid(); }
+
+// static
+inline int32_t TraceEvent::GetThreadId() {
+#ifdef __APPLE__
+  return syscall(SYS_thread_selfid);
+#else
+  return gettid();
+#endif
+}
+
 inline TraceEvent::TraceEvent(const char type, const std::string& name)
     : stream_() {
   auto timestamp =
       std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  auto pid = getpid();
-  auto tid = gettid();
+  auto pid = GetProcessId();
+  auto tid = GetThreadId();
   stream_ << timestamp << delimiter_ << pid << delimiter_ << tid << delimiter_
           << type << delimiter_ << name;
 }
