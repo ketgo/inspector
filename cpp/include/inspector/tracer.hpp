@@ -25,7 +25,7 @@ namespace inspector {
  *
  * These tags will be present in the published trace event. A reader can use
  * these values to determine the type of event. The tag values are chosen to be
- * consitent with catapult traceview:
+ * consistent with catapult traceview:
  *
  * https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU
  *
@@ -62,10 +62,10 @@ Kwarg<T> MakeKwarg(const char* name, const T& value) {
 }
 
 // ------------------------------------
-// Synchronus Scope Trace Events
+// Synchronous Scope Trace Events
 // =============================
 //
-//  Synchronus scope trace events are published to trace scopes within a method
+//  Synchronous scope trace events are published to trace scopes within a method
 //  call.
 
 /**
@@ -100,7 +100,7 @@ inline void SyncEnd(const std::string& name) {
 }
 
 // ------------------------------------
-// Asynchronus Scope Trace Events
+// Asynchronous Scope Trace Events
 // ==============================
 
 /**
@@ -114,6 +114,20 @@ template <class... Args>
 void AsyncBegin(const std::string& name, const Args&... args) {
   details::TraceEvent event(kAsyncBeginTag, name);
   event.SetArgs(args...);
+  details::TraceWriter().Write(event.String());
+}
+
+/**
+ * @brief
+ *
+ * @tparam Args
+ * @param name
+ * @param args
+ */
+template <class... Args>
+void AsyncBegin(const std::string& name, const Kwarg<Args>&... args) {
+  details::TraceEvent event(kAsyncBeginTag, name);
+  event.SetKwargs(args...);
   details::TraceWriter().Write(event.String());
 }
 
@@ -139,9 +153,37 @@ void AsyncInstance(const std::string& name, const Args&... args) {
  * @param args
  */
 template <class... Args>
+void AsyncInstance(const std::string& name, const Kwarg<Args>&... args) {
+  details::TraceEvent event(kAsyncInstanceTag, name);
+  event.SetKwargs(args...);
+  details::TraceWriter().Write(event.String());
+}
+
+/**
+ * @brief
+ *
+ * @tparam Args
+ * @param name
+ * @param args
+ */
+template <class... Args>
 void AsyncEnd(const std::string& name, const Args&... args) {
   details::TraceEvent event(kAsyncEndTag, name);
   event.SetArgs(args...);
+  details::TraceWriter().Write(event.String());
+}
+
+/**
+ * @brief
+ *
+ * @tparam Args
+ * @param name
+ * @param args
+ */
+template <class... Args>
+void AsyncEnd(const std::string& name, const Kwarg<Args>&... args) {
+  details::TraceEvent event(kAsyncEndTag, name);
+  event.SetKwargs(args...);
   details::TraceWriter().Write(event.String());
 }
 

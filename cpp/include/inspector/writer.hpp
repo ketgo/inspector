@@ -41,7 +41,7 @@ class Writer {
    * @brief Set writer configuration.
    *
    * NOTE: Writer configuration must be set before any method or classes in the
-   * inpector is used.
+   * inspector is used.
    *
    * @param config Constant reference to the new configuration.
    */
@@ -110,28 +110,28 @@ inline void Writer::SetConfig(const Config& config) {
   ConfigInstance() = config;
 }
 
-Writer::Writer()
+inline Writer::Writer()
     : remove_(ConfigInstance().remove),
       max_attempt_(ConfigInstance().max_attempt),
       queue_name_(ConfigInstance().queue_system_unique_name),
       queue_(details::shared_object::GetOrCreate<details::EventQueue>(
           queue_name_)) {}
 
-Writer::~Writer() {
+inline Writer::~Writer() {
   if (remove_) {
     LOG_INFO << "Marking the shared event queue for removal.";
     details::shared_object::Remove(queue_name_);
   }
 }
 
-void Writer::Reserve(Span& span, const std::size_t size) {
+inline void Writer::Reserve(Span& span, const std::size_t size) {
   auto status = queue_->Reserve(span, size, max_attempt_);
   if (status == details::EventQueue::Status::FULL) {
     LOG_ERROR << "Unable to write event as the shared event queue is full.";
   }
 }
 
-void Writer::Write(const std::string& event) {
+inline void Writer::Write(const std::string& event) {
   auto status = queue_->Publish(event, max_attempt_);
   if (status == details::EventQueue::Status::FULL) {
     LOG_ERROR << "Unable to write event as the shared event queue is full.";

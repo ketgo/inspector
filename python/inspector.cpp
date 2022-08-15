@@ -24,7 +24,7 @@ namespace py = pybind11;
 void BindConfig(py::module& m);
 void BindLogging(py::module& m);
 void BindReader(py::module& m);
-void BindTrace(py::module& m);
+void BindTracer(py::module& m);
 void BindWriter(py::module& m);
 
 PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
@@ -33,6 +33,6 @@ PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
   BindConfig(m);
   BindLogging(m);
   BindReader(m);
-  BindTrace(m);
+  BindTracer(m);
   BindWriter(m);
 }
