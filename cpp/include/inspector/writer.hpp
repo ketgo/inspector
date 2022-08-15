@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <iostream>
+
 #include <inspector/config.hpp>
 #include <inspector/details/event_queue.hpp>
 #include <inspector/details/logging.hpp>
@@ -120,7 +122,7 @@ inline Writer::Writer()
 inline Writer::~Writer() {
   if (remove_) {
     LOG_INFO << "Marking the shared event queue for removal.";
-    details::shared_object::Remove(queue_name_);
+    assert(details::shared_object::Remove(queue_name_));
   }
 }
 

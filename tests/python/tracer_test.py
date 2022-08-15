@@ -14,13 +14,23 @@
  limitations under the License.
 """
 
-"""
-    Pytest wrapper.
-"""
+from random import random
 
-import sys
-import pytest
+from python import inspector
 
-# Boiler plate to execute pytest runs...
-if __name__ == "__main__":
-    sys.exit(pytest.main(sys.argv[1:]))
+
+def setup_module():
+    config = inspector.Config()
+    config.EVENT_QUEUE_SYSTEM_UNIQUE_NAME = "inspector-{}-testing".format(random())
+    inspector.Writer.set_config(config)
+    config.REMOVE = True
+    inspector.Reader.set_config(config)
+
+
+def test_sync_begin():
+    inspector.sync_begin("test_sync", 1, "one", arg=[])
+
+    reader = inspector.Reader()
+    events = [event for event in reader]
+    assert len(events) == 1
+    assert "B|test_sync|1|one|arg=[]" in events[0]

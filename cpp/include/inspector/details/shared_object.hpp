@@ -114,6 +114,8 @@ T* GetOrCreate(const std::string& name, Args&&... args) {
   } catch (const std::system_error& error) {
     if (error.code().value() == EEXIST) {
       rvalue = Get<T>(name);
+    } else {
+      throw error;
     }
   }
   return rvalue;

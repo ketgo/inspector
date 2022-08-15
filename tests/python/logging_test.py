@@ -14,13 +14,14 @@
  limitations under the License.
 """
 
-"""
-    Pytest wrapper.
-"""
+import logging
 
-import sys
-import pytest
+from python.inspector import testing
 
-# Boiler plate to execute pytest runs...
-if __name__ == "__main__":
-    sys.exit(pytest.main(sys.argv[1:]))
+
+def test_logging(caplog):
+    caplog.set_level(logging.INFO)
+    testing.write_test_log()
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelname == logging.getLevelName(logging.ERROR)
+    assert caplog.records[0].msg == "Test Log Message"

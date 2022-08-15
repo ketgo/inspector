@@ -15,9 +15,29 @@
 load("//third_party/python:defs.bzl", "pytest_test")
 
 pytest_test(
-    name = "inspector_test",
+    name = "writer_reader_test",
     srcs = [
-        "inspector_test.py",
+        "writer_reader_test.py",
+    ],
+    deps = [
+        "//python:inspector",
+    ],
+)
+
+pytest_test(
+    name = "logging_test",
+    srcs = [
+        "logging_test.py",
+    ],
+    deps = [
+        "//python:inspector",
+    ],
+)
+
+pytest_test(
+    name = "tracer_test",
+    srcs = [
+        "tracer_test.py",
     ],
     deps = [
         "//python:inspector",
