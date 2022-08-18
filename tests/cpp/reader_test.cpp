@@ -16,45 +16,48 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
+
 #include <inspector/reader.hpp>
 
 using namespace inspector;
 
-namespace {
-constexpr auto kMaxAttempt = 32;
-}
+class ReaderTestFixture : public ::testing::Test {
+ protected:
+  static constexpr auto kMaxAttempt = 32;
+  Config config_;
+  std::shared_ptr<Reader> reader_;
 
-TEST(ReaderTestFixture, IterateEmptyQueue) {
-  Config config;
-  config.max_attempt = kMaxAttempt;
-  config.remove = true;
-  Reader::SetConfig(config);
-  Reader reader;
+  void SetUp() override {
+    config_.max_attempt = kMaxAttempt;
+    config_.queue_system_unique_name = "inspector-reader-test";
+    config_.remove = true;
+    Reader::SetConfig(config_);
+    reader_ = std::make_shared<Reader>();
+  }
+  void TearDown() override {}
+};
+
+TEST_F(ReaderTestFixture, IterateEmptyQueue) {
   std::vector<std::string> events;
-  for (auto&& event : reader) {
+  for (auto&& event : *reader_) {
     events.push_back(std::move(event));
   }
 
   ASSERT_TRUE(events.empty());
 }
 
-TEST(ReaderTestFixture, IterateNonEmptyQueue) {
-  Config config;
-  config.max_attempt = kMaxAttempt;
-  config.remove = true;
-  Reader::SetConfig(config);
-
+TEST_F(ReaderTestFixture, IterateNonEmptyQueue) {
   // Preparing queue by publishing a test event for testing.
   auto queue = details::shared_object::GetOrCreate<details::EventQueue>(
-      config.queue_system_unique_name);
+      config_.queue_system_unique_name);
   std::string test_event_1 = "testing_1";
   ASSERT_EQ(queue->Publish(test_event_1), details::EventQueue::Status::OK);
   std::string test_event_2 = "testing_2";
   ASSERT_EQ(queue->Publish(test_event_2), details::EventQueue::Status::OK);
 
-  Reader reader;
   std::vector<std::string> events;
-  for (auto&& event : reader) {
+  for (auto&& event : *reader_) {
     events.push_back(std::move(event));
   }
 

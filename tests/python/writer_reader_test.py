@@ -14,14 +14,12 @@
  limitations under the License.
 """
 
-from random import random
-
 from python.inspector import Writer, Reader, Config
 
 
 def setup_module():
     config = Config()
-    config.EVENT_QUEUE_SYSTEM_UNIQUE_NAME = "inspector-{}-testing".format(random())
+    config.EVENT_QUEUE_SYSTEM_UNIQUE_NAME = "inspector-writer-reader-test"
     Writer.set_config(config)
     config.REMOVE = True
     Reader.set_config(config)

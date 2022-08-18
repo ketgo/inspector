@@ -14,14 +14,12 @@
  limitations under the License.
 """
 
-from random import random
-
 from python import inspector
 
 
 def setup_module():
     config = inspector.Config()
-    config.EVENT_QUEUE_SYSTEM_UNIQUE_NAME = "inspector-{}-testing".format(random())
+    config.EVENT_QUEUE_SYSTEM_UNIQUE_NAME = "inspector-tracer-test"
     inspector.Writer.set_config(config)
     config.REMOVE = True
     inspector.Reader.set_config(config)

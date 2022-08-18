@@ -43,7 +43,9 @@ TEST(TracerTestFixture, TraceEventConstructor) {
 
 TEST(TracerTestFixture, TraceEventWithSetArgs) {
   details::TraceEvent trace_event(kTestTraceEventType, kTestTraceEventName);
-  trace_event.SetArgs("testing", 'a', 1, 3.54);
+  trace_event.SetArgs("testing", 'a', 1, 3.54,
+                      details::Kwarg<std::string>("foo_a", "45"),
+                      details::Kwarg<int>("foo_b", 2));
 
   auto event = inspector::testing::TraceEvent::Parse(trace_event.String());
   ASSERT_NE(event.timestamp, 0);
@@ -51,21 +53,5 @@ TEST(TracerTestFixture, TraceEventWithSetArgs) {
   ASSERT_NE(event.tid, 0);
   ASSERT_EQ(event.type, kTestTraceEventType);
   ASSERT_EQ(event.name, kTestTraceEventName);
-  ASSERT_EQ(event.payload, "testing|a|1|3.54");
-}
-
-TEST(TracerTestFixture, TraceEventWithSetKwargs) {
-  details::TraceEvent trace_event(kTestTraceEventType, kTestTraceEventName);
-  trace_event.SetKwargs(details::TraceEvent::MakeKwarg("a", "testing"),
-                        details::TraceEvent::MakeKwarg("b", 'a'),
-                        details::TraceEvent::MakeKwarg("c", 1),
-                        details::TraceEvent::MakeKwarg("d", 3.54));
-
-  auto event = inspector::testing::TraceEvent::Parse(trace_event.String());
-  ASSERT_NE(event.timestamp, 0);
-  ASSERT_NE(event.pid, 0);
-  ASSERT_NE(event.tid, 0);
-  ASSERT_EQ(event.type, kTestTraceEventType);
-  ASSERT_EQ(event.name, kTestTraceEventName);
-  ASSERT_EQ(event.payload, "a=testing|b=a|c=1|d=3.54");
+  ASSERT_EQ(event.payload, "testing|a|1|3.54|foo_a=45|foo_b=2");
 }

@@ -16,35 +16,53 @@
 
 #pragma once
 
-#include <sys/types.h>
-#include <unistd.h>
-#ifdef __APPLE__
-#include <sys/syscall.h>
-#endif
-
 #include <chrono>
 #include <sstream>
 
 #include <inspector/writer.hpp>
+#include <inspector/details/system.hpp>
 
 namespace inspector {
 namespace details {
 
 /**
- * @brief Get writer for publishing trace events.
+ * @brief The class `Kwarg` represents a keyword argument.
  *
- * @returns Reference to the event writer.
+ * @tparam T The type of argument.
  */
-inline Writer& TraceWriter() {
-  static Writer writer;
-  return writer;
-}
+template <class T>
+class Kwarg {
+ public:
+  /**
+   * @brief Construct a new keyword argument.
+   *
+   * @param name Name of the argument.
+   * @param value Constant reference to the argument value.
+   */
+  Kwarg(const char* name, const T& value) : name_(name), value_(value) {}
 
-// ---------------------------------------------
+  /**
+   * @brief Write keyword argument to output stream.
+   *
+   * @param out Reference to the output stream.
+   * @param arg Constant reference to the keyword argument.
+   */
+  friend std::ostream& operator<<(std::ostream& out, const Kwarg& arg) {
+    out << arg.name_ << "=" << arg.value_;
+    return out;
+  }
+
+ private:
+  const char* name_;
+  const T& value_;
+};
+
+// -------------------------------------------
 
 /**
  * @brief The class `TraceEvent` is used to create a trace event to be written
- * on the event queue.
+ * on the event queue. A trace event object is automatically written to the
+ * event queue during DTOR.
  *
  */
 class TraceEvent {
@@ -53,24 +71,18 @@ class TraceEvent {
 
  public:
   /**
-   * @brief Get the process identifier.
-   *
-   */
-  static int32_t GetProcessId();
-
-  /**
-   * @brief Get the thread identifier.
-   *
-   */
-  static int32_t GetThreadId();
-
-  /**
    * @brief Construct a new TraceEvent object
    *
    * @param type Constant reference to the trace event type.
    * @param name Constant reference to the event name.
    */
   TraceEvent(const char type, const std::string& name);
+
+  /**
+   * @brief Destroy the TraceEvent object.
+   *
+   */
+  ~TraceEvent();
 
   /**
    * @brief Method used for recursive parameter pack expansion.
@@ -91,50 +103,19 @@ class TraceEvent {
   void SetArgs(const T& arg, const Args&... args);
 
   /**
-   * @brief Keyword argument type.
-   *
-   * @tparam T The type of argument.
-   */
-  template <class T>
-  using Kwarg = std::pair<const char*, const T&>;
-
-  /**
-   * @brief Utility method to create a keyword argument from the given name and
-   * value.
-   *
-   * @tparam T The type of argument.
-   * @param name Name of the argument.
-   * @param value Constant reference to the value of the argument.
-   * @returns Keyword argument object.
-   */
-  template <class T>
-  static Kwarg<T> MakeKwarg(const char* name, const T& value);
-
-  /**
-   * @brief Method used for recursive parameter pack expansion.
-   *
-   * @note No operation performed.
-   */
-  void SetKwargs();
-
-  /**
-   * @brief Set additional keyword arguments in the trace event.
-   *
-   * @tparam T Type of first argument.
-   * @tparam Args Type of other arguments.
-   * @param arg Constant reference to the first keyword argument.
-   * @param args Constant reference to the other keyword arguments.
-   */
-  template <class T, class... Args>
-  void SetKwargs(const Kwarg<T>& arg, const Kwarg<Args>&... args);
-
-  /**
    * @brief Get string representation of the trace event.
    *
    */
   std::string String() const;
 
  private:
+  /**
+   * @brief Get writer for publishing trace events.
+   *
+   * @returns Reference to the event writer.
+   */
+  static Writer& TraceWriter();
+
   std::stringstream stream_;
 };
 
@@ -143,16 +124,12 @@ class TraceEvent {
 // -------------------------------------------
 
 // static
-inline int32_t TraceEvent::GetProcessId() { return getpid(); }
-
-// static
-inline int32_t TraceEvent::GetThreadId() {
-#ifdef __APPLE__
-  return syscall(SYS_thread_selfid);
-#else
-  return gettid();
-#endif
+inline Writer& TraceEvent::TraceWriter() {
+  static Writer writer;
+  return writer;
 }
+
+// ---------------- public -------------------
 
 inline TraceEvent::TraceEvent(const char type, const std::string& name)
     : stream_() {
@@ -164,27 +141,14 @@ inline TraceEvent::TraceEvent(const char type, const std::string& name)
           << type << delimiter_ << name;
 }
 
+inline TraceEvent::~TraceEvent() { TraceWriter().Write(stream_.str()); }
+
 inline void TraceEvent::SetArgs() {}
 
 template <class T, class... Args>
-void TraceEvent::SetArgs(const T& arg, const Args&... args) {
+inline void TraceEvent::SetArgs(const T& arg, const Args&... args) {
   stream_ << delimiter_ << arg;
   SetArgs(args...);
-}
-
-// static
-template <class T>
-typename TraceEvent::Kwarg<T> TraceEvent::MakeKwarg(const char* name,
-                                                    const T& value) {
-  return {name, value};
-}
-
-inline void TraceEvent::SetKwargs() {}
-
-template <class T, class... Args>
-void TraceEvent::SetKwargs(const Kwarg<T>& arg, const Kwarg<Args>&... args) {
-  stream_ << delimiter_ << arg.first << "=" << arg.second;
-  SetKwargs(args...);
 }
 
 inline std::string TraceEvent::String() const { return stream_.str(); }

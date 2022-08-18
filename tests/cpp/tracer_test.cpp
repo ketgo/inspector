@@ -26,58 +26,40 @@ using namespace inspector;
 class TracerTestFixture : public ::testing::Test {
  protected:
   static constexpr auto kMaxAttempt = 32;
-  static Reader reader_;
+  Config config_;
 
-  static void SetUpTestSuite() {
-    Config config;
-    config.max_attempt = kMaxAttempt;
-    config.remove = true;
-    Writer::SetConfig(config);
-  }
-
-  static void TearDownTestSuite() {}
-
-  static std::vector<std::string> Consume() {
+  std::vector<std::string> Consume() {
+    Reader reader;
     std::vector<std::string> events;
-    for (auto&& event : reader_) {
+    for (auto&& event : reader) {
       events.push_back(std::move(event));
     }
     return events;
   }
 
-  void SetUp() override {}
+  void SetUp() override {
+    config_.max_attempt = kMaxAttempt;
+    config_.queue_system_unique_name = "inspector-tracer-test";
+    Reader::SetConfig(config_);
+    config_.remove = true;
+    Writer::SetConfig(config_);
+  }
+
   void TearDown() override {}
 };
 
-Reader TracerTestFixture::reader_;
-
 TEST_F(TracerTestFixture, TestSyncEventWithArgs) {
-  SyncBegin("TestSync", "testing", 'a', 1, 3.54);
+  SyncBegin("TestSync", "testing", 'a', 1, 3.54, MakeKwarg("foo_a", "45"),
+            MakeKwarg("foo_b", 2));
 
   auto events = Consume();
   ASSERT_EQ(events.size(), 1);
   auto event = inspector::testing::TraceEvent::Parse(events[0]);
 
   ASSERT_NE(event.timestamp, 0);
-  ASSERT_EQ(event.pid, details::TraceEvent::GetProcessId());
-  ASSERT_EQ(event.tid, details::TraceEvent::GetThreadId());
+  ASSERT_EQ(event.pid, details::GetProcessId());
+  ASSERT_EQ(event.tid, details::GetThreadId());
   ASSERT_EQ(event.type, 'B');
   ASSERT_EQ(event.name, "TestSync");
-  ASSERT_EQ(event.payload, "testing|a|1|3.54");
-}
-
-TEST_F(TracerTestFixture, TestSyncEventWithKwargs) {
-  SyncBegin("TestSync", MakeKwarg("a", "testing"), MakeKwarg("b", 'a'),
-            MakeKwarg("c", 1), MakeKwarg("d", 3.54));
-
-  auto events = Consume();
-  ASSERT_EQ(events.size(), 1);
-  auto event = inspector::testing::TraceEvent::Parse(events[0]);
-
-  ASSERT_NE(event.timestamp, 0);
-  ASSERT_EQ(event.pid, details::TraceEvent::GetProcessId());
-  ASSERT_EQ(event.tid, details::TraceEvent::GetThreadId());
-  ASSERT_EQ(event.type, 'B');
-  ASSERT_EQ(event.name, "TestSync");
-  ASSERT_EQ(event.payload, "a=testing|b=a|c=1|d=3.54");
+  ASSERT_EQ(event.payload, "testing|a|1|3.54|foo_a=45|foo_b=2");
 }

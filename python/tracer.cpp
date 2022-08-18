@@ -22,81 +22,36 @@
 namespace py = pybind11;
 
 // -------------------------------
-// Synchronous Scope Trace Events
+// Python Trace Event Wrappers
 // -------------------------------
 
-void PythonSyncBegin(const std::string& name, const py::args& args,
-                     const py::kwargs& kwargs) {
-  inspector::details::TraceEvent event(inspector::kSyncBeginTag, name);
-  // Adding passed arguments to trace
+template <char TraceTag>
+void PythonTraceEventNoArgs(const std::string& name) {
+  inspector::details::TraceEvent event(TraceTag, name);
+}
+
+template <char TraceTag>
+void PythonTraceEvent(const std::string& name, const py::args& args,
+                      const py::kwargs& kwargs) {
+  inspector::details::TraceEvent event(TraceTag, name);
   for (auto& arg : args) {
     event.SetArgs(py::str(arg));
   }
-  // Adding keyword argument to trace
   for (auto& kwarg : kwargs) {
-    event.SetKwargs(inspector::MakeKwarg<std::string>(
+    event.SetArgs(inspector::MakeKwarg<std::string>(
         std::string(py::str(kwarg.first)).c_str(), py::str(kwarg.second)));
   }
-  inspector::details::TraceWriter().Write(event.String());
 }
 
+// -------------------------------
+
 void BindTracer(py::module& m) {
-  m.def("sync_begin", &PythonSyncBegin);
-  m.def("sync_end", [](const std::string& name) {
-    inspector::details::TraceEvent event(inspector::kSyncEndTag, name);
-    inspector::details::TraceWriter().Write(event.String());
-  });
-
-  // -------------------------------
-  // Asynchronous Scope Trace Events
-  // -------------------------------
-
-  m.def("async_begin", [](const std::string& name, const py::args& args,
-                          const py::kwargs& kwargs) {
-    inspector::details::TraceEvent event(inspector::kAsyncInstanceTag, name);
-    // Adding passed arguments to trace
-    for (auto& arg : args) {
-      event.SetArgs(py::str(arg));
-    }
-    // Adding keyword argument to trace
-    for (auto& kwarg : kwargs) {
-      event.SetKwargs(inspector::MakeKwarg<std::string>(
-          std::string(py::str(kwarg.first)).c_str(), py::str(kwarg.second)));
-    }
-    inspector::details::TraceWriter().Write(event.String());
-  });
-
-  m.def("async_instance", [](const std::string& name, const py::args& args,
-                             const py::kwargs& kwargs) {
-    inspector::details::TraceEvent event(inspector::kAsyncInstanceTag, name);
-    // Adding passed arguments to trace
-    for (auto& arg : args) {
-      event.SetArgs(py::str(arg));
-    }
-    // Adding keyword argument to trace
-    for (auto& kwarg : kwargs) {
-      event.SetKwargs(inspector::MakeKwarg<std::string>(
-          std::string(py::str(kwarg.first)).c_str(), py::str(kwarg.second)));
-    }
-    inspector::details::TraceWriter().Write(event.String());
-  });
-
-  m.def("async_end", [](const std::string& name, const py::args& args,
-                        const py::kwargs& kwargs) {
-    inspector::details::TraceEvent event(inspector::kAsyncEndTag, name);
-    // Adding passed arguments to trace
-    for (auto& arg : args) {
-      event.SetArgs(py::str(arg));
-    }
-    // Adding keyword argument to trace
-    for (auto& kwarg : kwargs) {
-      event.SetKwargs(inspector::MakeKwarg<std::string>(
-          std::string(py::str(kwarg.first)).c_str(), py::str(kwarg.second)));
-    }
-    inspector::details::TraceWriter().Write(event.String());
-  });
-
-  // -------------------------------
-  // Flow Scope Trace Events
-  // -------------------------------
+  m.def("sync_begin", &PythonTraceEvent<inspector::kSyncBeginTag>);
+  m.def("sync_end", &PythonTraceEventNoArgs<inspector::kSyncEndTag>);
+  m.def("async_begin", &PythonTraceEvent<inspector::kAsyncBeginTag>);
+  m.def("async_instance", &PythonTraceEvent<inspector::kAsyncInstanceTag>);
+  m.def("async_end", &PythonTraceEvent<inspector::kAsyncEndTag>);
+  m.def("flow_begin", &PythonTraceEvent<inspector::kFlowBeginTag>);
+  m.def("flow_instance", &PythonTraceEvent<inspector::kFlowInstanceTag>);
+  m.def("flow_end", &PythonTraceEvent<inspector::kFLowEndTag>);
 }
