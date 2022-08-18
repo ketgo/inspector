@@ -18,6 +18,7 @@
 #include <pybind11/stl.h>
 
 #include <inspector/reader.hpp>
+#include <inspector/trace_event.hpp>
 
 namespace py = pybind11;
 
@@ -36,4 +37,15 @@ void BindReader(py::module& m) {
             return py::make_iterator(reader.begin(), reader.end());
           },
           py::keep_alive<0, 1>());
+
+  py::class_<inspector::TraceEvent>(m, "TraceEvent")
+      .def_static("load", &inspector::TraceEvent::Parse)
+      .def(py::init<const char, const std::string&>())
+      .def_property_readonly("timestamp", &inspector::TraceEvent::Timestamp)
+      .def_property_readonly("process_id", &inspector::TraceEvent::ProcessId)
+      .def_property_readonly("thread_id", &inspector::TraceEvent::ThreadId)
+      .def_property_readonly("type", &inspector::TraceEvent::Type)
+      .def_property_readonly("name", &inspector::TraceEvent::Name)
+      .def_property_readonly("payload", &inspector::TraceEvent::Payload)
+      .def("__str__", &inspector::TraceEvent::String);
 }

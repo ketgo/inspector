@@ -124,17 +124,17 @@ inline TraceEvent::TraceEvent(const char type, const std::string& name)
       name_(name),
       payload_() {}
 
-int64_t TraceEvent::Timestamp() const { return timestamp_; }
+inline int64_t TraceEvent::Timestamp() const { return timestamp_; }
 
-int32_t TraceEvent::ProcessId() const { return pid_; }
+inline int32_t TraceEvent::ProcessId() const { return pid_; }
 
-int32_t TraceEvent::ThreadId() const { return tid_; }
+inline int32_t TraceEvent::ThreadId() const { return tid_; }
 
-char TraceEvent::Type() const { return type_; }
+inline char TraceEvent::Type() const { return type_; }
 
-const std::string& TraceEvent::Name() const { return name_; }
+inline const std::string& TraceEvent::Name() const { return name_; }
 
-std::string TraceEvent::Payload() const { return payload_.str(); }
+inline std::string TraceEvent::Payload() const { return payload_.str(); }
 
 inline void TraceEvent::SetArgs() {}
 

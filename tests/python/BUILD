@@ -35,6 +35,16 @@ pytest_test(
 )
 
 pytest_test(
+    name = "trace_event_test",
+    srcs = [
+        "trace_event_test.py",
+    ],
+    deps = [
+        "//python:inspector",
+    ],
+)
+
+pytest_test(
     name = "tracer_test",
     srcs = [
         "tracer_test.py",
