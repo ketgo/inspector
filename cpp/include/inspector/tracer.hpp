@@ -40,12 +40,36 @@ constexpr auto kFlowInstanceTag = 't';
 constexpr auto kFLowEndTag = 'f';
 
 /**
- * @brief Keyword argument type.
+ * @brief The class `Kwarg` represents a keyword argument.
  *
  * @tparam T The type of argument.
  */
 template <class T>
-using Kwarg = details::Kwarg<T>;
+class Kwarg {
+ public:
+  /**
+   * @brief Construct a new keyword argument.
+   *
+   * @param name Name of the argument.
+   * @param value Constant reference to the argument value.
+   */
+  Kwarg(const char* name, const T& value) : name_(name), value_(value) {}
+
+  /**
+   * @brief Write keyword argument to output stream.
+   *
+   * @param out Reference to the output stream.
+   * @param arg Constant reference to the keyword argument.
+   */
+  friend std::ostream& operator<<(std::ostream& out, const Kwarg& arg) {
+    out << arg.name_ << "=" << arg.value_;
+    return out;
+  }
+
+ private:
+  const char* name_;
+  const T& value_;
+};
 
 /**
  * @brief Utility method to create a keyword argument.
@@ -74,27 +98,29 @@ Kwarg<T> MakeKwarg(const char* name, const T& value) {
  * arguments to be attached with the event.
  *
  * @tparam Args Additional argument types.
- * @param name Constant reference to the name of the event.
+ * @param name Constant reference to the scope name.
  * @param args Constant reference to additional arguments.
  */
 template <class... Args>
 void SyncBegin(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kSyncBeginTag, name);
-  event.SetArgs(args...);
+  details::WriteTraceEvent(kSyncBeginTag, name, args...);
 }
 
 /**
- * @brief
+ * @brief Create a synchronous end trace event.
  *
- * @param name
+ * The method publishes a synchronous end trace event.
+ *
+ * @param name Constant reference to the scope name.
  */
 inline void SyncEnd(const std::string& name) {
-  details::TraceEvent event(kSyncEndTag, name);
+  details::WriteTraceEvent(kSyncEndTag, name);
 }
 
 /**
- * @brief Utility class to write begin and end synchronous trace events during
- * CTOR and DTOR respectively.
+ * @brief Utility class to publish a begin and end synchronous trace event
+ * during the CTOR and DTOR respectively. An object of the class can be used to
+ * trace a scope.
  *
  */
 class SyncScope {
@@ -128,8 +154,7 @@ inline SyncScope::~SyncScope() { SyncEnd(name_); }
  */
 template <class... Args>
 void AsyncBegin(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kAsyncBeginTag, name);
-  event.SetArgs(args...);
+  details::WriteTraceEvent(kAsyncBeginTag, name, args...);
 }
 
 /**
@@ -141,8 +166,7 @@ void AsyncBegin(const std::string& name, const Args&... args) {
  */
 template <class... Args>
 void AsyncInstance(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kAsyncInstanceTag, name);
-  event.SetArgs(args...);
+  details::WriteTraceEvent(kAsyncInstanceTag, name, args...);
 }
 
 /**
@@ -154,8 +178,7 @@ void AsyncInstance(const std::string& name, const Args&... args) {
  */
 template <class... Args>
 void AsyncEnd(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kAsyncEndTag, name);
-  event.SetArgs(args...);
+  details::WriteTraceEvent(kAsyncEndTag, name, args...);
 }
 
 // ------------------------------------
@@ -171,8 +194,7 @@ void AsyncEnd(const std::string& name, const Args&... args) {
  */
 template <class... Args>
 void FlowBegin(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kFlowBeginTag, name);
-  event.SetArgs(args...);
+  details::WriteTraceEvent(kFlowBeginTag, name, args...);
 }
 
 /**
@@ -184,8 +206,7 @@ void FlowBegin(const std::string& name, const Args&... args) {
  */
 template <class... Args>
 void FlowInstance(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kFlowInstanceTag, name);
-  event.SetArgs(args...);
+  details::WriteTraceEvent(kFlowInstanceTag, name, args...);
 }
 
 /**
@@ -197,8 +218,7 @@ void FlowInstance(const std::string& name, const Args&... args) {
  */
 template <class... Args>
 void FlowEnd(const std::string& name, const Args&... args) {
-  details::TraceEvent event(kFLowEndTag, name);
-  event.SetArgs(args...);
+  details::WriteTraceEvent(kFLowEndTag, name, args...);
 }
 
 // ------------------------------------

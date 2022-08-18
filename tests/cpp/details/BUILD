@@ -49,15 +49,3 @@ cc_test(
         "@gtest//:gtest_main",
     ],
 )
-
-cc_test(
-    name = "tracer_test",
-    srcs = [
-        "tracer_test.cpp",
-    ],
-    deps = [
-        "//cpp:inspector",
-        "//tests/cpp:trace_event",
-        "@gtest//:gtest_main",
-    ],
-)

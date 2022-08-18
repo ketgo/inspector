@@ -27,13 +27,14 @@ namespace py = pybind11;
 
 template <char TraceTag>
 void PythonTraceEventNoArgs(const std::string& name) {
-  inspector::details::TraceEvent event(TraceTag, name);
+  inspector::TraceEvent event(TraceTag, name);
+  inspector::details::TraceWriter().Write(event.String());
 }
 
 template <char TraceTag>
 void PythonTraceEvent(const std::string& name, const py::args& args,
                       const py::kwargs& kwargs) {
-  inspector::details::TraceEvent event(TraceTag, name);
+  inspector::TraceEvent event(TraceTag, name);
   for (auto& arg : args) {
     event.SetArgs(py::str(arg));
   }
@@ -41,6 +42,7 @@ void PythonTraceEvent(const std::string& name, const py::args& args,
     event.SetArgs(inspector::MakeKwarg<std::string>(
         std::string(py::str(kwarg.first)).c_str(), py::str(kwarg.second)));
   }
+  inspector::details::TraceWriter().Write(event.String());
 }
 
 // -------------------------------

@@ -16,147 +16,33 @@
 
 #pragma once
 
-#include <chrono>
-#include <sstream>
-
+#include <inspector/trace_event.hpp>
 #include <inspector/writer.hpp>
-#include <inspector/details/system.hpp>
-
-// TODO: Need a parser for reading trace events. Thus split the `TraceEvent`
-// class into a serializer and a de-serializer.
 
 namespace inspector {
 namespace details {
 
 /**
- * @brief The class `Kwarg` represents a keyword argument.
- *
- * @tparam T The type of argument.
- */
-template <class T>
-class Kwarg {
- public:
-  /**
-   * @brief Construct a new keyword argument.
-   *
-   * @param name Name of the argument.
-   * @param value Constant reference to the argument value.
-   */
-  Kwarg(const char* name, const T& value) : name_(name), value_(value) {}
-
-  /**
-   * @brief Write keyword argument to output stream.
-   *
-   * @param out Reference to the output stream.
-   * @param arg Constant reference to the keyword argument.
-   */
-  friend std::ostream& operator<<(std::ostream& out, const Kwarg& arg) {
-    out << arg.name_ << "=" << arg.value_;
-    return out;
-  }
-
- private:
-  const char* name_;
-  const T& value_;
-};
-
-// -------------------------------------------
-
-/**
- * @brief The class `TraceEvent` is used to create a trace event to be written
- * on the event queue. A trace event object is automatically written to the
- * event queue during DTOR.
+ * @brief Get trace writer instance.
  *
  */
-class TraceEvent {
-  // Delimiter used to separate arguments which make up the trace event.
-  static constexpr auto delimiter_ = '|';
-
- public:
-  /**
-   * @brief Construct a new TraceEvent object
-   *
-   * @param type Constant reference to the trace event type.
-   * @param name Constant reference to the event name.
-   */
-  TraceEvent(const char type, const std::string& name);
-
-  /**
-   * @brief Destroy the TraceEvent object.
-   *
-   */
-  ~TraceEvent();
-
-  /**
-   * @brief Method used for recursive parameter pack expansion.
-   *
-   * @note No operation performed.
-   */
-  void SetArgs();
-
-  /**
-   * @brief Set additional arguments in the trace event.
-   *
-   * @tparam T Type of first argument.
-   * @tparam Args Type of other arguments.
-   * @param arg Constant reference to the first argument.
-   * @param args Constant reference to the other arguments.
-   */
-  template <class T, class... Args>
-  void SetArgs(const T& arg, const Args&... args);
-
-  /**
-   * @brief Get string representation of the trace event.
-   *
-   */
-  std::string String() const;
-
- private:
-  /**
-   * @brief Get writer for publishing trace events.
-   *
-   * @returns Reference to the event writer.
-   */
-  static Writer& TraceWriter();
-
-  std::stringstream stream_;
-};
-
-// -------------------------------------------
-// TraceEvent Implementation
-// -------------------------------------------
-
-// static
-inline Writer& TraceEvent::TraceWriter() {
+inline Writer& TraceWriter() {
   static Writer writer;
   return writer;
 }
 
-// ---------------- public -------------------
-
-inline TraceEvent::TraceEvent(const char type, const std::string& name)
-    : stream_() {
-  auto timestamp =
-      std::chrono::high_resolution_clock::now().time_since_epoch().count();
-  auto pid = GetProcessId();
-  auto tid = GetThreadId();
-  stream_ << timestamp << delimiter_ << pid << delimiter_ << tid << delimiter_
-          << type << delimiter_ << name;
+/**
+ * @brief Write trace event onto the event queue.
+ *
+ * @param event Constant reference to the trace event.
+ */
+template <class... Args>
+inline void WriteTraceEvent(const char type, const std::string& name,
+                            const Args&... args) {
+  TraceEvent event(type, name);
+  event.SetArgs(args...);
+  TraceWriter().Write(event.String());
 }
-
-inline TraceEvent::~TraceEvent() { TraceWriter().Write(stream_.str()); }
-
-inline void TraceEvent::SetArgs() {}
-
-template <class T, class... Args>
-inline void TraceEvent::SetArgs(const T& arg, const Args&... args) {
-  stream_ << delimiter_ << arg;
-  SetArgs(args...);
-}
-
-inline std::string TraceEvent::String() const { return stream_.str(); }
-
-// -------------------------------------------
 
 }  // namespace details
 }  // namespace inspector

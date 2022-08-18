@@ -19,8 +19,6 @@
 #include <inspector/tracer.hpp>
 #include <inspector/reader.hpp>
 
-#include "tests/cpp/trace_event.hpp"
-
 using namespace inspector;
 
 class TracerTestFixture : public ::testing::Test {
@@ -54,12 +52,12 @@ TEST_F(TracerTestFixture, TestSyncEventWithArgs) {
 
   auto events = Consume();
   ASSERT_EQ(events.size(), 1);
-  auto event = inspector::testing::TraceEvent::Parse(events[0]);
+  auto event = TraceEvent::Parse(events[0]);
 
-  ASSERT_NE(event.timestamp, 0);
-  ASSERT_EQ(event.pid, details::GetProcessId());
-  ASSERT_EQ(event.tid, details::GetThreadId());
-  ASSERT_EQ(event.type, 'B');
-  ASSERT_EQ(event.name, "TestSync");
-  ASSERT_EQ(event.payload, "testing|a|1|3.54|foo_a=45|foo_b=2");
+  ASSERT_NE(event.Timestamp(), 0);
+  ASSERT_EQ(event.ProcessId(), details::GetProcessId());
+  ASSERT_EQ(event.ThreadId(), details::GetThreadId());
+  ASSERT_EQ(event.Type(), 'B');
+  ASSERT_EQ(event.Name(), "TestSync");
+  ASSERT_EQ(event.Payload(), "testing|a|1|3.54|foo_a=45|foo_b=2");
 }
