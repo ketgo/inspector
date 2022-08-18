@@ -68,11 +68,14 @@ Kwarg<T> MakeKwarg(const char* name, const T& value) {
 //  call.
 
 /**
- * @brief
+ * @brief Create a synchronous begin trace event.
  *
- * @tparam Args
- * @param name
- * @param args
+ * The method publishes a synchronous begin trace event with provided additional
+ * arguments to be attached with the event.
+ *
+ * @tparam Args Additional argument types.
+ * @param name Constant reference to the name of the event.
+ * @param args Constant reference to additional arguments.
  */
 template <class... Args>
 void SyncBegin(const std::string& name, const Args&... args) {
@@ -91,7 +94,7 @@ inline void SyncEnd(const std::string& name) {
 
 /**
  * @brief Utility class to write begin and end synchronous trace events during
- * CTOR and DTOR repsectively.
+ * CTOR and DTOR respectively.
  *
  */
 class SyncScope {

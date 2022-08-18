@@ -22,6 +22,9 @@
 #include <inspector/writer.hpp>
 #include <inspector/details/system.hpp>
 
+// TODO: Need a parser for reading trace events. Thus split the `TraceEvent`
+// class into a serializer and a de-serializer.
+
 namespace inspector {
 namespace details {
 

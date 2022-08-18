@@ -26,7 +26,7 @@ namespace inspector {
 /**
  * @brief The class `Reader` can be used to consume events from the shared queue
  * containing trace or metrics events. It exposes the standard iterator
- * interface which can be used in a for loop to consume events.
+ * interface which can be used in a `for` loop to consume the events.
  *
  */
 class Reader {
@@ -35,7 +35,7 @@ class Reader {
    * @brief Set reader configuration.
    *
    * NOTE: Reader configuration must be set before any method or classes in the
-   * inpector is used.
+   * inspector is used.
    *
    * @param config Constant reference to the new configuration.
    */
