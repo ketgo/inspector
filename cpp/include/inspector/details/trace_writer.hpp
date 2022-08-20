@@ -144,7 +144,7 @@ inline void WriteTraceEvent(const TraceEvent& event) {
 template <class... Args>
 inline void WriteTraceEvent(const char type, const std::string& name,
                             const Args&... args) {
-  if (inspector::details::Config::Get().disable_trace) {
+  if (inspector::details::Config::Get().disable_tracing) {
     return;
   }
   TraceEvent event(type, name);

@@ -38,5 +38,7 @@ void BindConfig(py::module& m) {
       .def_readwrite("WRITE_MAX_ATTEMPT",
                      &inspector::details::Config::write_max_attempt)
       .def_readwrite("READ_MAX_ATTEMPT",
-                     &inspector::details::Config::read_max_attempt);
+                     &inspector::details::Config::read_max_attempt)
+      .def_readwrite("DISABLE_TRACING",
+                     &inspector::details::Config::disable_tracing);
 }

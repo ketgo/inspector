@@ -27,7 +27,7 @@ namespace py = pybind11;
 
 template <char TraceTag>
 void PythonTraceEventNoArgs(const std::string& name) {
-  if (inspector::details::Config::Get().disable_trace) {
+  if (inspector::details::Config::Get().disable_tracing) {
     return;
   }
   inspector::TraceEvent event(TraceTag, name);
@@ -37,7 +37,7 @@ void PythonTraceEventNoArgs(const std::string& name) {
 template <char TraceTag>
 void PythonTraceEvent(const std::string& name, const py::args& args,
                       const py::kwargs& kwargs) {
-  if (inspector::details::Config::Get().disable_trace) {
+  if (inspector::details::Config::Get().disable_tracing) {
     return;
   }
   inspector::TraceEvent event(TraceTag, name);

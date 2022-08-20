@@ -103,18 +103,18 @@ inline void SetReadMaxAttempt(const std::size_t max_attempt) {
  * @return true
  * @return false
  */
-inline bool IsTraceDisable() { return details::Config::Get().disable_trace; }
+inline bool IsTraceDisable() { return details::Config::Get().disable_tracing; }
 
 /**
  * @brief
  *
  */
-inline void DisableTrace() { details::Config::Get().disable_trace = true; }
+inline void DisableTrace() { details::Config::Get().disable_tracing = true; }
 
 /**
  * @brief
  *
  */
-inline void EnableTrace() { details::Config::Get().disable_trace = false; }
+inline void EnableTrace() { details::Config::Get().disable_tracing = false; }
 
 }  // namespace inspector
