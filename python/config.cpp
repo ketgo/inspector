@@ -28,7 +28,7 @@ namespace py = pybind11;
  */
 void BindConfig(py::module& m) {
   py::class_<inspector::Config>(m, "Config")
-      .def(py::init())
+      .def(py::init<>())
       .def_readwrite("EVENT_QUEUE_SYSTEM_UNIQUE_NAME",
                      &inspector::Config::queue_system_unique_name)
       .def_readwrite("MAX_ATTEMPT", &inspector::Config::max_attempt)

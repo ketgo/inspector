@@ -122,7 +122,7 @@ inline Writer::Writer()
 inline Writer::~Writer() {
   if (remove_) {
     LOG_INFO << "Marking the shared event queue for removal.";
-    assert(details::shared_object::Remove(queue_name_));
+    details::shared_object::Remove(queue_name_);
   }
 }
 

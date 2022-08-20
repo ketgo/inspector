@@ -25,18 +25,21 @@ using namespace inspector;
 class ReaderTestFixture : public ::testing::Test {
  protected:
   static constexpr auto kMaxAttempt = 32;
-  Config config_;
+  static Config config_;
   std::shared_ptr<Reader> reader_;
 
-  void SetUp() override {
+  static void SetUpTestSuite() {
     config_.max_attempt = kMaxAttempt;
     config_.queue_system_unique_name = "inspector-reader-test";
     config_.remove = true;
     Reader::SetConfig(config_);
-    reader_ = std::make_shared<Reader>();
   }
+
+  void SetUp() override { reader_ = std::make_shared<Reader>(); }
   void TearDown() override {}
 };
+
+Config ReaderTestFixture::config_;
 
 TEST_F(ReaderTestFixture, IterateEmptyQueue) {
   std::vector<std::string> events;

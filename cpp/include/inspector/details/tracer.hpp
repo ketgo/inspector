@@ -23,8 +23,9 @@ namespace inspector {
 namespace details {
 
 /**
- * @brief Get trace writer instance.
+ * @brief Get the trace writer.
  *
+ * @return Reference to the trace writer.
  */
 inline Writer& TraceWriter() {
   static Writer writer;
@@ -32,16 +33,24 @@ inline Writer& TraceWriter() {
 }
 
 /**
- * @brief Write trace event onto the event queue.
+ * @brief Write the given trace event onto the event queue.
  *
  * @param event Constant reference to the trace event.
+ */
+inline void WriteTraceEvent(const TraceEvent& event) {
+  TraceWriter().Write(event.String());
+}
+
+/**
+ * @brief Construct and write a trace event with the given arguments.
+ *
  */
 template <class... Args>
 inline void WriteTraceEvent(const char type, const std::string& name,
                             const Args&... args) {
   TraceEvent event(type, name);
   event.SetArgs(args...);
-  TraceWriter().Write(event.String());
+  WriteTraceEvent(event);
 }
 
 }  // namespace details

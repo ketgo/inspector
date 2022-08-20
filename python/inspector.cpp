@@ -33,6 +33,6 @@ PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
   BindConfig(m);
   BindLogging(m);
   BindReader(m);
-  BindTracer(m);
   BindWriter(m);
+  BindTracer(m);
 }

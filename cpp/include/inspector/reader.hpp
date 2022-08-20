@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <iostream>
+
 #include <inspector/config.hpp>
 #include <inspector/details/iterator.hpp>
 #include <inspector/details/logging.hpp>

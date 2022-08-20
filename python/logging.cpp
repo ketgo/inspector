@@ -74,4 +74,18 @@ void BindLogging(py::module& m) {
 
   auto test_module = m.def_submodule("testing", "Module for testing.");
   test_module.def("write_test_log", &WriteTestLog);
+
+  // Unregister python logger before interpreter exits. This is required since
+  // the C++ static objects have lifetime greater than that of the interpreter
+  // and any logging done in these objects will cause segfault once the
+  // interpreter terminates.
+  auto atexit = py::module_::import("atexit");
+  atexit.attr("register")(py::cpp_function([]() {
+    inspector::RegisterLogger(inspector::LogLevel::INFO,
+                              inspector::NullLogger());
+    inspector::RegisterLogger(inspector::LogLevel::WARN,
+                              inspector::NullLogger());
+    inspector::RegisterLogger(inspector::LogLevel::ERROR,
+                              inspector::NullLogger());
+  }));
 }

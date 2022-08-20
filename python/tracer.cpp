@@ -18,6 +18,7 @@
 #include <pybind11/stl.h>
 
 #include <inspector/tracer.hpp>
+#include <inspector/writer.hpp>
 
 namespace py = pybind11;
 
@@ -28,7 +29,7 @@ namespace py = pybind11;
 template <char TraceTag>
 void PythonTraceEventNoArgs(const std::string& name) {
   inspector::TraceEvent event(TraceTag, name);
-  inspector::details::TraceWriter().Write(event.String());
+  inspector::details::WriteTraceEvent(event);
 }
 
 template <char TraceTag>
@@ -42,7 +43,7 @@ void PythonTraceEvent(const std::string& name, const py::args& args,
     event.SetArgs(inspector::MakeKwarg<std::string>(
         std::string(py::str(kwarg.first)).c_str(), py::str(kwarg.second)));
   }
-  inspector::details::TraceWriter().Write(event.String());
+  inspector::details::WriteTraceEvent(event);
 }
 
 // -------------------------------

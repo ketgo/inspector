@@ -14,21 +14,99 @@
  limitations under the License.
 """
 
+from typing import List
+
 from python import inspector
 
 
 def setup_module():
     config = inspector.Config()
     config.EVENT_QUEUE_SYSTEM_UNIQUE_NAME = "inspector-tracer-test"
-    inspector.Writer.set_config(config)
-    config.REMOVE = True
     inspector.Reader.set_config(config)
+    config.REMOVE = True
+    inspector.Writer.set_config(config)
+
+
+def consume() -> List[inspector.TraceEvent]:
+    reader = inspector.Reader()
+    return [inspector.TraceEvent.load(event) for event in reader]
 
 
 def test_sync_begin():
     inspector.sync_begin("test_sync", 1, "one", arg=[])
 
-    reader = inspector.Reader()
-    events = [event for event in reader]
+    events = consume()
     assert len(events) == 1
-    assert "B|test_sync|1|one|arg=[]" in events[0]
+    assert events[0].type == "B"
+    assert events[0].name == "test_sync"
+    assert events[0].payload == "1|one|arg=[]"
+
+
+def test_sync_end():
+    inspector.sync_end("test_sync")
+
+    events = consume()
+    assert len(events) == 1
+    assert events[0].type == "E"
+    assert events[0].name == "test_sync"
+    assert events[0].payload == ""
+
+
+def test_async_begin():
+    inspector.async_begin("test_async", 1, "one", arg=[])
+
+    events = consume()
+    assert len(events) == 1
+    assert events[0].type == "b"
+    assert events[0].name == "test_async"
+    assert events[0].payload == "1|one|arg=[]"
+
+
+def test_async_instance():
+    inspector.async_instance("test_async", 1, "one", arg=[])
+
+    events = consume()
+    assert len(events) == 1
+    assert events[0].type == "n"
+    assert events[0].name == "test_async"
+    assert events[0].payload == "1|one|arg=[]"
+
+
+def test_async_end():
+    inspector.async_end("test_async", 1, "one", arg=[])
+
+    events = consume()
+    assert len(events) == 1
+    assert events[0].type == "e"
+    assert events[0].name == "test_async"
+    assert events[0].payload == "1|one|arg=[]"
+
+
+def test_flow_begin():
+    inspector.flow_begin("test_flow", 1, "one", arg=[])
+
+    events = consume()
+    assert len(events) == 1
+    assert events[0].type == "s"
+    assert events[0].name == "test_flow"
+    assert events[0].payload == "1|one|arg=[]"
+
+
+def test_flow_instance():
+    inspector.flow_instance("test_flow", 1, "one", arg=[])
+
+    events = consume()
+    assert len(events) == 1
+    assert events[0].type == "t"
+    assert events[0].name == "test_flow"
+    assert events[0].payload == "1|one|arg=[]"
+
+
+def test_flow_end():
+    inspector.flow_end("test_flow", 1, "one", arg=[])
+
+    events = consume()
+    assert len(events) == 1
+    assert events[0].type == "f"
+    assert events[0].name == "test_flow"
+    assert events[0].payload == "1|one|arg=[]"

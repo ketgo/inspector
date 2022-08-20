@@ -24,7 +24,15 @@ using namespace inspector;
 class TracerTestFixture : public ::testing::Test {
  protected:
   static constexpr auto kMaxAttempt = 32;
-  Config config_;
+  static Config config_;
+
+  static void SetUpTestSuite() {
+    config_.max_attempt = kMaxAttempt;
+    config_.queue_system_unique_name = "inspector-tracer-test";
+    Reader::SetConfig(config_);
+    config_.remove = true;
+    Writer::SetConfig(config_);
+  }
 
   std::vector<std::string> Consume() {
     Reader reader;
@@ -35,18 +43,13 @@ class TracerTestFixture : public ::testing::Test {
     return events;
   }
 
-  void SetUp() override {
-    config_.max_attempt = kMaxAttempt;
-    config_.queue_system_unique_name = "inspector-tracer-test";
-    Reader::SetConfig(config_);
-    config_.remove = true;
-    Writer::SetConfig(config_);
-  }
-
+  void SetUp() override {}
   void TearDown() override {}
 };
 
-TEST_F(TracerTestFixture, TestSyncEventWithArgs) {
+Config TracerTestFixture::config_;
+
+TEST_F(TracerTestFixture, TestSyncBegin) {
   SyncBegin("TestSync", "testing", 'a', 1, 3.54, MakeKwarg("foo_a", "45"),
             MakeKwarg("foo_b", 2));
 
@@ -57,7 +60,118 @@ TEST_F(TracerTestFixture, TestSyncEventWithArgs) {
   ASSERT_NE(event.Timestamp(), 0);
   ASSERT_EQ(event.ProcessId(), details::GetProcessId());
   ASSERT_EQ(event.ThreadId(), details::GetThreadId());
-  ASSERT_EQ(event.Type(), 'B');
+  ASSERT_EQ(event.Type(), kSyncBeginTag);
   ASSERT_EQ(event.Name(), "TestSync");
+  ASSERT_EQ(event.Payload(), "testing|a|1|3.54|foo_a=45|foo_b=2");
+}
+
+TEST_F(TracerTestFixture, TestSyncEnd) {
+  SyncEnd("TestSync");
+
+  auto events = Consume();
+  ASSERT_EQ(events.size(), 1);
+  auto event = TraceEvent::Parse(events[0]);
+
+  ASSERT_NE(event.Timestamp(), 0);
+  ASSERT_EQ(event.ProcessId(), details::GetProcessId());
+  ASSERT_EQ(event.ThreadId(), details::GetThreadId());
+  ASSERT_EQ(event.Type(), kSyncEndTag);
+  ASSERT_EQ(event.Name(), "TestSync");
+  ASSERT_EQ(event.Payload(), "");
+}
+
+TEST_F(TracerTestFixture, TestAsyncBegin) {
+  AsyncBegin("TestAsync", "testing", 'a', 1, 3.54, MakeKwarg("foo_a", "45"),
+             MakeKwarg("foo_b", 2));
+
+  auto events = Consume();
+  ASSERT_EQ(events.size(), 1);
+  auto event = TraceEvent::Parse(events[0]);
+
+  ASSERT_NE(event.Timestamp(), 0);
+  ASSERT_EQ(event.ProcessId(), details::GetProcessId());
+  ASSERT_EQ(event.ThreadId(), details::GetThreadId());
+  ASSERT_EQ(event.Type(), kAsyncBeginTag);
+  ASSERT_EQ(event.Name(), "TestAsync");
+  ASSERT_EQ(event.Payload(), "testing|a|1|3.54|foo_a=45|foo_b=2");
+}
+
+TEST_F(TracerTestFixture, TestAsyncInstance) {
+  AsyncInstance("TestAsync", "testing", 'a', 1, 3.54, MakeKwarg("foo_a", "45"),
+                MakeKwarg("foo_b", 2));
+
+  auto events = Consume();
+  ASSERT_EQ(events.size(), 1);
+  auto event = TraceEvent::Parse(events[0]);
+
+  ASSERT_NE(event.Timestamp(), 0);
+  ASSERT_EQ(event.ProcessId(), details::GetProcessId());
+  ASSERT_EQ(event.ThreadId(), details::GetThreadId());
+  ASSERT_EQ(event.Type(), kAsyncInstanceTag);
+  ASSERT_EQ(event.Name(), "TestAsync");
+  ASSERT_EQ(event.Payload(), "testing|a|1|3.54|foo_a=45|foo_b=2");
+}
+
+TEST_F(TracerTestFixture, TestAsyncEnd) {
+  AsyncEnd("TestAsync", "testing", 'a', 1, 3.54, MakeKwarg("foo_a", "45"),
+           MakeKwarg("foo_b", 2));
+
+  auto events = Consume();
+  ASSERT_EQ(events.size(), 1);
+  auto event = TraceEvent::Parse(events[0]);
+
+  ASSERT_NE(event.Timestamp(), 0);
+  ASSERT_EQ(event.ProcessId(), details::GetProcessId());
+  ASSERT_EQ(event.ThreadId(), details::GetThreadId());
+  ASSERT_EQ(event.Type(), kAsyncEndTag);
+  ASSERT_EQ(event.Name(), "TestAsync");
+  ASSERT_EQ(event.Payload(), "testing|a|1|3.54|foo_a=45|foo_b=2");
+}
+
+TEST_F(TracerTestFixture, TestFlowBegin) {
+  FlowBegin("TestFlow", "testing", 'a', 1, 3.54, MakeKwarg("foo_a", "45"),
+            MakeKwarg("foo_b", 2));
+
+  auto events = Consume();
+  ASSERT_EQ(events.size(), 1);
+  auto event = TraceEvent::Parse(events[0]);
+
+  ASSERT_NE(event.Timestamp(), 0);
+  ASSERT_EQ(event.ProcessId(), details::GetProcessId());
+  ASSERT_EQ(event.ThreadId(), details::GetThreadId());
+  ASSERT_EQ(event.Type(), kFlowBeginTag);
+  ASSERT_EQ(event.Name(), "TestFlow");
+  ASSERT_EQ(event.Payload(), "testing|a|1|3.54|foo_a=45|foo_b=2");
+}
+
+TEST_F(TracerTestFixture, TestFlowInstance) {
+  FlowInstance("TestFlow", "testing", 'a', 1, 3.54, MakeKwarg("foo_a", "45"),
+               MakeKwarg("foo_b", 2));
+
+  auto events = Consume();
+  ASSERT_EQ(events.size(), 1);
+  auto event = TraceEvent::Parse(events[0]);
+
+  ASSERT_NE(event.Timestamp(), 0);
+  ASSERT_EQ(event.ProcessId(), details::GetProcessId());
+  ASSERT_EQ(event.ThreadId(), details::GetThreadId());
+  ASSERT_EQ(event.Type(), kFlowInstanceTag);
+  ASSERT_EQ(event.Name(), "TestFlow");
+  ASSERT_EQ(event.Payload(), "testing|a|1|3.54|foo_a=45|foo_b=2");
+}
+
+TEST_F(TracerTestFixture, TestFlowEnd) {
+  FlowEnd("TestFlow", "testing", 'a', 1, 3.54, MakeKwarg("foo_a", "45"),
+          MakeKwarg("foo_b", 2));
+
+  auto events = Consume();
+  ASSERT_EQ(events.size(), 1);
+  auto event = TraceEvent::Parse(events[0]);
+
+  ASSERT_NE(event.Timestamp(), 0);
+  ASSERT_EQ(event.ProcessId(), details::GetProcessId());
+  ASSERT_EQ(event.ThreadId(), details::GetThreadId());
+  ASSERT_EQ(event.Type(), kFLowEndTag);
+  ASSERT_EQ(event.Name(), "TestFlow");
   ASSERT_EQ(event.Payload(), "testing|a|1|3.54|foo_a=45|foo_b=2");
 }

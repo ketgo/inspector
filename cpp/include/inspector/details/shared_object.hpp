@@ -128,10 +128,11 @@ T* GetOrCreate(const std::string& name, Args&&... args) {
  *
  * @param name Constant reference to the system unique name of the shared
  * object.
- * @returns `true` on success else `false`.
  */
-inline bool Remove(const std::string& name) {
-  return shm_unlink(name.c_str()) < 0 ? false : true;
+inline void Remove(const std::string& name) {
+  if (shm_unlink(name.c_str()) < 0) {
+    throw std::system_error(errno, std::generic_category(), "shm_unlink");
+  }
 }
 
 }  // namespace shared_object

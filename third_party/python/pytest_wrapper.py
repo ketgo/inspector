@@ -23,4 +23,5 @@ import pytest
 
 # Boiler plate to execute pytest runs...
 if __name__ == "__main__":
-    sys.exit(pytest.main(sys.argv[1:]))
+    error = pytest.main(sys.argv[1:])
+    sys.exit(error)

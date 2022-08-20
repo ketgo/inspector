@@ -94,8 +94,8 @@ Kwarg<T> MakeKwarg(const char* name, const T& value) {
 /**
  * @brief Create a synchronous begin trace event.
  *
- * The method publishes a synchronous begin trace event with provided additional
- * arguments to be attached with the event.
+ * The method publishes a synchronous begin trace event attaching the provided
+ * additional arguments to the event.
  *
  * @tparam Args Additional argument types.
  * @param name Constant reference to the scope name.
@@ -146,11 +146,14 @@ inline SyncScope::~SyncScope() { SyncEnd(name_); }
 // ==============================
 
 /**
- * @brief
+ * @brief Create an asynchronous begin trace event.
  *
- * @tparam Args
- * @param name
- * @param args
+ * The method publishes an asynchronous begin trace event attaching the provided
+ * additional arguments to the event.
+ *
+ * @tparam Args Additional argument types.
+ * @param name Constant reference to the scope name.
+ * @param args Constant reference to additional arguments.
  */
 template <class... Args>
 void AsyncBegin(const std::string& name, const Args&... args) {
@@ -158,11 +161,14 @@ void AsyncBegin(const std::string& name, const Args&... args) {
 }
 
 /**
- * @brief
+ * @brief Create an asynchronous instance trace event.
  *
- * @tparam Args
- * @param name
- * @param args
+ * The method publishes an asynchronous instance trace event attaching the
+ * provided additional arguments to the event.
+ *
+ * @tparam Args Additional argument types.
+ * @param name Constant reference to the scope name.
+ * @param args Constant reference to additional arguments.
  */
 template <class... Args>
 void AsyncInstance(const std::string& name, const Args&... args) {
@@ -170,11 +176,14 @@ void AsyncInstance(const std::string& name, const Args&... args) {
 }
 
 /**
- * @brief
+ * @brief Create an asynchronous end trace event.
  *
- * @tparam Args
- * @param name
- * @param args
+ * The method publishes an asynchronous end trace event attaching the provided
+ * additional arguments to the event.
+ *
+ * @tparam Args Additional argument types.
+ * @param name Constant reference to the scope name.
+ * @param args Constant reference to additional arguments.
  */
 template <class... Args>
 void AsyncEnd(const std::string& name, const Args&... args) {
@@ -186,11 +195,14 @@ void AsyncEnd(const std::string& name, const Args&... args) {
 // ==============================
 
 /**
- * @brief
+ * @brief Create a flow begin trace event.
  *
- * @tparam Args
- * @param name
- * @param args
+ * The method publishes a flow begin trace event attaching the provided
+ * additional arguments to the event.
+ *
+ * @tparam Args Additional argument types.
+ * @param name Constant reference to the scope name.
+ * @param args Constant reference to additional arguments.
  */
 template <class... Args>
 void FlowBegin(const std::string& name, const Args&... args) {
@@ -198,11 +210,14 @@ void FlowBegin(const std::string& name, const Args&... args) {
 }
 
 /**
- * @brief
+ * @brief Create a flow instance trace event.
  *
- * @tparam Args
- * @param name
- * @param args
+ * The method publishes a flow instance trace event attaching the provided
+ * additional arguments to the event.
+ *
+ * @tparam Args Additional argument types.
+ * @param name Constant reference to the scope name.
+ * @param args Constant reference to additional arguments.
  */
 template <class... Args>
 void FlowInstance(const std::string& name, const Args&... args) {
@@ -210,11 +225,14 @@ void FlowInstance(const std::string& name, const Args&... args) {
 }
 
 /**
- * @brief
+ * @brief Create a flow end trace event.
  *
- * @tparam Args
- * @param name
- * @param args
+ * The method publishes a flow end trace event attaching the provided
+ * additional arguments to the event.
+ *
+ * @tparam Args Additional argument types.
+ * @param name Constant reference to the scope name.
+ * @param args Constant reference to additional arguments.
  */
 template <class... Args>
 void FlowEnd(const std::string& name, const Args&... args) {
