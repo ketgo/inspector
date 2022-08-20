@@ -17,8 +17,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include <inspector/tracer.hpp>
-#include <inspector/writer.hpp>
+#include <inspector/trace.hpp>
 
 namespace py = pybind11;
 
@@ -28,6 +27,9 @@ namespace py = pybind11;
 
 template <char TraceTag>
 void PythonTraceEventNoArgs(const std::string& name) {
+  if (inspector::details::Config::Get().disable_tracing) {
+    return;
+  }
   inspector::TraceEvent event(TraceTag, name);
   inspector::details::WriteTraceEvent(event);
 }
@@ -35,6 +37,9 @@ void PythonTraceEventNoArgs(const std::string& name) {
 template <char TraceTag>
 void PythonTraceEvent(const std::string& name, const py::args& args,
                       const py::kwargs& kwargs) {
+  if (inspector::details::Config::Get().disable_tracing) {
+    return;
+  }
   inspector::TraceEvent event(TraceTag, name);
   for (auto& arg : args) {
     event.SetArgs(py::str(arg));
@@ -48,7 +53,7 @@ void PythonTraceEvent(const std::string& name, const py::args& args,
 
 // -------------------------------
 
-void BindTracer(py::module& m) {
+void BindTrace(py::module& m) {
   m.def("sync_begin", &PythonTraceEvent<inspector::kSyncBeginTag>);
   m.def("sync_end", &PythonTraceEventNoArgs<inspector::kSyncEndTag>);
   m.def("async_begin", &PythonTraceEvent<inspector::kAsyncBeginTag>);

@@ -49,3 +49,14 @@ cc_test(
         "@gtest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "trace_writer_test",
+    srcs = [
+        "trace_writer_test.cpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+        "@gtest//:gtest_main",
+    ],
+)

@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <inspector/details/tracer.hpp>
+#include <inspector/details/trace_writer.hpp>
 
 namespace inspector {
 

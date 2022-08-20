@@ -18,9 +18,13 @@
 #include <pybind11/stl.h>
 
 #include <inspector/reader.hpp>
-#include <inspector/trace_event.hpp>
+#include <inspector/details/trace_writer.hpp>
 
 namespace py = pybind11;
+
+void WriteTestEvent(const std::string& event) {
+  inspector::details::TraceWriter::Get().Write(event);
+}
 
 /**
  * @brief Binding event reader to the given python module.
@@ -29,7 +33,6 @@ namespace py = pybind11;
  */
 void BindReader(py::module& m) {
   py::class_<inspector::Reader>(m, "Reader")
-      .def_static("set_config", &inspector::Reader::SetConfig)
       .def(py::init())
       .def(
           "__iter__",
@@ -38,14 +41,6 @@ void BindReader(py::module& m) {
           },
           py::keep_alive<0, 1>());
 
-  py::class_<inspector::TraceEvent>(m, "TraceEvent")
-      .def_static("load", &inspector::TraceEvent::Parse)
-      .def(py::init<const char, const std::string&>())
-      .def_property_readonly("timestamp", &inspector::TraceEvent::Timestamp)
-      .def_property_readonly("process_id", &inspector::TraceEvent::ProcessId)
-      .def_property_readonly("thread_id", &inspector::TraceEvent::ThreadId)
-      .def_property_readonly("type", &inspector::TraceEvent::Type)
-      .def_property_readonly("name", &inspector::TraceEvent::Name)
-      .def_property_readonly("payload", &inspector::TraceEvent::Payload)
-      .def("__str__", &inspector::TraceEvent::String);
+  auto test_module = m.def_submodule("testing", "Module for testing.");
+  test_module.def("write_test_event", &WriteTestEvent);
 }

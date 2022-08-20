@@ -17,7 +17,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include <inspector/config.hpp>
+#include <inspector/details/config.hpp>
 
 namespace py = pybind11;
 
@@ -27,10 +27,18 @@ namespace py = pybind11;
  * @param m Reference to the python module.
  */
 void BindConfig(py::module& m) {
-  py::class_<inspector::Config>(m, "Config")
-      .def(py::init<>())
-      .def_readwrite("EVENT_QUEUE_SYSTEM_UNIQUE_NAME",
-                     &inspector::Config::queue_system_unique_name)
-      .def_readwrite("MAX_ATTEMPT", &inspector::Config::max_attempt)
-      .def_readwrite("REMOVE", &inspector::Config::remove);
+  using ConfigPtr = std::unique_ptr<inspector::details::Config, py::nodelete>;
+  py::class_<inspector::details::Config, ConfigPtr>(m, "Config")
+      .def(py::init(
+          []() { return ConfigPtr(&inspector::details::Config::Get()); }))
+      .def_readwrite("EVENT_QUEUE_NAME",
+                     &inspector::details::Config::queue_system_unique_name)
+      .def_readwrite("REMOVE_EVENT_QUEUE_ON_EXIT",
+                     &inspector::details::Config::queue_remove_on_exit)
+      .def_readwrite("WRITE_MAX_ATTEMPT",
+                     &inspector::details::Config::write_max_attempt)
+      .def_readwrite("READ_MAX_ATTEMPT",
+                     &inspector::details::Config::read_max_attempt)
+      .def_readwrite("DISABLE_TRACING",
+                     &inspector::details::Config::disable_tracing);
 }

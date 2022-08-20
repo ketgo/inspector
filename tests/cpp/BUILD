@@ -35,17 +35,6 @@ cc_test(
 )
 
 cc_test(
-    name = "writer_test",
-    srcs = [
-        "writer_test.cpp",
-    ],
-    deps = [
-        "//cpp:inspector",
-        "@gtest//:gtest_main",
-    ],
-)
-
-cc_test(
     name = "trace_event_test",
     srcs = [
         "trace_event_test.cpp",
@@ -57,9 +46,9 @@ cc_test(
 )
 
 cc_test(
-    name = "tracer_test",
+    name = "trace_test",
     srcs = [
-        "tracer_test.cpp",
+        "trace_test.cpp",
     ],
     deps = [
         "//cpp:inspector",

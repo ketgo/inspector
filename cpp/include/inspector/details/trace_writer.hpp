@@ -16,21 +16,22 @@
 
 #pragma once
 
-#include <iostream>
+#include <inspector/trace_event.hpp>
 
-#include <inspector/config.hpp>
+#include <inspector/details/config.hpp>
 #include <inspector/details/event_queue.hpp>
 #include <inspector/details/logging.hpp>
 #include <inspector/details/shared_object.hpp>
 
 namespace inspector {
+namespace details {
 
 /**
- * @brief The class `Writer` can be used to publish trace or metrics events to
- * the shared event queue.
+ * @brief The class `TraceWriter` is used to publish trace events to the shared
+ * event queue.
  *
  */
-class Writer {
+class TraceWriter {
  public:
   /**
    * @brief Span encapsulating memory block in the event queue to write an
@@ -40,29 +41,19 @@ class Writer {
   using Span = details::EventQueue::WriteSpan;
 
   /**
-   * @brief Set writer configuration.
-   *
-   * NOTE: Writer configuration must be set before any method or classes in the
-   * inspector is used.
-   *
-   * @param config Constant reference to the new configuration.
-   */
-  static void SetConfig(const Config& config);
-
-  /**
-   * @brief Construct a new Writer object.
+   * @brief Get instance of writer.
    *
    */
-  Writer();
+  static TraceWriter& Get();
 
   /**
-   * @brief Destroy the Writer object.
+   * @brief Destroy the TraceWriter object.
    *
    * The DTOR marks the event queue for removal if the remove flag was set in
-   * the CTOR.
+   * the configuration settings.
    *
    */
-  ~Writer();
+  ~TraceWriter();
 
   /**
    * @brief Reserve space in the event queue to write an event of given size.
@@ -84,10 +75,10 @@ class Writer {
 
  private:
   /**
-   * @brief Get writer configuration instance.
+   * @brief Construct a new TraceWriter object.
    *
    */
-  static Config& ConfigInstance();
+  TraceWriter();
 
   const bool remove_;
   const std::size_t max_attempt_;
@@ -99,41 +90,36 @@ class Writer {
 // Writer Implementation
 // -----------------------------------
 
-// static
-inline Config& Writer::ConfigInstance() {
-  static Config config;
-  return config;
-}
-
-// ------------- public --------------
-
-// static
-inline void Writer::SetConfig(const Config& config) {
-  ConfigInstance() = config;
-}
-
-inline Writer::Writer()
-    : remove_(ConfigInstance().remove),
-      max_attempt_(ConfigInstance().max_attempt),
-      queue_name_(ConfigInstance().queue_system_unique_name),
+inline TraceWriter::TraceWriter()
+    : remove_(details::Config::Get().queue_remove_on_exit),
+      max_attempt_(details::Config::Get().read_max_attempt),
+      queue_name_(details::Config::Get().queue_system_unique_name),
       queue_(details::shared_object::GetOrCreate<details::EventQueue>(
           queue_name_)) {}
 
-inline Writer::~Writer() {
+// ----------- public -----------------
+
+// static
+inline TraceWriter& TraceWriter::Get() {
+  static TraceWriter writer;
+  return writer;
+}
+
+inline TraceWriter::~TraceWriter() {
   if (remove_) {
     LOG_INFO << "Marking the shared event queue for removal.";
     details::shared_object::Remove(queue_name_);
   }
 }
 
-inline void Writer::Reserve(Span& span, const std::size_t size) {
+inline void TraceWriter::Reserve(Span& span, const std::size_t size) {
   auto status = queue_->Reserve(span, size, max_attempt_);
   if (status == details::EventQueue::Status::FULL) {
     LOG_ERROR << "Unable to write event as the shared event queue is full.";
   }
 }
 
-inline void Writer::Write(const std::string& event) {
+inline void TraceWriter::Write(const std::string& event) {
   auto status = queue_->Publish(event, max_attempt_);
   if (status == details::EventQueue::Status::FULL) {
     LOG_ERROR << "Unable to write event as the shared event queue is full.";
@@ -142,4 +128,29 @@ inline void Writer::Write(const std::string& event) {
 
 // -----------------------------------
 
+/**
+ * @brief Write the given trace event onto the event queue.
+ *
+ * @param event Constant reference to the trace event.
+ */
+inline void WriteTraceEvent(const TraceEvent& event) {
+  TraceWriter::Get().Write(event.String());
+}
+
+/**
+ * @brief Construct and write a trace event with the given arguments.
+ *
+ */
+template <class... Args>
+inline void WriteTraceEvent(const char type, const std::string& name,
+                            const Args&... args) {
+  if (inspector::details::Config::Get().disable_tracing) {
+    return;
+  }
+  TraceEvent event(type, name);
+  event.SetArgs(args...);
+  WriteTraceEvent(event);
+}
+
+}  // namespace details
 }  // namespace inspector
