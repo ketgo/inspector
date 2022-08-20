@@ -21,17 +21,17 @@
 
 using namespace inspector;
 
+namespace {
+static constexpr auto kMaxAttempt = 32;
+static constexpr auto kEventQueueName = "inspector-tracer-test";
+}  // namespace
+
 class TracerTestFixture : public ::testing::Test {
  protected:
-  static constexpr auto kMaxAttempt = 32;
-  static Config config_;
-
   static void SetUpTestSuite() {
-    config_.max_attempt = kMaxAttempt;
-    config_.queue_system_unique_name = "inspector-tracer-test";
-    Reader::SetConfig(config_);
-    config_.remove = true;
-    Writer::SetConfig(config_);
+    details::Config::Get().write_max_attempt = kMaxAttempt;
+    details::Config::Get().queue_system_unique_name = kEventQueueName;
+    details::Config::Get().queue_remove_on_exit = true;
   }
 
   std::vector<std::string> Consume() {
@@ -46,8 +46,6 @@ class TracerTestFixture : public ::testing::Test {
   void SetUp() override {}
   void TearDown() override {}
 };
-
-Config TracerTestFixture::config_;
 
 TEST_F(TracerTestFixture, TestSyncBegin) {
   SyncBegin("TestSync", "testing", 'a', 1, 3.54, MakeKwarg("foo_a", "45"),

@@ -28,10 +28,65 @@ namespace details {
 constexpr auto kEventQueueSystemUniqueName = "/inspector-56027e94-events";
 
 /**
+ * @brief Remove event queue on application exit.
+ *
+ */
+constexpr auto kEventQueueRemoveOnExit = false;
+
+/**
  * @brief Max attempt when consuming or publishing events.
  *
  */
 constexpr auto kMaxAttempt = 32;
+
+/**
+ * @brief The class `Config` contains configuration settings for the inspector
+ * library. It can be used to change the default settings.
+ *
+ * NOTE: Configuration must be set before any method or classes in the inspector
+ * library is used.
+ *
+ */
+class Config {
+ public:
+  /**
+   * @brief Get library config instance.
+   *
+   */
+  static Config& Get();
+
+  std::string queue_system_unique_name;
+  bool queue_remove_on_exit;
+  std::size_t read_max_attempt;
+  std::size_t write_max_attempt;
+
+ private:
+  /**
+   * @brief Construct a new Config object.
+   *
+   */
+  Config();
+};
+
+// ----------------------------
+// Config Implementation
+// ----------------------------
+
+inline Config::Config()
+    : queue_system_unique_name(kEventQueueSystemUniqueName),
+      queue_remove_on_exit(kEventQueueRemoveOnExit),
+      read_max_attempt(kMaxAttempt),
+      write_max_attempt(kMaxAttempt) {}
+
+// --------- public -----------
+
+// static
+inline Config& Config::Get() {
+  static Config config;
+  return config;
+}
+
+// ----------------------------
 
 }  // namespace details
 }  // namespace inspector

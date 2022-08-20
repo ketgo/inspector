@@ -17,20 +17,116 @@
 #pragma once
 
 #include <inspector/trace_event.hpp>
-#include <inspector/writer.hpp>
+
+#include <inspector/details/config.hpp>
+#include <inspector/details/event_queue.hpp>
+#include <inspector/details/logging.hpp>
+#include <inspector/details/shared_object.hpp>
 
 namespace inspector {
 namespace details {
 
 /**
- * @brief Get the trace writer.
+ * @brief The class `TraceWriter` is used to publish trace events to the shared
+ * event queue.
  *
- * @return Reference to the trace writer.
  */
-inline Writer& TraceWriter() {
-  static Writer writer;
+class TraceWriter {
+ public:
+  /**
+   * @brief Span encapsulating memory block in the event queue to write an
+   * event.
+   *
+   */
+  using Span = details::EventQueue::WriteSpan;
+
+  /**
+   * @brief Get instance of writer.
+   *
+   */
+  static TraceWriter& Get();
+
+  /**
+   * @brief Destroy the TraceWriter object.
+   *
+   * The DTOR marks the event queue for removal if the remove flag was set in
+   * the configuration settings.
+   *
+   */
+  ~TraceWriter();
+
+  /**
+   * @brief Reserve space in the event queue to write an event of given size.
+   *
+   * The method sets the passed span object so that it can be used to write the
+   * event onto the queue.
+   *
+   * @param span Reference to the span.
+   * @param size Number of bytes to write.
+   */
+  void Reserve(Span& span, const std::size_t size);
+
+  /**
+   * @brief Write the given event to the shared event queue.
+   *
+   * @param event Constant reference to the event.
+   */
+  void Write(const std::string& event);
+
+ private:
+  /**
+   * @brief Construct a new TraceWriter object.
+   *
+   */
+  TraceWriter();
+
+  const bool remove_;
+  const std::size_t max_attempt_;
+  const std::string queue_name_;
+  details::EventQueue* queue_;
+};
+
+// -----------------------------------
+// Writer Implementation
+// -----------------------------------
+
+inline TraceWriter::TraceWriter()
+    : remove_(details::Config::Get().queue_remove_on_exit),
+      max_attempt_(details::Config::Get().read_max_attempt),
+      queue_name_(details::Config::Get().queue_system_unique_name),
+      queue_(details::shared_object::GetOrCreate<details::EventQueue>(
+          queue_name_)) {}
+
+// ----------- public -----------------
+
+// static
+inline TraceWriter& TraceWriter::Get() {
+  static TraceWriter writer;
   return writer;
 }
+
+inline TraceWriter::~TraceWriter() {
+  if (remove_) {
+    LOG_INFO << "Marking the shared event queue for removal.";
+    details::shared_object::Remove(queue_name_);
+  }
+}
+
+inline void TraceWriter::Reserve(Span& span, const std::size_t size) {
+  auto status = queue_->Reserve(span, size, max_attempt_);
+  if (status == details::EventQueue::Status::FULL) {
+    LOG_ERROR << "Unable to write event as the shared event queue is full.";
+  }
+}
+
+inline void TraceWriter::Write(const std::string& event) {
+  auto status = queue_->Publish(event, max_attempt_);
+  if (status == details::EventQueue::Status::FULL) {
+    LOG_ERROR << "Unable to write event as the shared event queue is full.";
+  }
+}
+
+// -----------------------------------
 
 /**
  * @brief Write the given trace event onto the event queue.
@@ -38,7 +134,7 @@ inline Writer& TraceWriter() {
  * @param event Constant reference to the trace event.
  */
 inline void WriteTraceEvent(const TraceEvent& event) {
-  TraceWriter().Write(event.String());
+  TraceWriter::Get().Write(event.String());
 }
 
 /**

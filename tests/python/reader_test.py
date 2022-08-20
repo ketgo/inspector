@@ -14,21 +14,17 @@
  limitations under the License.
 """
 
-from python.inspector import Writer, Reader, Config
+from python.inspector import Reader, Config, testing
 
 
 def setup_module():
-    config = Config()
-    config.EVENT_QUEUE_SYSTEM_UNIQUE_NAME = "inspector-writer-reader-test"
-    Writer.set_config(config)
-    config.REMOVE = True
-    Reader.set_config(config)
+    Config().EVENT_QUEUE_NAME = "inspector-reader-test"
+    Config().REMOVE_EVENT_QUEUE_ON_EXIT = True
 
 
 def test_writer_reader():
-    writer = Writer()
-    writer.write("testing_1")
-    writer.write("testing_2")
+    testing.write_test_event("testing_1")
+    testing.write_test_event("testing_2")
 
     reader = Reader()
     events = [event for event in reader]

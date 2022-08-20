@@ -20,11 +20,8 @@ from python import inspector
 
 
 def setup_module():
-    config = inspector.Config()
-    config.EVENT_QUEUE_SYSTEM_UNIQUE_NAME = "inspector-tracer-test"
-    inspector.Reader.set_config(config)
-    config.REMOVE = True
-    inspector.Writer.set_config(config)
+    inspector.Config().EVENT_QUEUE_NAME = "inspector-tracer-test"
+    inspector.Config().REMOVE_EVENT_QUEUE_ON_EXIT = True
 
 
 def consume() -> List[inspector.TraceEvent]:

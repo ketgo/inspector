@@ -22,24 +22,20 @@
 
 using namespace inspector;
 
+namespace {
+constexpr auto kMaxAttempt = 32;
+constexpr auto kEventQueueName = "inspector-reader-test";
+}  // namespace
+
 class ReaderTestFixture : public ::testing::Test {
  protected:
-  static constexpr auto kMaxAttempt = 32;
-  static Config config_;
   std::shared_ptr<Reader> reader_;
 
-  static void SetUpTestSuite() {
-    config_.max_attempt = kMaxAttempt;
-    config_.queue_system_unique_name = "inspector-reader-test";
-    config_.remove = true;
-    Reader::SetConfig(config_);
+  void SetUp() override {
+    reader_ = std::make_shared<Reader>(kEventQueueName, kMaxAttempt, true);
   }
-
-  void SetUp() override { reader_ = std::make_shared<Reader>(); }
   void TearDown() override {}
 };
-
-Config ReaderTestFixture::config_;
 
 TEST_F(ReaderTestFixture, IterateEmptyQueue) {
   std::vector<std::string> events;
@@ -52,8 +48,8 @@ TEST_F(ReaderTestFixture, IterateEmptyQueue) {
 
 TEST_F(ReaderTestFixture, IterateNonEmptyQueue) {
   // Preparing queue by publishing a test event for testing.
-  auto queue = details::shared_object::GetOrCreate<details::EventQueue>(
-      config_.queue_system_unique_name);
+  auto queue =
+      details::shared_object::GetOrCreate<details::EventQueue>(kEventQueueName);
   std::string test_event_1 = "testing_1";
   ASSERT_EQ(queue->Publish(test_event_1), details::EventQueue::Status::OK);
   std::string test_event_2 = "testing_2";

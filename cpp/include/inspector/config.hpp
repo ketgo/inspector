@@ -22,23 +22,79 @@
 
 namespace inspector {
 
-/**
- * @brief The `Config` class contains settings to configure the event writer and
- * reader.
- *
- */
-struct Config {
-  std::string queue_system_unique_name;
-  std::size_t max_attempt;
-  bool remove;
+// TODO: Better naming
 
-  Config(const std::string& queue_system_unique_name_ =
-             details::kEventQueueSystemUniqueName,
-         const std::size_t max_attempt_ = details::kMaxAttempt,
-         bool remove_ = false)
-      : queue_system_unique_name(queue_system_unique_name_),
-        max_attempt(max_attempt_),
-        remove(remove_) {}
-};
+/**
+ * @brief Get the Event Queue Name object
+ *
+ * @return std::string
+ */
+inline std::string EventQueueName() {
+  return details::Config::Get().queue_system_unique_name;
+}
+
+/**
+ * @brief Set the Event Queue Name object.
+ *
+ * @param name
+ */
+inline void SetEventQueueName(const std::string name) {
+  details::Config::Get().queue_system_unique_name = name;
+}
+
+/**
+ * @brief
+ *
+ * @return true
+ * @return false
+ */
+inline bool RemoveEventQueueOnExit() {
+  return details::Config::Get().queue_remove_on_exit;
+}
+
+/**
+ * @brief Set the Queue Remove On Exit object
+ *
+ * @param flag
+ */
+inline void SetRemoveEventQueueOnExit(bool remove) {
+  details::Config::Get().queue_remove_on_exit = remove;
+}
+
+/**
+ * @brief
+ *
+ * @return std::size_t
+ */
+inline std::size_t WriteMaxAttempt() {
+  return details::Config::Get().write_max_attempt;
+}
+
+/**
+ * @brief Set the Write Max Attempt object
+ *
+ * @param max_attempt
+ */
+inline void SetWriteMaxAttempt(const std::size_t max_attempt) {
+  details::Config::Get().write_max_attempt = max_attempt;
+}
+
+/**
+ * @brief
+ *
+ * @return std::size_t
+ */
+inline std::size_t ReadMaxAttempt() {
+  return details::Config::Get().read_max_attempt;
+}
+
+/**
+ * @brief Set the Write Max Attempt object
+ *
+ * @param max_attempt
+ */
+inline void SetReadMaxAttempt(const std::size_t max_attempt) {
+  details::Config::Get().read_max_attempt = max_attempt;
+}
 
 }  // namespace inspector

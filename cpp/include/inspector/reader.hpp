@@ -16,14 +16,14 @@
 
 #pragma once
 
-#include <iostream>
-
-#include <inspector/config.hpp>
+#include <inspector/details/config.hpp>
 #include <inspector/details/iterator.hpp>
 #include <inspector/details/logging.hpp>
 #include <inspector/details/shared_object.hpp>
 
 namespace inspector {
+
+// TODO: Move the iterator implementation into this header file
 
 /**
  * @brief The class `Reader` can be used to consume events from the shared queue
@@ -34,20 +34,20 @@ namespace inspector {
 class Reader {
  public:
   /**
-   * @brief Set reader configuration.
+   * @brief Construct a new Reader object
    *
-   * NOTE: Reader configuration must be set before any method or classes in the
-   * inspector is used.
-   *
-   * @param config Constant reference to the new configuration.
+   * @param queue_name Constant reference to the queue name containing trace
+   * events. Note that the name used should be unique accross the operating
+   * system.
+   * @param max_attempt Maximum number of attempts to make when reading an event
+   * from the queue.
+   * @param remove Mark the queue for removal during DTOR of the reader.
    */
-  static void SetConfig(const Config& config);
-
-  /**
-   * @brief Construct a new Reader object.
-   *
-   */
-  Reader();
+  Reader(
+      const std::string& queue_name =
+          details::Config::Get().queue_system_unique_name,
+      const std::size_t max_attempt = details::Config::Get().read_max_attempt,
+      bool remove = false);
 
   /**
    * @brief Destroy the Reader object.
@@ -66,12 +66,6 @@ class Reader {
   details::Iterator end() const;
 
  private:
-  /**
-   * @brief Get writer configuration instance.
-   *
-   */
-  static Config& ConfigInstance();
-
   const bool remove_;
   const std::size_t max_attempt_;
   const std::string queue_name_;
@@ -82,23 +76,11 @@ class Reader {
 // Reader Implementation
 // ---------------------------------
 
-// static
-inline Config& Reader::ConfigInstance() {
-  static Config config;
-  return config;
-}
-
-// ------------- public --------------
-
-// static
-inline void Reader::SetConfig(const Config& config) {
-  ConfigInstance() = config;
-}
-
-inline Reader::Reader()
-    : remove_(ConfigInstance().remove),
-      max_attempt_(ConfigInstance().max_attempt),
-      queue_name_(ConfigInstance().queue_system_unique_name),
+inline Reader::Reader(const std::string& queue_name,
+                      const std::size_t max_attempt, bool remove)
+    : remove_(remove),
+      max_attempt_(max_attempt),
+      queue_name_(queue_name),
       queue_(details::shared_object::GetOrCreate<details::EventQueue>(
           queue_name_)) {}
 
