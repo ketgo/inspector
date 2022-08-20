@@ -20,7 +20,7 @@ from python import inspector
 
 
 def setup_module():
-    inspector.Config().EVENT_QUEUE_NAME = "inspector-tracer-test"
+    inspector.Config().EVENT_QUEUE_NAME = "inspector-trace-test"
     inspector.Config().REMOVE_EVENT_QUEUE_ON_EXIT = True
 
 

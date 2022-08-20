@@ -59,6 +59,7 @@ class Config {
   bool queue_remove_on_exit;
   std::size_t read_max_attempt;
   std::size_t write_max_attempt;
+  bool disable_trace;
 
  private:
   /**
@@ -76,7 +77,8 @@ inline Config::Config()
     : queue_system_unique_name(kEventQueueSystemUniqueName),
       queue_remove_on_exit(kEventQueueRemoveOnExit),
       read_max_attempt(kMaxAttempt),
-      write_max_attempt(kMaxAttempt) {}
+      write_max_attempt(kMaxAttempt),
+      disable_trace(false) {}
 
 // --------- public -----------
 

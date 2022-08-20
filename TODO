@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-[ ] Desing and implement option to enable and disable publishing trace events. The desing should support multiple languages, e.g. cpp, python, etc.
+[x] Desing and implement option to enable and disable publishing trace events. The desing should support multiple languages, e.g. cpp, python, etc.
 [ ] Recover from stale cursors in the event queue.
 [ ] CLI monitor to view the published trace events on console in realtime or store them in a file.
 [ ] Web monitor to view the published trace events on browser in realtime.
 [ ] Traceview generator to convert the published trace events to the format accepted by Catapult Traceview.
+[ ] Add binding for javascript
+[ ] Add binding for Java

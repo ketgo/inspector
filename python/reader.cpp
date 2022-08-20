@@ -18,7 +18,7 @@
 #include <pybind11/stl.h>
 
 #include <inspector/reader.hpp>
-#include <inspector/details/tracer.hpp>
+#include <inspector/details/trace_writer.hpp>
 
 namespace py = pybind11;
 

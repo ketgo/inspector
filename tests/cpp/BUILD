@@ -46,9 +46,9 @@ cc_test(
 )
 
 cc_test(
-    name = "tracer_test",
+    name = "trace_test",
     srcs = [
-        "tracer_test.cpp",
+        "trace_test.cpp",
     ],
     deps = [
         "//cpp:inspector",

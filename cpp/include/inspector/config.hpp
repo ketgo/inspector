@@ -97,4 +97,24 @@ inline void SetReadMaxAttempt(const std::size_t max_attempt) {
   details::Config::Get().read_max_attempt = max_attempt;
 }
 
+/**
+ * @brief
+ *
+ * @return true
+ * @return false
+ */
+inline bool IsTraceDisable() { return details::Config::Get().disable_trace; }
+
+/**
+ * @brief
+ *
+ */
+inline void DisableTrace() { details::Config::Get().disable_trace = true; }
+
+/**
+ * @brief
+ *
+ */
+inline void EnableTrace() { details::Config::Get().disable_trace = false; }
+
 }  // namespace inspector

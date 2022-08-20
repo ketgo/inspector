@@ -16,14 +16,14 @@
 
 #include <gtest/gtest.h>
 
-#include <inspector/tracer.hpp>
+#include <inspector/trace.hpp>
 #include <inspector/reader.hpp>
 
 using namespace inspector;
 
 namespace {
 static constexpr auto kMaxAttempt = 32;
-static constexpr auto kEventQueueName = "inspector-tracer-test";
+static constexpr auto kEventQueueName = "inspector-trace-test";
 }  // namespace
 
 class TracerTestFixture : public ::testing::Test {

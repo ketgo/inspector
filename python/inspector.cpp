@@ -25,7 +25,7 @@ void BindConfig(py::module& m);
 void BindLogging(py::module& m);
 void BindReader(py::module& m);
 void BindTraceEvent(py::module& m);
-void BindTracer(py::module& m);
+void BindTrace(py::module& m);
 
 PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
   m.doc() = "Tool set to capture real time application traces for inspection.";
@@ -34,5 +34,5 @@ PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
   BindLogging(m);
   BindReader(m);
   BindTraceEvent(m);
-  BindTracer(m);
+  BindTrace(m);
 }

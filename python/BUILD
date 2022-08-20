@@ -24,7 +24,7 @@ pybind_library(
         "logging.cpp",
         "reader.cpp",
         "trace_event.cpp",
-        "tracer.cpp",
+        "trace.cpp",
     ],
     soname = "inspector",
     deps = [

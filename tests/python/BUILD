@@ -45,9 +45,9 @@ pytest_test(
 )
 
 pytest_test(
-    name = "tracer_test",
+    name = "trace_test",
     srcs = [
-        "tracer_test.py",
+        "trace_test.py",
     ],
     deps = [
         "//python:inspector",

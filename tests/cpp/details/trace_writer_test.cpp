@@ -16,7 +16,7 @@
 
 #include <gtest/gtest.h>
 
-#include <inspector/details/tracer.hpp>
+#include <inspector/details/trace_writer.hpp>
 
 using namespace inspector;
 
