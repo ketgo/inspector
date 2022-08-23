@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <chrono>
+
 #include <inspector/details/random.hpp>
 #include <inspector/details/circular_queue/cursor.hpp>
 
@@ -37,12 +39,20 @@ class CursorPool {
   friend class CursorHandle<CursorPool>;
 
   /**
-   * @brief Enumerated states of a cursor.
+   * @brief The data structure `CursorState` stores the state information of a
+   * cursor. This includes two values, a flag indicating if the cursor is free,
+   * and the timestamp when the cursor was last allocated.
    *
+   * @note The structure is restricted to 64 bits in order to make the atomic
+   * type `AtomicCursorState` lock free.
    */
-  enum class CursorState {
-    FREE,       // Cursor free for use.
-    ALLOCATED,  // Cursor in use.
+  struct CursorState {
+    bool allocated : 1;
+    uint64_t timestamp : 63;
+
+    CursorState() = default;
+    CursorState(const bool allocated_, const uint64_t timestamp_)
+        : allocated(allocated_), timestamp(timestamp_) {}
   };
   using AtomicCursorState = std::atomic<CursorState>;
 
@@ -100,8 +110,9 @@ class CursorPool {
 template <std::size_t POOL_SIZE>
 void CursorPool<POOL_SIZE>::Release(AtomicCursor *cursor) {
   assert(cursor != nullptr);
+  CursorState cursor_state(false, 0);
   const std::size_t idx = cursor - cursor_;
-  cursor_state_[idx].store(CursorState::FREE, std::memory_order_seq_cst);
+  cursor_state_[idx].store(cursor_state, std::memory_order_seq_cst);
 }
 
 // ------- public --------------
@@ -110,17 +121,17 @@ template <std::size_t POOL_SIZE>
 CursorPool<POOL_SIZE>::CursorPool() {
   // Initial cursor value
   Cursor cursor(false, 0);
+  CursorState cursor_state(false, 0);
   for (std::size_t idx = 0; idx < POOL_SIZE; ++idx) {
     cursor_[idx].store(cursor, std::memory_order_seq_cst);
-    cursor_state_[idx].store(CursorState::FREE, std::memory_order_seq_cst);
+    cursor_state_[idx].store(cursor_state, std::memory_order_seq_cst);
   }
 }
 
 template <std::size_t POOL_SIZE>
 bool CursorPool<POOL_SIZE>::IsBehind(const Cursor &cursor) const {
   for (std::size_t idx = 0; idx < POOL_SIZE; ++idx) {
-    if (cursor_state_[idx].load(std::memory_order_seq_cst) ==
-        CursorState::ALLOCATED) {
+    if (cursor_state_[idx].load(std::memory_order_seq_cst).allocated) {
       auto _cursor = cursor_[idx].load(std::memory_order_seq_cst);
       if (_cursor <= cursor) {
         return false;
@@ -133,8 +144,7 @@ bool CursorPool<POOL_SIZE>::IsBehind(const Cursor &cursor) const {
 template <std::size_t POOL_SIZE>
 bool CursorPool<POOL_SIZE>::IsAhead(const Cursor &cursor) const {
   for (std::size_t idx = 0; idx < POOL_SIZE; ++idx) {
-    if (cursor_state_[idx].load(std::memory_order_seq_cst) ==
-        CursorState::ALLOCATED) {
+    if (cursor_state_[idx].load(std::memory_order_seq_cst).allocated) {
       auto _cursor = cursor_[idx].load(std::memory_order_seq_cst);
       if (cursor <= _cursor) {
         return false;
@@ -149,9 +159,10 @@ CursorHandle<CursorPool<POOL_SIZE>> CursorPool<POOL_SIZE>::Allocate(
     std::size_t max_attempt) {
   while (max_attempt) {
     const std::size_t idx = Random() % POOL_SIZE;
-    auto expected = CursorState::FREE;
-    if (cursor_state_[idx].compare_exchange_strong(expected,
-                                                   CursorState::ALLOCATED)) {
+    CursorState expected(false, 0);
+    CursorState desired(
+        true, std::chrono::system_clock::now().time_since_epoch().count());
+    if (cursor_state_[idx].compare_exchange_strong(expected, desired)) {
       return {cursor_[idx], *this};
     }
     // TODO: Check if the cursor is stale
