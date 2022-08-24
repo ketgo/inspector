@@ -95,7 +95,6 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
   // Get the size of memory block to allocate for writing
   auto block_size = sizeof(MemoryBlock<T>) + size * sizeof(T);
   assert(block_size < BUFFER_SIZE);
-
   // Attempt to get a write cursor from the cursor pool
   auto cursor_h = write_pool_.Allocate(max_attempt);
   if (!cursor_h) {
@@ -105,23 +104,22 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
   while (max_attempt) {
     auto read_head = read_head_.load(std::memory_order_seq_cst);
     auto write_head = write_head_.load(std::memory_order_seq_cst);
-    if (read_head <= write_head) {
+    auto end = write_head + (block_size - 1);
+    // Allocate block only if the end location is ahead of all the allocated
+    // read cursors and the read head, and the read head is equal or behind the
+    // write head.
+    if (read_head <= write_head && read_pool_.IsAhead(end) && read_head < end) {
       cursor_h->store(write_head, std::memory_order_seq_cst);
-      auto end = write_head + (block_size - 1);
-      // Allocate block only if the end cursor is ahead of all the allocated
-      // read cursors
-      if (read_pool_.IsAhead(end) && read_head < end) {
-        // Set write head to new value if its original value has not been
-        // already changed by another writer.
-        if (write_head_.compare_exchange_weak(write_head, end + 1)) {
-          auto *block = reinterpret_cast<MemoryBlock<T> *>(
-              &data_[write_head.Location() % BUFFER_SIZE]);
-          block->size = size;
-          return {*block, std::move(cursor_h)};
-        }
-        // Another writer allocated memory before us so try again until success
-        // or max attempt is reached.
+      // Set write head to new value if its original value has not already been
+      // changed by another writer.
+      if (write_head_.compare_exchange_weak(write_head, end + 1)) {
+        auto *block = reinterpret_cast<MemoryBlock<T> *>(
+            &data_[write_head.Location() % BUFFER_SIZE]);
+        block->size = size;
+        return {*block, std::move(cursor_h)};
       }
+      // Another writer allocated memory before us so try again until success
+      // or max attempt is reached.
     }
     // Not enough space to allocate memory so try again until enough space
     // becomes available or the max attempt is reached.
@@ -145,25 +143,24 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
   while (max_attempt) {
     auto read_head = read_head_.load(std::memory_order_seq_cst);
     auto write_head = write_head_.load(std::memory_order_seq_cst);
-    // Read only when the read head is behind write head
-    if (read_head < write_head) {
+    auto *block =
+        reinterpret_cast<MemoryBlock<const T> *>(const_cast<unsigned char *>(
+            &data_[read_head.Location() % BUFFER_SIZE]));
+    auto block_size = sizeof(MemoryBlock<T>) + block->size * sizeof(T);
+    auto end = read_head + (block_size - 1);
+    // Allocate block only if the end location is behind all of the allocated
+    // write cursors and the write head, and the read head is behind the write
+    // head.
+    if (read_head < write_head && write_pool_.IsBehind(end) &&
+        end < write_head) {
       cursor_h->store(read_head, std::memory_order_seq_cst);
-      auto *block =
-          reinterpret_cast<MemoryBlock<const T> *>(const_cast<unsigned char *>(
-              &data_[read_head.Location() % BUFFER_SIZE]));
-      auto block_size = sizeof(MemoryBlock<T>) + block->size * sizeof(T);
-      auto end = read_head + (block_size - 1);
-      // Allocate block only if the end cursor is behind all the allocated write
-      // cursors
-      if (write_pool_.IsBehind(end) && end < write_head) {
-        // Set read head to new value if its original value has not been already
-        // changed by another reader.
-        if (read_head_.compare_exchange_weak(read_head, end + 1)) {
-          return {*block, std::move(cursor_h)};
-        }
-        // Another reader allocated memory before us so try again until success
-        // or max attempt is reached.
+      // Set read head to new value if its original value has not already been
+      // changed by another reader.
+      if (read_head_.compare_exchange_weak(read_head, end + 1)) {
+        return {*block, std::move(cursor_h)};
       }
+      // Another reader allocated memory before us so try again until success
+      // or max attempt is reached.
     }
     // Not enough space to allocate memory so try again until enough space
     // becomes available or the max attempt is reached.

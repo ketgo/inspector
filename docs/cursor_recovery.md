@@ -16,95 +16,63 @@
 
 # Cursor Recovery Approach
 
-The following sections describe the approach taken to resolve the different issues faced in order to recover from an abrupt process termination leaving the circular queue in an invalid state.
+A stale cursor can be resulted when a process is abruptly terminated while writing or reading from the circular queue. This document describes the approach taken to properly recover stale cursors without impacting the queue functioning and performance. We can divide the approach into two parts: detecting presence of a stale cursor, and recovering the queue. The two are discussed in the following sections.
 
-## ISSUE 1
+## Detecting Stale Cursor
 
-How to discover if a cursor is stale due to an abrupt process termination.
+In order to detect staleness we store a timestamp into the cursor state data structure. The sturcture is as shown below:
 
-### SOLUTION
+```cpp
+struct CursorState {
+  bool allocated : 1;
+  uint64_t timestamp: 63;
+};
+```
 
-- Cursor:
-  - 0: overflow
-  - 1-63: position
+We keep the state 64-bit in order to make it lock free using the `std::atomic` lib. The `allocated` field indicates if the cursor is allocated and the `timestamp` field contains the monotonic timestamp when the cursor was allocated. The `timestamp` field is used to detect for staleness. We compare the elapsed time since the cursor was allocated with a pre-configured threshold value. If the elapsed time is greater than the threshold then the cursor is considered stale.
 
-- CursorState
-  - 0: allocate
-  - 1-63: timestamp (monotonic)
+## Queue Recovery
 
-The approach is to check for the allocation timestamp of the cursor in the `IsAhead`, `IsBehind` and `Allocate` method of the `CursorPool`. If the differen between the current monotonic timestamp and the allocate timestamp is greater than some threshold then consider the cursor as stale.
+Presence of a stale cursor indicates an incomplete memory block has been written or read. In certain cases there might be no associated memory block. To better understand how a stale cursor effects the queue, we first revisit how a memory block is allocated on the queue for write/read.
 
-## ISSUE 2
+| #   | READ                                                                                                                                                                                                       | WRITE                                                                                                                                                                                                                                      |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1.  | Allocate a free cursor from read cursor pool                                                                                                                                                               | Allocate a free cursor from write cursor pool                                                                                                                                                                                              |
+| 2.  | Load the read and write head values                                                                                                                                                                        | Load the read and write head values                                                                                                                                                                                                        |
+| 3.  | The memory block header is read to obtain the block size                                                                                                                                                   | Use the requested size to get the ending location of the to be created memory block. Make sure that this location is behind all the read cursors and the read head. Also make sure the loaded read head is equal or behind the write head. |
+| 4.  | Use the block size to get the ending location of the block. Make sure that this location is behind all the write cursors and the write head. Also make sure the loaded read head is behind the write head. | Store the write head value into the allocated cursor.                                                                                                                                                                                      |
+| 5.  | Store the read head value into the allocated cursor                                                                                                                                                        | Update the write head value if not already updated by another writer                                                                                                                                                                       |
+| 6.  | Update the read head value if not already updated                                                                                                                                                          | Write the block header                                                                                                                                                                                                                     |
+| 7.  | Read the data in the memory block                                                                                                                                                                          | Write data to the memory block                                                                                                                                                                                                             |
+| 8.  | Release the allocated cursor                                                                                                                                                                               | Release the allocated cursor                                                                                                                                                                                                               |
 
-How to recover a stale cursor.
+A process abruptly terminating anywhere between step 1 and 8 will result in a stale cursor. Furthermore, it can be infered from step 3 for writers and step 4 for readers that a cursor becomes stale, it will eventually block all the consumers (readers) and producers (writers) respectvely. To prevent such a scenario from happening, we propose the following recovery strategy.
 
-### SOLUTION
+1. Along with the block size, we also store a magic mark and checksum value in the memory block header. The data structure of the memory block becomes:
+```cpp
+template <class T>
+struct __attribute__((packed)) MemoryBlock {
+  // Ensures at compile time that the parameter T has trivial memory layout.
+  static_assert(std::is_trivial<T>::value,
+                "The data type used does not have a trivial memory layout.");
 
-a. Release the stale cursor
-b. If the stale cursor is a write cursor, any block writen using the cursor should be skipped by the consumer. This can be achived by marking the block as corrupt.
-c. If the stale cursor is a read cursor, then it should be either passed to another consumer so that the message can be re-consumed, or it should just be released so that the message is skipped. The former results in ATLEAST_ONCE delivery semantic while the latter results in ATMOST_ONCE.
+  std::size_t size;
+  uint32_t magic;
+  uint32_t checksum;
+  T data[0];
+};
+```
+2. We perform recovery only when a producer or consumer hits a memory block associated with a stale cursor. We will refer to such a memory block as stale block. The check of hitting a stale block is done in step 3 of the table. The below table explains the approach taken for readers and writers.
 
-## ISSUE 3 
+| READER                                                                                                                                                                                                                                                                            | WRITER                                                                                                                                                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Check timestamp of each allocated cursor in the `CursorPool::IsBehind` method. If the elapsed time since the allocation is above threshold, and the cursor position is behind the given end position, we are hitting a stale block. Release the cursor and notify the `Allocator` | Check timestamp of each allocated cursor in the `CursorPool::IsAhead` method. If the elapsed time since the allocation is above threshold, and the cursor position is behind the given end position, we are hitting a stale block. Release the cursor and notify the `Allocator`. |
 
-The `Consume` method of the circular queue returns a read span which can be used by the user to write data onto the queue. Need a way to invalidate the use of the span.
+3. When a writer hits a stale block, no new operation is performed expecept for releasing the stale cursor in the above step. When a reader hits a stale block the following is performed (Note that this works only when the block size is written by a writter before writing the magic mark in the block header):
+   1. Check if magic mark is present in the header. 
+   2. If the magic mark is present, use the block size in the header to increase the read head and reserve the stale block. Then validate the checksum. If checksum is invalid then skip the block. Otherewise process the data in the block normally. 
+   3. If the magic mark is not present, recover the block size by traversing the buffer till a magic mark is observed or the write head is reached. If the write head is reached then skip any operation and return kBufferFull status. After succesful block size recovery, use it to increase the read head so that the stale block can be reserved. Then perform no-op to skip the block since the block is incomplete.
 
-### SOLUTION 
+## Long Running Process
 
-Change API for `Consume` and `Produce` where the method takes a `DynamicSpan` object which satisfies the following concepts. Furthermore, the methods should handle copying of data from/to the queue and buffer.
-
-| Expression   | Return | Description                             |
-| ------------ | ------ | --------------------------------------- |
-| S.Reserve(X) | void   | Reserve X bytes in the dynamic span S   |
-| S.Data()     | Byte*  | Get the starting location of the span S |
-| S.Size()     | size_t | Get the size in bytes of the span S     |
-
-## ISSUE 4
-
-How to detect if a memory block is writen by using a stale cursor ?
-
-### SOLUTION
-
-We use the following data block header
-
-    Header:
-      - [16-bit] magic mark
-      - [32-bit] block size
-      - [32-bit] CRC checksum
-
-and perform the following steps after detecting a stale cursor.
-
-List of failure cases of a process:
-a. Failed after reserving cursor but before reserving space on the buffer
-b. Failed after reserving space on the buffer but before writing header magic mark
-c. Failed after writing magic mark but before writing the block size
-d. Failed after writing block size but before writing the checksum. This includes failure while writing the actual message data.
-e. Failed after writing checksum but before releasing the cursor
-
-1. Read the header at the location contained on the cursor.
-2. Check if the magic mark is present
-  N: This will happen for failure cases a and b.
-    1. First step is to detect which one of the two cases happened. The following table lists the detection techinque
-      | Cases | Detection                                     |
-      | ----- | --------------------------------------------- |
-      | a     | write head value is same as the cursor value  |
-      | b     | write head value not same as the cursor value |
-    2. In case of a we just release the cursor. In case of b we recover the block size by transversing till we hit the next magic mark. If we hit the write head before observing the next magic mark then the recovery is stopped until the next message is completely written. Note that this is not a limitation since there is no consumable message present in the queue at this point.
-    3. Set the magic mark, computed block size, and a default checksum in the header. This allows the consumer to properly skip the block by checking for the default checksum.   
-  Y: This will happen for the cases a, c, d and e.
-    1. First step is to detect which one of the four cases happened. The following table lists the detection techinque
-      | Cases | Detection              |
-      | ----- | ---------------------- |
-      | a, e  | Valid checksum value   |
-      | c, d  | Invalid checksum value |
-      We can re-compute the checksum along with the block size by transversing to the next magic marker.  If we hit the write head before observing the next magic mark then the recovery is stopped until the next message is completely written. Note that this is not a limitation since there is no consumable message present in the queue at this point.
-    2. For the cases a and e we just release the cursor for reuse. If any of the other two cases happen then we compute and set the block size and the default checksum. 
-
-NOTE: Possible data race when checking for the next magic marker or write head. To reslove this always load the write head value first before starting the recovery algorithm.
-
-## ISSUE 5
-
-How to handle the case of a false release in which the process owning the pressumed stale cursor is still alive.
-
-### SOLUTION
-
-Just ignore the write since its suppose to be skipped by the consumers.
+One edge case that needs to be addressed in the above approach is release of a stale cursor allocated to a process which takes longer than the threshold to complete. In such a case the process is still alive and would result in data race. In fact, the above approach still works if a consumer always performs checksum validation before using the stored data. Once the alive process writes on the stale block, any consumer will ignore it as the checksum will become invalid.
