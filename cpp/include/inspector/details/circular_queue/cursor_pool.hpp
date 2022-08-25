@@ -19,7 +19,7 @@
 #include <chrono>
 
 #include <inspector/details/random.hpp>
-#include <inspector/details/circular_queue/cursor.hpp>
+#include <inspector/details/circular_queue/cursor_handle.hpp>
 
 namespace inspector {
 namespace details {
@@ -38,38 +38,13 @@ template <std::size_t POOL_SIZE>
 class CursorPool {
   friend class CursorHandle<CursorPool>;
 
-  /**
-   * @brief The data structure `CursorState` stores the state information of a
-   * cursor. This includes two values, a flag indicating if the cursor is free,
-   * and the timestamp when the cursor was last allocated.
-   *
-   * @note The structure is restricted to 64 bits in order to make the atomic
-   * type `AtomicCursorState` lock free.
-   */
-  struct CursorState {
-    bool allocated : 1;
-    uint64_t timestamp : 63;
-
-    CursorState() = default;
-    CursorState(const bool allocated_, const uint64_t timestamp_);
-  };
-  using AtomicCursorState = std::atomic<CursorState>;
-
  public:
-  /**
-   * @brief Get default cursor timeout in nano seconds.
-   *
-   */
-  static constexpr uint64_t DefaultTimeoutNs() {
-    return 2000000000UL;  // 2 seconds
-  }
-
   /**
    * @brief Construct a new CursorPool object.
    *
    * @param timeout_ns Cursor timeout in nano seconds.
    */
-  CursorPool(const uint64_t timeout_ns = DefaultTimeoutNs());
+  CursorPool(const uint64_t timeout_ns);
 
   /**
    * @brief Check if the given cursor is behind all the allocated cursors in
@@ -119,15 +94,6 @@ class CursorPool {
   AtomicCursor cursor_[POOL_SIZE];
   const uint64_t timeout_ns_;
 };
-
-// -----------------------------
-// CursorState Implementation
-// -----------------------------
-
-template <std::size_t POOL_SIZE>
-CursorPool<POOL_SIZE>::CursorState::CursorState(const bool allocated_,
-                                                const uint64_t timestamp_)
-    : allocated(allocated_), timestamp(timestamp_) {}
 
 // -----------------------------
 // CursorPool Implementation

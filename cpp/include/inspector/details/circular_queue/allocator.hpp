@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <inspector/details/circular_queue/block.hpp>
+#include <inspector/details/circular_queue/block_handle.hpp>
 #include <inspector/details/circular_queue/cursor_pool.hpp>
 
 namespace inspector {
@@ -39,8 +39,9 @@ class Allocator {
   /**
    * @brief Construct a new Allocator object.
    *
+   * @param timeout_ns Cursor timeout in nano seconds.
    */
-  Allocator();
+  Allocator(const uint64_t timeout_ns);
 
   /**
    * @brief Allocate memory in the circular queue for writing.
@@ -68,6 +69,25 @@ class Allocator {
   const unsigned char *Data() const;
 
  private:
+  /**
+   * @brief Get or recover the block size of the memory block located at the
+   * given cursor.
+   *
+   * The method checks for the presence of the magic mark in the memory block.
+   * If no such mark is present then the block size is recovered by computing
+   * the distance to the next magic mark on the buffer. In case no such mark is
+   * present then the method returns a size of 0.
+   *
+   * @param start Constant reference to the cursor pointing to the start of the
+   * memory block.
+   * @param end Constant reference to the cursor containing the max possible end
+   * location of the memory block.
+   * @returns Tuple containing the block size and a flag indicating if the size
+   * was recovered.
+   */
+  std::pair<std::size_t, bool> GetOrRecoverMemoryBlockSize(
+      const Cursor &start, const Cursor &end) const;
+
   unsigned char data_[BUFFER_SIZE];              // data buffer
   CursorPool<MAX_PRODUCERS> write_pool_;         // write cursor pool
   AtomicCursor write_head_;                      // write head cursor
@@ -75,13 +95,53 @@ class Allocator {
   mutable AtomicCursor read_head_;               // read head cursor
 };
 
-// -------------------------
+// ----------------------------
 // Allocator Implementation
-// -------------------------
+// ----------------------------
 
 template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
           std::size_t MAX_CONSUMERS>
-Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocator() {
+std::pair<std::size_t, bool>
+Allocator<T, BUFFER_SIZE, MAX_PRODUCERS,
+          MAX_CONSUMERS>::GetOrRecoverMemoryBlockSize(const Cursor &start,
+                                                      const Cursor &end) const {
+  uint64_t location = start.Location();
+  auto *block = reinterpret_cast<MemoryBlock<const T> *>(
+      const_cast<unsigned char *>(&data_[location % BUFFER_SIZE]));
+  // Check if the memeory block header contains a valid size
+  if (block->magic_mark != kMagicMark) {
+    // The header does not contain a valid size so attempt recovery
+    std::size_t delta = sizeof(MemoryBlock<T>);
+    location += delta;
+    while (location < end.Location()) {
+      location = start.Location() + delta;
+      auto *header = reinterpret_cast<MemoryBlock<const T> *>(
+          const_cast<unsigned char *>(&data_[location % BUFFER_SIZE]));
+      if (header->magic_mark == kMagicMark) {
+        // Found the header of the next block so return the computed block size
+        return {delta / sizeof(T), true};
+      }
+      ++delta;
+    }
+    // Failed to recover the block size so return 0
+    return {0, true};
+  }
+  // Magic mark present in the memory block header so return the valid size.
+  // @note We need to specifically create a pair and set the size since the
+  // block is a packed data structure.
+  std::pair<std::size_t, bool> size;
+  size.first = block->size;
+  size.second = false;
+  return size;
+}
+
+// --------- public ----------
+
+template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
+          std::size_t MAX_CONSUMERS>
+Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocator(
+    const uint64_t timeout_ns)
+    : write_pool_(timeout_ns), read_pool_(timeout_ns) {
   Cursor cursor(false, 0);
   write_head_.store(cursor, std::memory_order_seq_cst);
   read_head_.store(cursor, std::memory_order_seq_cst);
@@ -116,6 +176,7 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
         auto *block = reinterpret_cast<MemoryBlock<T> *>(
             &data_[write_head.Location() % BUFFER_SIZE]);
         block->size = size;
+        block->magic_mark = kMagicMark;
         return {*block, std::move(cursor_h)};
       }
       // Another writer allocated memory before us so try again until success
@@ -143,20 +204,26 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
   while (max_attempt) {
     auto read_head = read_head_.load(std::memory_order_seq_cst);
     auto write_head = write_head_.load(std::memory_order_seq_cst);
-    auto *block =
-        reinterpret_cast<MemoryBlock<const T> *>(const_cast<unsigned char *>(
-            &data_[read_head.Location() % BUFFER_SIZE]));
-    auto block_size = sizeof(MemoryBlock<T>) + block->size * sizeof(T);
+    // Check if the block has valid size information
+    auto size = GetOrRecoverMemoryBlockSize(read_head, write_head);
+    auto block_size = sizeof(MemoryBlock<T>) + size.first * sizeof(T);
     auto end = read_head + (block_size - 1);
     // Allocate block only if the end location is behind all of the allocated
-    // write cursors and the write head, and the read head is behind the write
-    // head.
+    // write cursors and the write head, the read head is behind the write head,
+    // and the block size is not 0.
     if (read_head < write_head && write_pool_.IsBehind(end) &&
-        end < write_head) {
+        end < write_head && size.first != 0) {
       cursor_h->store(read_head, std::memory_order_seq_cst);
       // Set read head to new value if its original value has not already been
       // changed by another reader.
       if (read_head_.compare_exchange_weak(read_head, end + 1)) {
+        auto *block = reinterpret_cast<MemoryBlock<const T> *>(
+            const_cast<unsigned char *>(
+                &data_[read_head.Location() % BUFFER_SIZE]));
+        if (size.second) {
+          block->size = size.first;
+          block->magic_mark = kMagicMark;
+        }
         return {*block, std::move(cursor_h)};
       }
       // Another reader allocated memory before us so try again until success

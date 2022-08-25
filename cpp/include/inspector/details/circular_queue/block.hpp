@@ -18,8 +18,6 @@
 
 #include <type_traits>
 
-#include <inspector/details/circular_queue/cursor.hpp>
-
 namespace inspector {
 namespace details {
 namespace circular_queue {
@@ -31,7 +29,7 @@ namespace circular_queue {
  * the block size.
  *
  */
-constexpr auto kMagicMark = 357243;
+constexpr auto kMagicMark = 924926508;
 
 /**
  * @brief Data structure representing a memory block in the circular queue.
@@ -46,104 +44,8 @@ struct __attribute__((packed)) MemoryBlock {
 
   std::size_t size;
   uint32_t magic_mark;
-  uint32_t checksum;
   T data[0];
 };
-
-// ============================================================================
-
-/**
- * @brief Handle to an allocated memory block in the circular queue. It exposes
- * the allocated memory for reading or writing.
- *
- * @note The class does not satisfy CopyConstructable and CopyAssignable
- * concepts. However, it does satisfy MoveConstructable and MoveAssignable
- * concepts.
- *
- * @tparam T Type of objects stored in the memory block.
- * @tparam CursorPool The type of cursor pool.
- */
-template <class T, class CursorPool>
-class MemoryBlockHandle {
- public:
-  /**
-   * @brief Construct a new Memory Block Handle object.
-   *
-   */
-  MemoryBlockHandle();
-
-  /**
-   * @brief Construct a new Memory Block Handle object.
-   *
-   * @param block Reference to the memory block.
-   * @param handle Rvalue reference to the cursor handle.
-   */
-  MemoryBlockHandle(MemoryBlock<T>& block, CursorHandle<CursorPool>&& handle);
-
-  /**
-   * @brief Get the number of objects of type T stored in the memory block.
-   *
-   */
-  std::size_t Size() const;
-
-  /**
-   * @brief Get the pointer to the first T type object in the memory block.
-   *
-   */
-  T* Data() const;
-
-  /**
-   * @brief Get object at the given index in the memory block.
-   *
-   * @param n Index value.
-   * @returns Reference to the object.
-   */
-  T& operator[](std::size_t n) const;
-
-  /**
-   * @brief Check if the handle is valid.
-   *
-   */
-  operator bool() const;
-
- private:
-  MemoryBlock<T>* block_;
-  CursorHandle<CursorPool> handle_;
-};
-
-// --------------------------------
-// MemoryBlockHandle Implementation
-// --------------------------------
-
-template <class T, class CursorPool>
-MemoryBlockHandle<T, CursorPool>::MemoryBlockHandle()
-    : block_(nullptr), handle_() {}
-
-template <class T, class CursorPool>
-MemoryBlockHandle<T, CursorPool>::MemoryBlockHandle(
-    MemoryBlock<T>& block, CursorHandle<CursorPool>&& handle)
-    : block_(std::addressof(block)), handle_(std::move(handle)) {}
-
-template <class T, class CursorPool>
-std::size_t MemoryBlockHandle<T, CursorPool>::Size() const {
-  return block_->size;
-}
-
-template <class T, class CursorPool>
-T* MemoryBlockHandle<T, CursorPool>::Data() const {
-  return block_->data;
-}
-
-template <class T, class CursorPool>
-T& MemoryBlockHandle<T, CursorPool>::operator[](std::size_t n) const {
-  assert(n < block_->size);
-  return block_->data[n];
-}
-
-template <class T, class CursorPool>
-MemoryBlockHandle<T, CursorPool>::operator bool() const {
-  return block_ != nullptr && bool(handle_);
-}
 
 // ============================================================================
 

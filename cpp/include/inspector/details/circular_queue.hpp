@@ -23,6 +23,7 @@
 // if we reprocess the message pointed by these cursors, we have the
 // AtleastOnce delivery. If we ignore these messages then we have the
 // AtmostOnce delivery.
+// TODO: Change the consumer API by introducing a DynamicSpan class.
 
 namespace inspector {
 namespace details {
@@ -126,14 +127,6 @@ class CircularQueue {
       const T, circular_queue::CursorPool<MAX_CONSUMERS>>;
 
   /**
-   * @brief Span encapsulating a memory block in the circular queue reserved for
-   * writing.
-   *
-   */
-  using WriteSpan = circular_queue::MemoryBlockHandle<
-      T, circular_queue::CursorPool<MAX_CONSUMERS>>;
-
-  /**
    * @brief Default maximum number of attempts made when publishing or consuming
    * data from the circular queue.
    *
@@ -141,18 +134,19 @@ class CircularQueue {
   constexpr static std::size_t defaultMaxAttempt() { return 32; }
 
   /**
-   * @brief Reserve memory span in the circular queue for writing.
+   * @brief Get default cursor timeout in nano seconds.
    *
-   * The method sets the passed span object so that it can be used to write
-   * data onto the circular queue.
-   *
-   * @param span Reference to the write span.
-   * @param size Number of objects to write.
-   * @param max_attempt Maximum number of attempts to perform.
-   * @returns Status of the queue.
    */
-  Status Reserve(WriteSpan &span, const std::size_t size,
-                 size_t max_attempt = defaultMaxAttempt());
+  static constexpr uint64_t DefaultTimeoutNs() {
+    return 2000000000UL;  // 2 seconds
+  }
+
+  /**
+   * @brief Construct a new CircularQueue object.
+   *
+   * @param timeout_ns Cursor timeout in nano seconds.
+   */
+  CircularQueue(const uint64_t timeout_ns = DefaultTimeoutNs());
 
   /**
    * @brief Publish data to circular queue.
@@ -197,33 +191,27 @@ class CircularQueue {
 
 template <class T, size_t BUFFER_SIZE, size_t MAX_PRODUCERS,
           size_t MAX_CONSUMERS>
-typename CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Status
-CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Reserve(
-    WriteSpan &span, const std::size_t size, size_t max_attempt) {
-  // Attempt writing of data
-  while (max_attempt) {
-    // Allocate a write block on the buffer
-    span = std::move(allocator_.Allocate(size, max_attempt));
-    if (span) {
-      return Status::OK;
-    }
-    // Could not allocate chunk so attempt again
-    --max_attempt;
-  }
-  return Status::FULL;
-}
+CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::CircularQueue(
+    const uint64_t timeout_ns)
+    : allocator_(timeout_ns) {}
 
 template <class T, size_t BUFFER_SIZE, size_t MAX_PRODUCERS,
           size_t MAX_CONSUMERS>
 typename CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Status
 CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Publish(
     const Span<T> &span, size_t max_attempt) {
-  WriteSpan span_;
-  auto status = Reserve(span_, span.Size(), max_attempt);
-  if (status == Status::OK) {
-    memcpy(span_.Data(), span.Data(), span.Size() * sizeof(T));
+  // Attempt writing of data
+  while (max_attempt) {
+    // Allocate a write block on the buffer
+    auto block_h = std::move(allocator_.Allocate(span.Size(), max_attempt));
+    if (block_h) {
+      memcpy(block_h.Data(), span.Data(), span.Size() * sizeof(T));
+      return Status::OK;
+    }
+    // Could not allocate chunk so attempt again
+    --max_attempt;
   }
-  return status;
+  return Status::FULL;
 }
 
 template <class T, size_t BUFFER_SIZE, size_t MAX_PRODUCERS,

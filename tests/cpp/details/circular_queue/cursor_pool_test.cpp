@@ -24,6 +24,8 @@
 
 #include <inspector/details/circular_queue/cursor_pool.hpp>
 
+// TODO: Add tests for stale cursor
+
 using namespace inspector::details;
 
 namespace {
@@ -32,6 +34,7 @@ constexpr auto kThreadCount = 10;
 constexpr auto kPoolSize = 10;
 constexpr auto kMaxAttempts = 32;
 constexpr auto kBufferSize = 124;
+constexpr auto kCursorTimeoutNs = 200000UL;  // 0.2 ms
 
 using Cursor = circular_queue::AtomicCursor;
 using CursorPool = circular_queue::CursorPool<kPoolSize>;
@@ -55,8 +58,8 @@ void Allocate(CursorPool& pool, CursorHandle& handle) {
 
 }  // namespace
 
-TEST(CircularQueueCursorPoolTestFixture, AllocateSingleThread) {
-  CursorPool pool;
+TEST(CircularQueueCursorPoolTestFixture, TestAllocateSingleThread) {
+  CursorPool pool(kCursorTimeoutNs);
 
   std::array<CursorHandle, kThreadCount> handles;
   auto null_count = 0;
@@ -72,8 +75,8 @@ TEST(CircularQueueCursorPoolTestFixture, AllocateSingleThread) {
   ASSERT_EQ(unique_cursors.size(), kThreadCount - null_count);
 }
 
-TEST(CircularQueueCursorPoolTestFixture, AllocateMultipleThread) {
-  CursorPool pool;
+TEST(CircularQueueCursorPoolTestFixture, TestAllocateMultipleThread) {
+  CursorPool pool(kCursorTimeoutNs);
 
   std::array<CursorHandle, kThreadCount> handles;
   utils::Threads threads(kThreadCount);
@@ -95,13 +98,13 @@ TEST(CircularQueueCursorPoolTestFixture, AllocateMultipleThread) {
   ASSERT_EQ(unique_cursors.size(), kThreadCount - null_count);
 }
 
-TEST(CircularQueueCursorPoolTestFixture, IsBehindOrEqualSingleThread) {
+TEST(CircularQueueCursorPoolTestFixture, TestIsBehind) {
   utils::RandomNumberGenerator<size_t> rand(kBufferSize / 2,
                                             kBufferSize + kBufferSize / 2);
   size_t min = std::numeric_limits<size_t>::max();
   size_t max = std::numeric_limits<size_t>::min();
   std::array<CursorHandle, kThreadCount> handles;
-  CursorPool pool;
+  CursorPool pool(kCursorTimeoutNs);
 
   for (size_t i = 0; i < kThreadCount; ++i) {
     handles[i] = pool.Allocate(kMaxAttempts);
@@ -121,13 +124,31 @@ TEST(CircularQueueCursorPoolTestFixture, IsBehindOrEqualSingleThread) {
   ASSERT_TRUE(pool.IsBehind({true, 2 * max}));
 }
 
-TEST(CircularQueueCursorPoolTestFixture, IsAheadOrEqualSingleThread) {
+TEST(CircularQueueCursorPoolTestFixture, TestIsBehindWithStaleCursor) {
+  std::array<CursorHandle, 2> handles;
+  CursorPool pool(kCursorTimeoutNs);
+
+  // Creating stale cursor
+  handles[0] = pool.Allocate(kMaxAttempts);
+  handles[0]->store({false, 5}, std::memory_order_seq_cst);
+  // Wait more than timeout to make the cursor stale
+  std::this_thread::sleep_for(
+      std::chrono::nanoseconds{kCursorTimeoutNs + 1000});
+
+  handles[1] = pool.Allocate(kMaxAttempts);
+  handles[1]->store({false, 10}, std::memory_order_seq_cst);
+
+  ASSERT_TRUE(pool.IsBehind({false, 6}));
+  ASSERT_FALSE(pool.IsBehind({false, 12}));
+}
+
+TEST(CircularQueueCursorPoolTestFixture, TestIsAhead) {
   utils::RandomNumberGenerator<size_t> rand(kBufferSize / 2,
                                             kBufferSize + kBufferSize / 2);
   size_t min = std::numeric_limits<size_t>::max();
   size_t max = std::numeric_limits<size_t>::min();
   std::array<CursorHandle, kThreadCount> handles;
-  CursorPool pool;
+  CursorPool pool(kCursorTimeoutNs);
 
   for (size_t i = 0; i < kThreadCount; ++i) {
     handles[i] = pool.Allocate(kMaxAttempts);
@@ -145,4 +166,22 @@ TEST(CircularQueueCursorPoolTestFixture, IsAheadOrEqualSingleThread) {
   ASSERT_TRUE(pool.IsAhead({false, 2 * max}));
   ASSERT_TRUE(pool.IsAhead({true, min / 2}));
   ASSERT_FALSE(pool.IsAhead({true, 2 * max}));
+}
+
+TEST(CircularQueueCursorPoolTestFixture, TestIsAheadWithStaleCursor) {
+  std::array<CursorHandle, 2> handles;
+  CursorPool pool(kCursorTimeoutNs);
+
+  // Creating stale cursor
+  handles[0] = pool.Allocate(kMaxAttempts);
+  handles[0]->store({false, 10}, std::memory_order_seq_cst);
+  // Wait more than timeout to make the cursor stale
+  std::this_thread::sleep_for(
+      std::chrono::nanoseconds{kCursorTimeoutNs + 1000});
+
+  handles[1] = pool.Allocate(kMaxAttempts);
+  handles[1]->store({false, 5}, std::memory_order_seq_cst);
+
+  ASSERT_TRUE(pool.IsAhead({false, 8}));
+  ASSERT_FALSE(pool.IsAhead({false, 4}));
 }

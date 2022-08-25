@@ -24,6 +24,17 @@ cc_test(
 )
 
 cc_test(
+    name = "cursor_handle_test",
+    srcs = [
+        "cursor_handle_test.cpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+        "@gtest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "cursor_pool_test",
     srcs = [
         "cursor_pool_test.cpp",

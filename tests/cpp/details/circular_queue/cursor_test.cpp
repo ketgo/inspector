@@ -27,7 +27,7 @@ using AtomicCursor = std::atomic<circular_queue::Cursor>;
 
 }  // namespace
 
-TEST(CircularQueueCursorTestFixture, AddOperation) {
+TEST(CursorTestFixture, TestAddOperation) {
   Cursor cursor(false, std::numeric_limits<std::size_t>::max());
 
   auto new_cursor = cursor + 5;
@@ -35,6 +35,6 @@ TEST(CircularQueueCursorTestFixture, AddOperation) {
   ASSERT_EQ(new_cursor.Location(), 4);
 }
 
-TEST(CircularQueueCursorTestFixture, AtomicCursorIsLockFree) {
+TEST(CursorTestFixture, TestAtomicCursorIsLockFree) {
   ASSERT_TRUE(AtomicCursor().is_lock_free());
 }
