@@ -29,7 +29,7 @@ namespace circular_queue {
  * the block size.
  *
  */
-constexpr auto kMagicMark = 924926508;
+constexpr auto kStartMarker = 924926508;
 
 /**
  * @brief Data structure representing a memory block in the circular queue.
@@ -42,8 +42,8 @@ struct __attribute__((packed)) MemoryBlock {
   static_assert(std::is_trivial<T>::value,
                 "The data type used does not have a trivial memory layout.");
 
+  uint32_t start_marker;
   std::size_t size;
-  uint32_t magic_mark;
   T data[0];
 };
 

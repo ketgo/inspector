@@ -73,6 +73,12 @@ struct __attribute__((packed)) MemoryBlock {
    2. If the magic mark is present, use the block size in the header to increase the read head and reserve the stale block. Then validate the checksum. If checksum is invalid then skip the block. Otherewise process the data in the block normally. Note that the process of validating the checksum can also be left to the user and we can remove it from the recovery process and thus from the block header.
    3. If the magic mark is not present, recover the block size by traversing the buffer till a magic mark is observed or the write head is reached. If the write head is reached then skip any operation and return kBufferFull status. After succesful block size recovery, use it to increase the read head so that the stale block can be reserved. Then perform no-op to skip the block since the block is incomplete.
 
-## Long Running Process
+## Limitations
 
-One edge case that needs to be addressed in the above approach is release of a stale cursor allocated to a process which takes longer than the threshold to complete. In such a case the process is still alive and would result in data race. In fact, the above approach still works if a consumer always performs checksum validation before using the stored data. Once the alive process writes on the stale block, any consumer will ignore it as the checksum will become invalid.
+a. One edge case that needs to be addressed in the above approach is release of a stale cursor allocated to a process which takes longer than the threshold to complete. In such a case the process is still alive and would result in data race. In fact, the above approach still works if a consumer always performs checksum validation before using the stored data. Once the alive process writes on the stale block, any consumer will ignore it as the checksum will become invalid.
+
+b. While recovering the block size, it is possible to reach a false margic mark if the message contains the same mark in its contents. 
+SOLUTIONS:
+- Keep the size information in a seprate queue?
+- Use user provided marker and warn the user to not use that marker in message content?
+- Update recovery algorithm to test the block size of the next found block?

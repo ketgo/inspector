@@ -73,10 +73,20 @@ class MemoryBlockHandle {
   T& operator[](std::size_t n) const;
 
   /**
-   * @brief Check if the handle is valid.
+   * @brief Check if the handle is null.
    *
    */
   operator bool() const;
+
+  /**
+   * @brief Check if the handle is valid.
+   *
+   * Along with the null check, this method also checks the validity of the
+   * underlying cursor state.
+   *
+   * @return `true` if handle is valid else `false`.
+   */
+  bool IsValid() const;
 
  private:
   MemoryBlock<T>* block_;
@@ -114,6 +124,14 @@ T& MemoryBlockHandle<T>::operator[](std::size_t n) const {
 template <class T>
 MemoryBlockHandle<T>::operator bool() const {
   return block_ != nullptr && bool(handle_);
+}
+
+template <class T>
+bool MemoryBlockHandle<T>::IsValid() const {
+  if (handle_.IsValid()) {
+    return block_ != nullptr;
+  }
+  return false;
 }
 
 // ============================================================================

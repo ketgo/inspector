@@ -35,6 +35,9 @@ namespace circular_queue {
 template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
           std::size_t MAX_CONSUMERS>
 class Allocator {
+  static_assert(BUFFER_SIZE > sizeof(MemoryBlock<T>),
+                "Invalid buffer size specified.");
+
  public:
   /**
    * @brief Construct a new Allocator object.
@@ -107,31 +110,43 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS,
   uint64_t location = start.Location();
   auto *block = reinterpret_cast<MemoryBlock<const T> *>(
       const_cast<unsigned char *>(&data_[location % BUFFER_SIZE]));
-  // Check if the memeory block header contains a valid size
-  if (block->magic_mark != kMagicMark) {
-    // The header does not contain a valid size so attempt recovery
-    std::size_t delta = sizeof(MemoryBlock<T>);
-    location += delta;
-    while (location < end.Location()) {
-      location = start.Location() + delta;
-      auto *header = reinterpret_cast<MemoryBlock<const T> *>(
-          const_cast<unsigned char *>(&data_[location % BUFFER_SIZE]));
-      if (header->magic_mark == kMagicMark) {
-        // Found the header of the next block so return the computed block size
+
+  // Check if the memeory block header contains a valid size by checking for the
+  // existance of the start marker
+  if (block->start_marker == kStartMarker) {
+    // Start marker present so return the memory block size.
+    // @note We need to implicitly create a pair and set the size since
+    // the memory block is a packed data structure.
+    std::pair<std::size_t, bool> size;
+    size.first = block->size;
+    size.second = false;
+    return size;
+  }
+
+  // Start marker not present in the header so attempt to recover the memory
+  // block size by searching for the next start marker
+  std::size_t delta = sizeof(MemoryBlock<T>);
+  while (location < end.Location()) {
+    location = start.Location() + delta;
+    block = reinterpret_cast<MemoryBlock<const T> *>(
+        const_cast<unsigned char *>(&data_[location % BUFFER_SIZE]));
+    if (block->start_marker == kStartMarker) {
+      // Found possible header of the next block so validate the header before
+      // returning the computed block size
+      auto next_location = location + sizeof(T) * block->size;
+      auto *next_block = reinterpret_cast<MemoryBlock<const T> *>(
+          const_cast<unsigned char *>(&data_[next_location % BUFFER_SIZE]));
+      if (next_location == end.Location() ||
+          next_block->start_marker == kStartMarker) {
         return {delta / sizeof(T), true};
       }
-      ++delta;
+      // Flase marker found so continue the search
     }
-    // Failed to recover the block size so return 0
-    return {0, true};
+    delta += sizeof(T);
   }
-  // Magic mark present in the memory block header so return the valid size.
-  // @note We need to specifically create a pair and set the size since the
-  // block is a packed data structure.
-  std::pair<std::size_t, bool> size;
-  size.first = block->size;
-  size.second = false;
-  return size;
+
+  // Failed to recover the block size so return 0
+  return {0, true};
 }
 
 // --------- public ----------
@@ -175,7 +190,7 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
         auto *block = reinterpret_cast<MemoryBlock<T> *>(
             &data_[write_head.Location() % BUFFER_SIZE]);
         block->size = size;
-        block->magic_mark = kMagicMark;
+        block->start_marker = kStartMarker;
         return {*block, std::move(cursor_h)};
       }
       // Another writer allocated memory before us so try again until success
@@ -221,7 +236,7 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
                 &data_[read_head.Location() % BUFFER_SIZE]));
         if (size.second) {
           block->size = size.first;
-          block->magic_mark = kMagicMark;
+          block->start_marker = kStartMarker;
         }
         return {*block, std::move(cursor_h)};
       }
