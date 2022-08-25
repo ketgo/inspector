@@ -24,8 +24,6 @@
 
 #include <inspector/details/circular_queue/cursor_pool.hpp>
 
-// TODO: Add tests for stale cursor
-
 using namespace inspector::details;
 
 namespace {
@@ -38,7 +36,7 @@ constexpr auto kCursorTimeoutNs = 200000UL;  // 0.2 ms
 
 using Cursor = circular_queue::AtomicCursor;
 using CursorPool = circular_queue::CursorPool<kPoolSize>;
-using CursorHandle = circular_queue::CursorHandle<CursorPool>;
+using CursorHandle = circular_queue::CursorHandle;
 
 // AtomicCursor hasher
 class AtomicCursorHash {
@@ -139,6 +137,7 @@ TEST(CircularQueueCursorPoolTestFixture, TestIsBehindWithStaleCursor) {
   handles[1]->store({false, 10}, std::memory_order_seq_cst);
 
   ASSERT_TRUE(pool.IsBehind({false, 6}));
+  ASSERT_FALSE(handles[0].IsValid());  // Stale cursor was released
   ASSERT_FALSE(pool.IsBehind({false, 12}));
 }
 
@@ -183,5 +182,6 @@ TEST(CircularQueueCursorPoolTestFixture, TestIsAheadWithStaleCursor) {
   handles[1]->store({false, 5}, std::memory_order_seq_cst);
 
   ASSERT_TRUE(pool.IsAhead({false, 8}));
+  ASSERT_FALSE(handles[0].IsValid());  // Stale cursor was released
   ASSERT_FALSE(pool.IsAhead({false, 4}));
 }

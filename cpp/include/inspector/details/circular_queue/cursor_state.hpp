@@ -36,8 +36,35 @@ struct CursorState {
   bool allocated : 1;
   uint64_t timestamp : 63;
 
+  /**
+   * @brief Construct a new Cursor State object.
+   *
+   */
   CursorState() = default;
+
+  /**
+   * @brief Construct a new Cursor State object.
+   *
+   * @param allocated_ Flag indicating if a cursor is allocated.
+   * @param timestamp_ Timestamp when the cursor is allocated.
+   */
   CursorState(const bool allocated_, const uint64_t timestamp_);
+
+  /**
+   * @brief Equality comparision operator.
+   *
+   * @param other Constant reference to another state.
+   * @return `true` if equal else `false`.
+   */
+  bool operator==(const CursorState& other) const;
+
+  /**
+   * @brief Inequality comparision operator.
+   *
+   * @param other Constant reference to another state.
+   * @return `true` if not equal else `false`.
+   */
+  bool operator!=(const CursorState& other) const;
 };
 
 // -----------------------------
@@ -47,6 +74,14 @@ struct CursorState {
 inline CursorState::CursorState(const bool allocated_,
                                 const uint64_t timestamp_)
     : allocated(allocated_), timestamp(timestamp_) {}
+
+inline bool CursorState::operator==(const CursorState& other) const {
+  return allocated == other.allocated && timestamp == other.timestamp;
+}
+
+inline bool CursorState::operator!=(const CursorState& other) const {
+  return !(*this == other);
+}
 
 // ============================================================================
 

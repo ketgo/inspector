@@ -34,9 +34,8 @@ namespace circular_queue {
  * concepts.
  *
  * @tparam T Type of objects stored in the memory block.
- * @tparam CursorPool The type of cursor pool.
  */
-template <class T, class CursorPool>
+template <class T>
 class MemoryBlockHandle {
  public:
   /**
@@ -51,7 +50,7 @@ class MemoryBlockHandle {
    * @param block Reference to the memory block.
    * @param handle Rvalue reference to the cursor handle.
    */
-  MemoryBlockHandle(MemoryBlock<T>& block, CursorHandle<CursorPool>&& handle);
+  MemoryBlockHandle(MemoryBlock<T>& block, CursorHandle&& handle);
 
   /**
    * @brief Get the number of objects of type T stored in the memory block.
@@ -81,40 +80,39 @@ class MemoryBlockHandle {
 
  private:
   MemoryBlock<T>* block_;
-  CursorHandle<CursorPool> handle_;
+  CursorHandle handle_;
 };
 
 // --------------------------------
 // MemoryBlockHandle Implementation
 // --------------------------------
 
-template <class T, class CursorPool>
-MemoryBlockHandle<T, CursorPool>::MemoryBlockHandle()
-    : block_(nullptr), handle_() {}
+template <class T>
+MemoryBlockHandle<T>::MemoryBlockHandle() : block_(nullptr), handle_() {}
 
-template <class T, class CursorPool>
-MemoryBlockHandle<T, CursorPool>::MemoryBlockHandle(
-    MemoryBlock<T>& block, CursorHandle<CursorPool>&& handle)
+template <class T>
+MemoryBlockHandle<T>::MemoryBlockHandle(MemoryBlock<T>& block,
+                                        CursorHandle&& handle)
     : block_(std::addressof(block)), handle_(std::move(handle)) {}
 
-template <class T, class CursorPool>
-std::size_t MemoryBlockHandle<T, CursorPool>::Size() const {
+template <class T>
+std::size_t MemoryBlockHandle<T>::Size() const {
   return block_->size;
 }
 
-template <class T, class CursorPool>
-T* MemoryBlockHandle<T, CursorPool>::Data() const {
+template <class T>
+T* MemoryBlockHandle<T>::Data() const {
   return block_->data;
 }
 
-template <class T, class CursorPool>
-T& MemoryBlockHandle<T, CursorPool>::operator[](std::size_t n) const {
+template <class T>
+T& MemoryBlockHandle<T>::operator[](std::size_t n) const {
   assert(n < block_->size);
   return block_->data[n];
 }
 
-template <class T, class CursorPool>
-MemoryBlockHandle<T, CursorPool>::operator bool() const {
+template <class T>
+MemoryBlockHandle<T>::operator bool() const {
   return block_ != nullptr && bool(handle_);
 }
 

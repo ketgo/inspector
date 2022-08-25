@@ -50,8 +50,8 @@ class Allocator {
    * @param max_attempt The maximum number of attempts.
    * @returns Pointer to the memory block.
    */
-  MemoryBlockHandle<T, CursorPool<MAX_PRODUCERS>> Allocate(
-      const std::size_t size, std::size_t max_attempt);
+  MemoryBlockHandle<T> Allocate(const std::size_t size,
+                                std::size_t max_attempt);
 
   /**
    * @brief Allocate memory in the circular queue for reading.
@@ -59,8 +59,7 @@ class Allocator {
    * @param max_attempt The maximum number of attempts.
    * @returns Pointer to the memory block.
    */
-  MemoryBlockHandle<const T, CursorPool<MAX_CONSUMERS>> Allocate(
-      std::size_t max_attempt) const;
+  MemoryBlockHandle<const T> Allocate(std::size_t max_attempt) const;
 
   /**
    * @brief Get the raw buffer data.
@@ -149,7 +148,7 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocator(
 
 template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
           std::size_t MAX_CONSUMERS>
-MemoryBlockHandle<T, CursorPool<MAX_PRODUCERS>>
+MemoryBlockHandle<T>
 Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
     const std::size_t size, std::size_t max_attempt) {
   // Get the size of memory block to allocate for writing
@@ -192,7 +191,7 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
 
 template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
           std::size_t MAX_CONSUMERS>
-MemoryBlockHandle<const T, CursorPool<MAX_CONSUMERS>>
+MemoryBlockHandle<const T>
 Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
     std::size_t max_attempt) const {
   // Attempt to get a read cursor from the cursor pool

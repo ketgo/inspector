@@ -33,9 +33,7 @@ namespace circular_queue {
  * concepts. However, it does satisfy MoveConstructable and MoveAssignable
  * concepts.
  *
- * @tparam CursorPool The type of cursor pool.
  */
-template <class CursorPool>
 class CursorHandle {
  public:
   CursorHandle(const CursorHandle &other) = delete;
@@ -51,9 +49,23 @@ class CursorHandle {
    * @brief Construct a new Cursor Handle object.
    *
    * @param cursor Reference to the cursor.
-   * @param pool Reference to the cursor pool.
+   * @param cursor_state Reference to the cursor state.
    */
-  CursorHandle(AtomicCursor &cursor, CursorPool &pool);
+  CursorHandle(AtomicCursor &cursor, AtomicCursorState &cursor_state);
+
+  /**
+   * @brief Construct a new Cursor Handle object.
+   *
+   * @param cursor Reference to the cursor.
+   * @param cursor_state Reference to the cursor state.
+   * @param reserved_state Constant reference to the state of the cursor when it
+   * was reserved.
+   *
+   * @note This CTOR avoids the need to perform an atomic load of the cursor
+   * state.
+   */
+  CursorHandle(AtomicCursor &cursor, AtomicCursorState &cursor_state,
+               const CursorState &reserved_state);
 
   /**
    * @brief Construct a new cursor handle object.
@@ -83,10 +95,21 @@ class CursorHandle {
   AtomicCursor *operator->() const;
 
   /**
-   * @brief Check if handle is valid.
+   * @brief Check if handle is not null.
    *
    */
   operator bool() const;
+
+  /**
+   * @brief Check if the handle is valid.
+   *
+   * Along with the null test, this method also checks for the validity of the
+   * cursor state. The method is primarly used for testing but can be used
+   * outside of testing as well.
+   *
+   * @returns `true` if valid else `false`.
+   */
+  bool IsValid() const;
 
   /**
    * @brief Destroy the Cursor Handle object.
@@ -96,74 +119,85 @@ class CursorHandle {
 
  private:
   /**
-   * @brief Release the allocated cursor back to the pool.
+   * @brief Release the cursor managed by the handle.
    *
    */
   void Release();
 
   AtomicCursor *cursor_;
-  CursorPool *pool_;
+  AtomicCursorState *cursor_state_;
+  CursorState reserved_state_;
 };
 
 // ------------------------------------
 // CursorHandle Implementation
 // ------------------------------------
 
-template <class CursorPool>
-void CursorHandle<CursorPool>::Release() {
-  if (pool_) {
-    pool_->Release(cursor_);
+inline void CursorHandle::Release() {
+  if (cursor_state_) {
+    // Set the cursor state to released only if its state has not changed. This
+    // prevents a re-release of the same cursor which might lead to a data race.
+    CursorState released_state(false, 0);
+    cursor_state_->compare_exchange_strong(reserved_state_, released_state,
+                                           std::memory_order_seq_cst);
   }
 }
 
 // ------------- public ---------------
 
-template <class CursorPool>
-CursorHandle<CursorPool>::CursorHandle() : cursor_(nullptr), pool_(nullptr) {}
+inline CursorHandle::CursorHandle()
+    : cursor_(nullptr), cursor_state_(nullptr), reserved_state_() {}
 
-template <class CursorPool>
-CursorHandle<CursorPool>::CursorHandle(AtomicCursor &cursor, CursorPool &pool)
-    : cursor_(std::addressof(cursor)), pool_(std::addressof(pool)) {}
+inline CursorHandle::CursorHandle(AtomicCursor &cursor,
+                                  AtomicCursorState &cursor_state)
+    : cursor_(std::addressof(cursor)),
+      cursor_state_(std::addressof(cursor_state)),
+      reserved_state_(cursor_state_->load(std::memory_order_seq_cst)) {}
 
-template <class CursorPool>
-CursorHandle<CursorPool>::CursorHandle(CursorHandle &&other)
-    : cursor_(other.cursor_), pool_(other.pool_) {
+inline CursorHandle::CursorHandle(AtomicCursor &cursor,
+                                  AtomicCursorState &cursor_state,
+                                  const CursorState &reserved_state)
+    : cursor_(std::addressof(cursor)),
+      cursor_state_(std::addressof(cursor_state)),
+      reserved_state_(reserved_state) {}
+
+inline CursorHandle::CursorHandle(CursorHandle &&other)
+    : cursor_(other.cursor_),
+      cursor_state_(other.cursor_state_),
+      reserved_state_(other.reserved_state_) {
   other.cursor_ = nullptr;
-  other.pool_ = nullptr;
+  other.cursor_state_ = nullptr;
 }
 
-template <class CursorPool>
-CursorHandle<CursorPool> &CursorHandle<CursorPool>::operator=(
-    CursorHandle &&other) {
+inline CursorHandle &CursorHandle::operator=(CursorHandle &&other) {
   if (this != &other) {
     Release();
     cursor_ = other.cursor_;
-    pool_ = other.pool_;
+    cursor_state_ = other.cursor_state_;
+    reserved_state_ = other.reserved_state_;
     other.cursor_ = nullptr;
-    other.pool_ = nullptr;
+    other.cursor_state_ = nullptr;
   }
   return *this;
 }
 
-template <class CursorPool>
-AtomicCursor &CursorHandle<CursorPool>::operator*() const {
-  return *cursor_;
+inline AtomicCursor &CursorHandle::operator*() const { return *cursor_; }
+
+inline AtomicCursor *CursorHandle::operator->() const { return cursor_; }
+
+inline CursorHandle::operator bool() const {
+  return cursor_ != nullptr && cursor_state_ != nullptr;
 }
 
-template <class CursorPool>
-AtomicCursor *CursorHandle<CursorPool>::operator->() const {
-  return cursor_;
+inline bool CursorHandle::IsValid() const {
+  if (*this) {
+    auto current_state = cursor_state_->load(std::memory_order_seq_cst);
+    return current_state == reserved_state_;
+  }
+  return false;
 }
 
-template <class CursorPool>
-CursorHandle<CursorPool>::operator bool() const {
-  return cursor_ != nullptr && pool_ != nullptr;
-}
-
-template <class CursorPool>
-CursorHandle<CursorPool>::~CursorHandle() {
-  Release();
-}
+inline CursorHandle::~CursorHandle() { Release(); }
 
 // ============================================================================
 

@@ -36,8 +36,6 @@ namespace circular_queue {
  */
 template <std::size_t POOL_SIZE>
 class CursorPool {
-  friend class CursorHandle<CursorPool>;
-
  public:
   /**
    * @brief Construct a new CursorPool object.
@@ -72,16 +70,9 @@ class CursorPool {
    * @param max_attempt Maximum number of attempts to perform.
    * @returns Pointer to the allocated cursor.
    */
-  CursorHandle<CursorPool> Allocate(std::size_t max_attempt);
+  CursorHandle Allocate(std::size_t max_attempt);
 
  private:
-  /**
-   * @brief Release an allocated cursor.
-   *
-   * @param cursor Pointer to the cursor.
-   */
-  void Release(const AtomicCursor *cursor);
-
   /**
    * @brief Check if the given state represents a stale cursor.
    *
@@ -98,14 +89,6 @@ class CursorPool {
 // -----------------------------
 // CursorPool Implementation
 // -----------------------------
-
-template <std::size_t POOL_SIZE>
-void CursorPool<POOL_SIZE>::Release(const AtomicCursor *cursor) {
-  assert(cursor != nullptr);
-  CursorState released_state(false, 0);
-  const std::size_t idx = cursor - cursor_;
-  cursor_state_[idx].store(released_state, std::memory_order_seq_cst);
-}
 
 template <std::size_t POOL_SIZE>
 bool CursorPool<POOL_SIZE>::IsStale(const CursorState &cursor_state) const {
@@ -172,15 +155,14 @@ bool CursorPool<POOL_SIZE>::IsAhead(const Cursor &cursor) const {
 }
 
 template <std::size_t POOL_SIZE>
-CursorHandle<CursorPool<POOL_SIZE>> CursorPool<POOL_SIZE>::Allocate(
-    std::size_t max_attempt) {
+CursorHandle CursorPool<POOL_SIZE>::Allocate(std::size_t max_attempt) {
   while (max_attempt) {
     const std::size_t idx = Random() % POOL_SIZE;
     CursorState expected(false, 0);
     CursorState desired(
         true, std::chrono::system_clock::now().time_since_epoch().count());
     if (cursor_state_[idx].compare_exchange_strong(expected, desired)) {
-      return {cursor_[idx], *this};
+      return {cursor_[idx], cursor_state_[idx], desired};
     }
     --max_attempt;
   }

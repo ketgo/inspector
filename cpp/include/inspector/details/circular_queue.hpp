@@ -123,8 +123,7 @@ class CircularQueue {
    * reading.
    *
    */
-  using ReadSpan = circular_queue::MemoryBlockHandle<
-      const T, circular_queue::CursorPool<MAX_CONSUMERS>>;
+  using ReadSpan = circular_queue::MemoryBlockHandle<const T>;
 
   /**
    * @brief Default maximum number of attempts made when publishing or consuming

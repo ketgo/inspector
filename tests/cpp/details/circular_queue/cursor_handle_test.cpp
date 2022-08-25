@@ -15,44 +15,63 @@
  */
 
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
 
 #include <inspector/details/circular_queue/cursor_handle.hpp>
 
 using namespace inspector::details;
 
-using ::testing::_;
-
 namespace {
 
-using AtomicCursor = std::atomic<circular_queue::Cursor>;
-
-class MockCursorPool {
- public:
-  MOCK_METHOD1(Release, void(AtomicCursor*));
-};
+using AtomicCursor = circular_queue::AtomicCursor;
+using CursorState = circular_queue::CursorState;
+using AtomicCursorState = circular_queue::AtomicCursorState;
+using CursorHandle = circular_queue::CursorHandle;
 
 }  // namespace
 
 TEST(CursorHandleTestFixture, TestRAIIRelease) {
   AtomicCursor cursor;
-  MockCursorPool pool;
+  AtomicCursorState state;
+  CursorState reserved_state(true, 2422542);
 
-  EXPECT_CALL(pool, Release(_)).Times(1);
-  { circular_queue::CursorHandle<MockCursorPool> handle(cursor, pool); }
+  state.store(reserved_state);
+  { CursorHandle handle(cursor, state, reserved_state); }
+  auto released_state = state.load();
+  ASSERT_EQ(released_state.allocated, false);
+  ASSERT_EQ(released_state.timestamp, 0);
+}
+
+TEST(CursorHandleTestFixture, TestRAIIReleaseWhenCursorStateChanged) {
+  AtomicCursor cursor;
+  AtomicCursorState state;
+  CursorState reserved_state(true, 2422542);
+
+  state.store(reserved_state);
+  {
+    CursorHandle handle(cursor, state, reserved_state);
+    state.store({true, 25820});
+  }
+  auto released_state = state.load();
+  // Test that the cursor was not released since its state changed
+  ASSERT_EQ(released_state.allocated, true);
+  ASSERT_EQ(released_state.timestamp, 25820);
 }
 
 TEST(CursorHandleTestFixture, TestMoveConstructorAndMoveAssignment) {
   AtomicCursor cursor;
-  MockCursorPool pool;
+  AtomicCursorState state;
+  CursorState reserved_state(true, 2422542);
 
-  EXPECT_CALL(pool, Release(_)).Times(1);
+  state.store(reserved_state);
   {
-    circular_queue::CursorHandle<MockCursorPool> handle_a(cursor, pool);
+    CursorHandle handle_a(cursor, state, reserved_state);
     // Move constructor
-    circular_queue::CursorHandle<MockCursorPool> handle_b(std::move(handle_a));
+    CursorHandle handle_b(std::move(handle_a));
     // Move assignment
-    circular_queue::CursorHandle<MockCursorPool> handle_c;
+    CursorHandle handle_c;
     handle_c = std::move(handle_b);
   }
+  auto released_state = state.load();
+  ASSERT_EQ(released_state.allocated, false);
+  ASSERT_EQ(released_state.timestamp, 0);
 }
