@@ -43,8 +43,12 @@ class Allocator {
    * @brief Construct a new Allocator object.
    *
    * @param timeout_ns Cursor timeout in nano seconds.
+   * @param start_marker Start marker used to split memory blocks. It is
+   * primarly used to recover memory block size for stale blocks written by
+   * abruptly terminated producers. Please use a value which is never going to
+   * be a part of the actual message content.
    */
-  Allocator(const uint64_t timeout_ns);
+  Allocator(const uint64_t timeout_ns, const uint32_t start_marker);
 
   /**
    * @brief Allocate memory in the circular queue for writing.
@@ -72,6 +76,24 @@ class Allocator {
 
  private:
   /**
+   * @brief Get read-write memory block at the given cursor location on the
+   * buffer.
+   *
+   * @param cursor Constant reference to the cursor.
+   * @returns Pointer to the memory block.
+   */
+  MemoryBlock<T> *GetMemoryBlock(const Cursor &cursor);
+
+  /**
+   * @brief Get read-only memory block at the given cursor location on the
+   * buffer.
+   *
+   * @param cursor Constant reference to the cursor.
+   * @returns Pointer to the memory block.
+   */
+  MemoryBlock<const T> *GetMemoryBlock(const Cursor &cursor) const;
+
+  /**
    * @brief Get or recover the block size of the memory block located at the
    * given cursor.
    *
@@ -95,6 +117,7 @@ class Allocator {
   AtomicCursor write_head_;                      // write head cursor
   mutable CursorPool<MAX_CONSUMERS> read_pool_;  // read cursor pool
   mutable AtomicCursor read_head_;               // read head cursor
+  const uint32_t start_marker_;                  // start marker
 };
 
 // ----------------------------
@@ -103,17 +126,31 @@ class Allocator {
 
 template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
           std::size_t MAX_CONSUMERS>
+MemoryBlock<T> *Allocator<T, BUFFER_SIZE, MAX_PRODUCERS,
+                          MAX_CONSUMERS>::GetMemoryBlock(const Cursor &cursor) {
+  return reinterpret_cast<MemoryBlock<T> *>(
+      &data_[cursor.Location() % BUFFER_SIZE]);
+}
+
+template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
+          std::size_t MAX_CONSUMERS>
+MemoryBlock<T const>
+    *Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::GetMemoryBlock(
+        const Cursor &cursor) const {
+  return reinterpret_cast<MemoryBlock<const T> *>(
+      const_cast<unsigned char *>(&data_[cursor.Location() % BUFFER_SIZE]));
+}
+
+template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
+          std::size_t MAX_CONSUMERS>
 std::pair<std::size_t, bool>
 Allocator<T, BUFFER_SIZE, MAX_PRODUCERS,
           MAX_CONSUMERS>::GetOrRecoverMemoryBlockSize(const Cursor &start,
                                                       const Cursor &end) const {
-  uint64_t location = start.Location();
-  auto *block = reinterpret_cast<MemoryBlock<const T> *>(
-      const_cast<unsigned char *>(&data_[location % BUFFER_SIZE]));
-
-  // Check if the memeory block header contains a valid size by checking for the
+  auto *block = GetMemoryBlock(start);
+  // Check if the memory block header contains a valid size by checking for the
   // existance of the start marker
-  if (block->start_marker == kStartMarker) {
+  if (block->start_marker == start_marker_) {
     // Start marker present so return the memory block size.
     // @note We need to implicitly create a pair and set the size since
     // the memory block is a packed data structure.
@@ -123,26 +160,30 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS,
     return size;
   }
 
-  // Start marker not present in the header so attempt to recover the memory
-  // block size by searching for the next start marker
-  std::size_t delta = sizeof(MemoryBlock<T>);
-  while (location < end.Location()) {
-    location = start.Location() + delta;
-    block = reinterpret_cast<MemoryBlock<const T> *>(
-        const_cast<unsigned char *>(&data_[location % BUFFER_SIZE]));
-    if (block->start_marker == kStartMarker) {
+  // Start marker not present in the header so attempt a recover by searching
+  // for the next start marker
+  std::size_t size = 0;
+  Cursor cursor = start + sizeof(MemoryBlock<T>);
+  while (cursor < end) {
+    block = GetMemoryBlock(cursor);
+    if (block->start_marker == start_marker_) {
       // Found possible header of the next block so validate the header before
       // returning the computed block size
-      auto next_location = location + sizeof(T) * block->size;
-      auto *next_block = reinterpret_cast<MemoryBlock<const T> *>(
-          const_cast<unsigned char *>(&data_[next_location % BUFFER_SIZE]));
-      if (next_location == end.Location() ||
-          next_block->start_marker == kStartMarker) {
-        return {delta / sizeof(T), true};
+      auto next = cursor + sizeof(T) * block->size;
+      if (next == end) {
+        return {size, true};
+      }
+      //@note We dont combine the two if statements into one since the cursor
+      //`next` might be pointing to the buffer end and thus would result in
+      // invalid memory access if cast to a memory block.
+      auto *next_block = GetMemoryBlock(next);
+      if (next_block->start_marker == start_marker_) {
+        return {size, true};
       }
       // Flase marker found so continue the search
     }
-    delta += sizeof(T);
+    cursor = cursor + sizeof(T);
+    ++size;
   }
 
   // Failed to recover the block size so return 0
@@ -154,8 +195,10 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS,
 template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
           std::size_t MAX_CONSUMERS>
 Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocator(
-    const uint64_t timeout_ns)
-    : write_pool_(timeout_ns), read_pool_(timeout_ns) {
+    const uint64_t timeout_ns, const uint32_t start_marker)
+    : write_pool_(timeout_ns),
+      read_pool_(timeout_ns),
+      start_marker_(start_marker) {
   Cursor cursor(false, 0);
   write_head_.store(cursor, std::memory_order_seq_cst);
   read_head_.store(cursor, std::memory_order_seq_cst);
@@ -187,10 +230,9 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
       // Set write head to new value if its original value has not already been
       // changed by another writer.
       if (write_head_.compare_exchange_weak(write_head, end + 1)) {
-        auto *block = reinterpret_cast<MemoryBlock<T> *>(
-            &data_[write_head.Location() % BUFFER_SIZE]);
+        auto *block = GetMemoryBlock(write_head);
         block->size = size;
-        block->start_marker = kStartMarker;
+        block->start_marker = start_marker_;
         return {*block, std::move(cursor_h)};
       }
       // Another writer allocated memory before us so try again until success
@@ -231,13 +273,11 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
       // Set read head to new value if its original value has not already been
       // changed by another reader.
       if (read_head_.compare_exchange_weak(read_head, end + 1)) {
-        auto *block = reinterpret_cast<MemoryBlock<const T> *>(
-            const_cast<unsigned char *>(
-                &data_[read_head.Location() % BUFFER_SIZE]));
+        // If the block size was recovered then move to the next block
         if (size.second) {
-          block->size = size.first;
-          block->start_marker = kStartMarker;
+          continue;
         }
+        auto *block = GetMemoryBlock(read_head);
         return {*block, std::move(cursor_h)};
       }
       // Another reader allocated memory before us so try again until success

@@ -141,11 +141,24 @@ class CircularQueue {
   }
 
   /**
+   * @brief Get default start marker value. A start marker is a unique marker
+   * used to indicate start of a memory block and is primarly used in stale
+   * block detection and recovery.
+   *
+   */
+  static constexpr uint32_t DefaultStartMarker() { return 924926508; }
+
+  /**
    * @brief Construct a new CircularQueue object.
    *
    * @param timeout_ns Cursor timeout in nano seconds.
+   * @param start_marker Start marker used to split memory blocks. It is
+   * primarly used to recover memory block size for stale blocks written by
+   * abruptly terminated producers. Please use a value which is never going to
+   * be a part of the actual message content.
    */
-  CircularQueue(const uint64_t timeout_ns = DefaultTimeoutNs());
+  CircularQueue(const uint64_t timeout_ns = DefaultTimeoutNs(),
+                const uint32_t start_marker = DefaultStartMarker());
 
   /**
    * @brief Publish data to circular queue.
@@ -191,8 +204,8 @@ class CircularQueue {
 template <class T, size_t BUFFER_SIZE, size_t MAX_PRODUCERS,
           size_t MAX_CONSUMERS>
 CircularQueue<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::CircularQueue(
-    const uint64_t timeout_ns)
-    : allocator_(timeout_ns) {}
+    const uint64_t timeout_ns, const uint32_t start_marker)
+    : allocator_(timeout_ns, start_marker) {}
 
 template <class T, size_t BUFFER_SIZE, size_t MAX_PRODUCERS,
           size_t MAX_CONSUMERS>

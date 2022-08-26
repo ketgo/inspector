@@ -87,6 +87,23 @@ class Cursor {
   bool operator<=(const Cursor &cursor) const;
 
   /**
+   * @brief Operator to check if the given cursor points to the same location.
+   *
+   * @param cursor Constant reference to the cursor.
+   * @returns `true` if same location else `false`.
+   */
+  bool operator==(const Cursor &cursor) const;
+
+  /**
+   * @brief Operator to check if the given cursor does not point to the same
+   * location.
+   *
+   * @param cursor Constant reference to the cursor.
+   * @returns `true` if not same location else `false`.
+   */
+  bool operator!=(const Cursor &cursor) const;
+
+  /**
    * @brief Add a value to the location stored in the cursor to get a new
    * cursor.
    *
@@ -136,6 +153,14 @@ inline bool Cursor::operator<(const Cursor &cursor) const {
 inline bool Cursor::operator<=(const Cursor &cursor) const {
   return overflow_ == cursor.overflow_ ? location_ <= cursor.location_
                                        : location_ > cursor.location_;
+}
+
+inline bool Cursor::operator==(const Cursor &cursor) const {
+  return overflow_ == cursor.overflow_ && location_ <= cursor.location_;
+}
+
+inline bool Cursor::operator!=(const Cursor &cursor) const {
+  return !(*this == cursor);
 }
 
 inline Cursor Cursor::operator+(const std::size_t value) const {
