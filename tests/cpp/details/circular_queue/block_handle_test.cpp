@@ -16,6 +16,8 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
+
 #include <inspector/details/circular_queue/block_handle.hpp>
 
 using namespace inspector::details;

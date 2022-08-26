@@ -53,7 +53,7 @@ TEST(AllocatorTestFixture, TestProcessingOfStaleMemoryBlock) {
       reinterpret_cast<MemoryBlock*>(stale_handle.Data() - sizeof(MemoryBlock));
   block->start_marker = 0;
   std::this_thread::sleep_for(
-      std::chrono::nanoseconds{kCursorTimeoutNs + 1000});
+      std::chrono::microseconds{kCursorTimeoutNs + 1000});
 
   ReadMemoryBlockHandle handle = allocator.Allocate(kMaxAttempts);
   ASSERT_TRUE(handle);
