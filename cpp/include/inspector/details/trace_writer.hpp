@@ -34,13 +34,6 @@ namespace details {
 class TraceWriter {
  public:
   /**
-   * @brief Span encapsulating memory block in the event queue to write an
-   * event.
-   *
-   */
-  using Span = details::EventQueue::WriteSpan;
-
-  /**
    * @brief Get instance of writer.
    *
    */
@@ -54,17 +47,6 @@ class TraceWriter {
    *
    */
   ~TraceWriter();
-
-  /**
-   * @brief Reserve space in the event queue to write an event of given size.
-   *
-   * The method sets the passed span object so that it can be used to write the
-   * event onto the queue.
-   *
-   * @param span Reference to the span.
-   * @param size Number of bytes to write.
-   */
-  void Reserve(Span& span, const std::size_t size);
 
   /**
    * @brief Write the given event to the shared event queue.
@@ -109,13 +91,6 @@ inline TraceWriter::~TraceWriter() {
   if (remove_) {
     LOG_INFO << "Marking the shared event queue for removal.";
     details::shared_object::Remove(queue_name_);
-  }
-}
-
-inline void TraceWriter::Reserve(Span& span, const std::size_t size) {
-  auto status = queue_->Reserve(span, size, max_attempt_);
-  if (status == details::EventQueue::Status::FULL) {
-    LOG_ERROR << "Unable to write event as the shared event queue is full.";
   }
 }
 

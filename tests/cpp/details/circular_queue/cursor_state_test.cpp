@@ -16,25 +16,17 @@
 
 #include <gtest/gtest.h>
 
-#include <inspector/details/circular_queue/cursor.hpp>
+#include <inspector/details/circular_queue/cursor_state.hpp>
 
 using namespace inspector::details;
 
 namespace {
-
-using Cursor = circular_queue::Cursor;
-using AtomicCursor = std::atomic<circular_queue::Cursor>;
-
-}  // namespace
-
-TEST(CursorTestFixture, TestAddOperation) {
-  Cursor cursor(false, std::numeric_limits<std::size_t>::max());
-
-  auto new_cursor = cursor + 5;
-  ASSERT_TRUE(new_cursor.Overflow());
-  ASSERT_EQ(new_cursor.Location(), 4);
+using CursorState = circular_queue::CursorState;
 }
 
-TEST(CursorTestFixture, TestAtomicCursorIsLockFree) {
-  ASSERT_TRUE(AtomicCursor().is_lock_free());
+TEST(CursorStateTestFixture, TestEqualityAndInequality) {
+  CursorState state_a(false, 4802), state_b(false, 4802), state_c(true, 5028);
+
+  ASSERT_EQ(state_a, state_b);
+  ASSERT_NE(state_a, state_c);
 }
