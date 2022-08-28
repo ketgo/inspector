@@ -130,8 +130,7 @@ TEST(CircularQueueCursorPoolTestFixture, TestIsBehindWithStaleCursor) {
   handles[0] = pool.Allocate(kMaxAttempts);
   handles[0]->store({false, 5}, std::memory_order_seq_cst);
   // Wait more than timeout to make the cursor stale
-  std::this_thread::sleep_for(
-      std::chrono::microseconds{kCursorTimeoutNs + 1000});
+  std::this_thread::sleep_for(std::chrono::microseconds{kCursorTimeoutNs});
 
   handles[1] = pool.Allocate(kMaxAttempts);
   handles[1]->store({false, 10}, std::memory_order_seq_cst);
@@ -175,8 +174,7 @@ TEST(CircularQueueCursorPoolTestFixture, TestIsAheadWithStaleCursor) {
   handles[0] = pool.Allocate(kMaxAttempts);
   handles[0]->store({false, 10}, std::memory_order_seq_cst);
   // Wait more than timeout to make the cursor stale
-  std::this_thread::sleep_for(
-      std::chrono::microseconds{kCursorTimeoutNs + 1000});
+  std::this_thread::sleep_for(std::chrono::microseconds{kCursorTimeoutNs});
 
   handles[1] = pool.Allocate(kMaxAttempts);
   handles[1]->store({false, 5}, std::memory_order_seq_cst);

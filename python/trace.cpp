@@ -61,5 +61,5 @@ void BindTrace(py::module& m) {
   m.def("async_end", &PythonTraceEvent<inspector::kAsyncEndTag>);
   m.def("flow_begin", &PythonTraceEvent<inspector::kFlowBeginTag>);
   m.def("flow_instance", &PythonTraceEvent<inspector::kFlowInstanceTag>);
-  m.def("flow_end", &PythonTraceEvent<inspector::kFLowEndTag>);
+  m.def("flow_end", &PythonTraceEvent<inspector::kFlowEndTag>);
 }

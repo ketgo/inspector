@@ -169,7 +169,7 @@ TEST_F(TracerTestFixture, TestFlowEnd) {
   ASSERT_NE(event.Timestamp(), 0);
   ASSERT_EQ(event.ProcessId(), details::GetProcessId());
   ASSERT_EQ(event.ThreadId(), details::GetThreadId());
-  ASSERT_EQ(event.Type(), kFLowEndTag);
+  ASSERT_EQ(event.Type(), kFlowEndTag);
   ASSERT_EQ(event.Name(), "TestFlow");
   ASSERT_EQ(event.Payload(), "testing|a|1|3.54|foo_a=45|foo_b=2");
 }

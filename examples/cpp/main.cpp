@@ -14,19 +14,30 @@
  * limitations under the License.
  */
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <glog/logging.h>
 
-#include "monitors/common/consumer.hpp"
+#include <iostream>
 
-namespace py = pybind11;
+#include "examples/cpp/init.hpp"
+#include "examples/cpp/task.hpp"
 
-PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
-  m.doc() = "Trace monitor consumer";
+void PrintPrimeNumber() {
+  inspector::SyncScope _prime("PrintPrimeNumber");
 
-  py::class_<inspector::Consumer>(m, "Consumer")
-      .def(py::init<bool>())
-      .def("consume", &inspector::Consumer::Consume,
-           "Consume and return a raw event from the queue. If no event is "
-           "found then an empty event is returned.");
+  std::cout << 0 << "\n";
+}
+
+int main(int argc, char* argv[]) {
+  // Initializing glog logger
+  FLAGS_logtostderr = 1;
+  google::InitGoogleLogging(argv[0]);
+
+  // Register glog with the inspector library for logging
+  inspector::examples::RegisterGlog();
+
+  LOG(INFO) << "Starting Trace Generator...";
+  inspector::examples::PeriodicTask task(1000000000UL, &PrintPrimeNumber);
+  task.Run();
+
+  return 0;
 }

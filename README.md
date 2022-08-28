@@ -1,3 +1,5 @@
 # Inspector
 
-Tool set to capture real time application traces for inspection. 
+__Supported OS__: MacOS, Linux
+
+Toolset to capture real time application traces for inspection. 

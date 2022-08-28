@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//third_party/python:defs.bzl", "pytest_test")
-load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+load("@rules_python//python:defs.bzl", "py_binary")
 
 py_binary(
     name = "run",
@@ -21,14 +21,14 @@ py_binary(
         "run.py",
     ],
     deps = [
-        "//monitors/common:consumer_py",
+        "//python:inspector",
     ],
 )
 
 pytest_test(
-    name = "sample_test",
+    name = "timmer_test",
     srcs = [
-        "sample_test.py",
+        "timmer_test.py",
     ],
     deps = [],
 )

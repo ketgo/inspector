@@ -13,8 +13,8 @@
 // limitations under the License.
 
 [ ] Rigorous unit testing of circular queue, e.g. test behavior during overflow condition. Furthmore there are some components which have missing tests. 
-[x] Desing and implement option to enable and disable publishing trace events. The design should support multiple languages, e.g. cpp, python, etc.
-[ ] Recover from stale cursors in the event queue.
+[X] Desing and implement option to enable and disable publishing trace events. The design should support multiple languages, e.g. cpp, python, etc.
+[X] Recover from stale cursors in the event queue.
 [ ] CLI monitor to view the published trace events on console in realtime or store them in a file.
 [ ] Web monitor to view the published trace events on browser in realtime.
 [ ] Traceview generator to convert the published trace events to the format accepted by Catapult Traceview.

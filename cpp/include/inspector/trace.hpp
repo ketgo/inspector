@@ -37,7 +37,7 @@ constexpr auto kAsyncInstanceTag = 'n';
 constexpr auto kAsyncEndTag = 'e';
 constexpr auto kFlowBeginTag = 's';
 constexpr auto kFlowInstanceTag = 't';
-constexpr auto kFLowEndTag = 'f';
+constexpr auto kFlowEndTag = 'f';
 
 /**
  * @brief The class `Kwarg` represents a keyword argument.
@@ -236,7 +236,7 @@ void FlowInstance(const std::string& name, const Args&... args) {
  */
 template <class... Args>
 void FlowEnd(const std::string& name, const Args&... args) {
-  details::WriteTraceEvent(kFLowEndTag, name, args...);
+  details::WriteTraceEvent(kFlowEndTag, name, args...);
 }
 
 // ------------------------------------

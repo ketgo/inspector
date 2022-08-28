@@ -12,17 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//third_party/pybind11:defs.bzl", "pybind_library")
-
-package(default_visibility = ["//monitors:__subpackages__"])
-
 cc_library(
-    name = "consumer_cc",
+    name = "init",
     srcs = [
-        "consumer.cpp",
+        "init.cpp",
     ],
     hdrs = [
-        "consumer.hpp",
+        "init.hpp",
     ],
     deps = [
         "//cpp:inspector",
@@ -30,24 +26,28 @@ cc_library(
     ],
 )
 
-cc_test(
-    name = "consumer_test",
+cc_library(
+    name = "task",
     srcs = [
-        "consumer_test.cpp",
+        "task.cpp",
+    ],
+    hdrs = [
+        "task.hpp",
     ],
     deps = [
-        ":consumer_cc",
-        "@gtest//:gtest_main",
+        "//cpp:inspector",
+        "@boost//:asio",
+        "@glog",
     ],
 )
 
-pybind_library(
-    name = "consumer_py",
+cc_binary(
+    name = "run",
     srcs = [
-        "consumer_py.cpp",
+        "main.cpp",
     ],
-    soname = "consumer",
     deps = [
-        ":consumer_cc",
+        ":init",
+        ":task",
     ],
 )

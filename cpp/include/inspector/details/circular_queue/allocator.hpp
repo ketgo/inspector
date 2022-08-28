@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <cassert>
+
 #include <inspector/details/circular_queue/block_handle.hpp>
 #include <inspector/details/circular_queue/cursor_pool.hpp>
 
