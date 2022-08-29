@@ -28,10 +28,11 @@ using namespace inspector::details;
 
 class CircularQueueTestFixture : public ::testing::Test {
  protected:
-  static constexpr auto kBufferSize = 521;
+  static constexpr auto kBufferSize = 512;
   static constexpr auto kMaxProducers = 100;
   static constexpr auto kMaxConsumers = 100;
 
+  using MemoryBlock = inspector::details::circular_queue::MemoryBlock<char>;
   using Queue = CircularQueue<char, kBufferSize, kMaxProducers, kMaxConsumers>;
   Queue queue_;
 
@@ -61,6 +62,13 @@ class CircularQueueTestFixture : public ::testing::Test {
       std::this_thread::yield();
     }
     data = std::string(span.Data(), span.Size());
+  }
+
+  void PrintQueue() const {
+    for (std::size_t i = 0; i < kBufferSize; ++i) {
+      std::cout << queue_.Data()[i] << ",";
+    }
+    std::cout << "\n";
   }
 };
 
@@ -143,4 +151,17 @@ TEST_F(CircularQueueTestFixture, TestPublishConsumeMultipleThreadsConcurrent) {
     ASSERT_TRUE(std::find(read_data.begin(), read_data.end(), data) !=
                 read_data.end());
   }
+}
+
+TEST_F(CircularQueueTestFixture, TestPublishToFullQueue) {
+  std::string data = "testing";
+  std::size_t count = kBufferSize / (sizeof(MemoryBlock) + data.size());
+  for (std::size_t i = 0; i < count; ++i) {
+    Publish(data);
+  }
+
+  PrintQueue();
+  auto status = queue_.Publish(data);
+  PrintQueue();
+  ASSERT_EQ(status, Queue::Status::OK);
 }

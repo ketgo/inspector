@@ -14,15 +14,57 @@
  * limitations under the License.
  */
 
-#include <glog/logging.h>
+#include "examples/cpp/task.hpp"
 
 #include <thread>
 #include <vector>
 
-#include "examples/cpp/task.hpp"
+#include <boost/bind/bind.hpp>
+#include <glog/logging.h>
+#include <inspector/trace.hpp>
 
 namespace inspector {
 namespace examples {
+namespace {
+
+/**
+ * @brief Wrapper to publish trace events for `boost::async_wait` method.
+ *
+ * @tparam AsyncWaitable Any type which implements the `async_wait` method.
+ * @tparam CompletionHandler Completion handler type.
+ * @param waitable Reference to the waitable object.
+ * @param handler Rvalue reference to the completion handler.
+ */
+template <class AsyncWaitable, class CompletionHandler>
+void AsyncWait(AsyncWaitable& waitable, CompletionHandler&& handler) {
+  AsyncBegin("boost::async_wait");
+  auto completion_handler =
+      [=](const boost::system::error_code& error_code) -> void {
+    handler();
+    AsyncEnd("boost::async_wait");
+  };
+  waitable.async_wait(completion_handler);
+}
+
+}  // namespace
+
+PeriodicTask::PeriodicTask(const uint64_t interval_ns, Task&& task)
+    : strand_(boost::asio::make_strand(io_)),
+      interval_ns_(interval_ns),
+      timer_(strand_, interval_ns_),
+      signals_(io_),
+      task_(std::forward<Task>(task)) {
+  // Registering signal handlers to gracefully terminate the periodic task
+  signals_.add(SIGINT);
+  signals_.add(SIGTERM);
+#if defined(SIGQUIT)
+  signals_.add(SIGQUIT);
+#endif  // defined(SIGQUIT)
+  signals_.async_wait(boost::bind(&PeriodicTask::Stop, this));
+
+  // Add task to work queue
+  AsyncWait(timer_, boost::bind(&PeriodicTask::Tick, this));
+}
 
 void PeriodicTask::Run(const size_t thread_pool_size) {
   LOG(INFO) << "Starting periodic task...";

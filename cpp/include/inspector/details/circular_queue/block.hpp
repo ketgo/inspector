@@ -25,13 +25,6 @@ namespace circular_queue {
 // ============================================================================
 
 /**
- * @brief Magic mark constant set in the memory block after sucessfully setting
- * the block size.
- *
- */
-constexpr auto kStartMarker = 924926508;
-
-/**
  * @brief Data structure representing a memory block in the circular queue.
  *
  * @tparam T Type of objects stored in the memory block.

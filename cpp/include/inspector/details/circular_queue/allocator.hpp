@@ -227,11 +227,16 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
     // Allocate block only if the end location is ahead of all the allocated
     // read cursors and the read head, and the read head is equal or behind the
     // write head.
+    // BUG: Need to fix cursor by setting a max location value == BUFFER_SIZE.
+    // Overflow will occur when we excced this value.
     if (read_head <= write_head && read_pool_.IsAhead(end) && read_head < end) {
       cursor_h->store(write_head, std::memory_order_seq_cst);
       // Set write head to new value if its original value has not already been
       // changed by another writer.
       if (write_head_.compare_exchange_weak(write_head, end + 1)) {
+        std::cout << " READ_HEAD: " << read_head.Location()
+                  << " WRITE_HEAD: " << write_head.Location()
+                  << " NEW_WRITE_HEAD: " << (end + 1).Location() << "\n";
         auto *block = GetMemoryBlock(write_head);
         block->size = size;
         block->start_marker = start_marker_;

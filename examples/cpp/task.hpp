@@ -17,24 +17,10 @@
 #pragma once
 
 #include <boost/asio.hpp>
-#include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
-
-#include <inspector/trace.hpp>
 
 namespace inspector {
 namespace examples {
-
-template <class AsyncWaitable, class Handler>
-void AsyncWait(AsyncWaitable& waitable, Handler&& handler) {
-  AsyncBegin("boost::async_wait");
-  auto completion_handler =
-      [=](const boost::system::error_code& error_code) -> void {
-    handler();
-    AsyncEnd("boost::async_wait");
-  };
-  waitable.async_wait(completion_handler);
-}
 
 /**
  * @brief The class `PeriodicTask` represents a task triggered periodically at a
@@ -44,16 +30,20 @@ void AsyncWait(AsyncWaitable& waitable, Handler&& handler) {
 class PeriodicTask {
  public:
   /**
+   * @brief Functor type to perfrom the task.
+   *
+   */
+  using Task = boost::function<void()>;
+
+  /**
    * @brief Construct a new Periodic Task object,
    *
    * @tparam Task Type of task called periodically.
    * @tparam Args Type of arguments passed to the periodic task.
    * @param interval_ns Interval in nano seconds between each call to the task.
    * @param func Rvalue reference to the task.
-   * @param args Rvalue reference to the task arguments.
    */
-  template <class Task, class... Args>
-  PeriodicTask(const uint64_t interval_ns, Task&& task, Args&&... args);
+  PeriodicTask(const uint64_t interval_ns, Task&& task);
 
   /**
    * @brief Run the periodic task. This method is a blocking call.
@@ -79,35 +69,9 @@ class PeriodicTask {
   boost::asio::strand<boost::asio::io_context::executor_type> strand_;
   boost::asio::chrono::nanoseconds interval_ns_;
   boost::asio::steady_timer timer_;
-  boost::function<void()> task_;
   boost::asio::signal_set signals_;
+  Task task_;
 };
-
-// -------------------------------------
-// PeriodicTask Implementation
-// -------------------------------------
-
-template <class Task, class... Args>
-PeriodicTask::PeriodicTask(const uint64_t interval_ns, Task&& task,
-                           Args&&... args)
-    : strand_(boost::asio::make_strand(io_)),
-      interval_ns_(interval_ns),
-      timer_(strand_, interval_ns_),
-      task_(boost::bind(std::forward<Task>(task), std::forward<Args>(args)...)),
-      signals_(io_) {
-  // Registering signal handlers to gracefully terminate the periodic task
-  signals_.add(SIGINT);
-  signals_.add(SIGTERM);
-#if defined(SIGQUIT)
-  signals_.add(SIGQUIT);
-#endif  // defined(SIGQUIT)
-  signals_.async_wait(boost::bind(&PeriodicTask::Stop, this));
-
-  // Add task to work queue
-  AsyncWait(timer_, boost::bind(&PeriodicTask::Tick, this));
-}
-
-// -------------------------------------
 
 }  // namespace examples
 }  // namespace inspector

@@ -15,17 +15,55 @@
  */
 
 #include <glog/logging.h>
-
-#include <iostream>
+#include <inspector/trace.hpp>
 
 #include "examples/cpp/init.hpp"
 #include "examples/cpp/task.hpp"
 
-void PrintPrimeNumber() {
-  inspector::SyncScope _prime("PrintPrimeNumber");
+/**
+ * @brief Generator for prime numbers.
+ *
+ */
+class PrimeNumberGenerator {
+ public:
+  /**
+   * @brief Construct a new Prime Number Generator object.
+   *
+   */
+  PrimeNumberGenerator() : last_prime_(1) {}
 
-  std::cout << 0 << "\n";
-}
+  /**
+   * @brief Generates next prime number
+   *
+   */
+  void operator()() {
+    inspector::SyncScope _prime("PrimeNumberGenerator");
+    while (!IsPrime(++last_prime_))
+      ;
+    LOG(INFO) << "Next Prime: " << last_prime_;
+  }
+
+ private:
+  /**
+   * @brief Check if a given number is prime.
+   *
+   */
+  static bool IsPrime(int num) {
+    if (num == 1) {
+      return false;
+    }
+    int i = 2;
+    while (i * i <= num) {
+      if (num % i == 0) {
+        return false;
+      }
+      ++i;
+    }
+    return true;
+  }
+
+  int last_prime_;
+};
 
 int main(int argc, char* argv[]) {
   // Initializing glog logger
@@ -36,7 +74,8 @@ int main(int argc, char* argv[]) {
   inspector::examples::RegisterGlog();
 
   LOG(INFO) << "Starting Trace Generator...";
-  inspector::examples::PeriodicTask task(1000000000UL, &PrintPrimeNumber);
+  PrimeNumberGenerator generator;
+  inspector::examples::PeriodicTask task(1000000000UL, generator);
   task.Run();
 
   return 0;
