@@ -20,10 +20,10 @@ namespace inspector {
 namespace examples {
 
 /**
- * @brief Register glog library with the inspector library to enable logging.
+ * @brief Initialize inspector library.
  *
  */
-void RegisterGlog();
+void InitInspector();
 
 }  // namespace examples
 }  // namespace inspector

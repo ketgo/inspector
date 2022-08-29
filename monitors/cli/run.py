@@ -17,25 +17,43 @@
 import argparse
 import logging
 
+from monitors.cli.periodic_task import PeriodicTask
+from python.inspector import Reader
+
 LOG = logging.getLogger(__name__)
+
+
+class TraceReader:
+    """
+    Trace event reader
+    """
+
+    def __init__(self) -> None:
+        self._reader = Reader()
+
+    def __call__(self) -> None:
+        LOG.debug("Consuming trace events...")
+        for trace in self._reader:
+            print(trace)
 
 
 def parse_args() -> argparse.Namespace:
     """
     Parse command line arguments
     """
-    parser = argparse.ArgumentParser(
-        prog="monitor", 
-        description="Trace monitor CLI."
+    parser = argparse.ArgumentParser(prog="monitor", description="Trace monitor CLI.")
+    parser.add_argument(
+        "--period", type=float, help="Period of monitoring.", default=0.1
     )
     return parser.parse_args()
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     args = parse_args()
-    
+
     LOG.info("Starting trace consumer...")
+    PeriodicTask(args.period).run(TraceReader())
 
 
 if __name__ == "__main__":

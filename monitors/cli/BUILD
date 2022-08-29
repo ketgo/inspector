@@ -12,8 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//third_party/python:defs.bzl", "pytest_test")
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
+
+py_library(
+    name = "periodic_task",
+    srcs = [
+        "periodic_task.py",
+    ],
+    deps = [],
+)
 
 py_binary(
     name = "run",
@@ -21,14 +28,7 @@ py_binary(
         "run.py",
     ],
     deps = [
+        ":periodic_task",
         "//python:inspector",
     ],
-)
-
-pytest_test(
-    name = "timmer_test",
-    srcs = [
-        "timmer_test.py",
-    ],
-    deps = [],
 )

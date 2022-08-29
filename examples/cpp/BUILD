@@ -27,12 +27,12 @@ cc_library(
 )
 
 cc_library(
-    name = "task",
+    name = "periodic_task",
     srcs = [
-        "task.cpp",
+        "periodic_task.cpp",
     ],
     hdrs = [
-        "task.hpp",
+        "periodic_task.hpp",
     ],
     deps = [
         "//cpp:inspector",
@@ -48,6 +48,6 @@ cc_binary(
     ],
     deps = [
         ":init",
-        ":task",
+        ":periodic_task",
     ],
 )

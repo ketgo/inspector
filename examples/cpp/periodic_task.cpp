@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "examples/cpp/task.hpp"
+#include "examples/cpp/periodic_task.hpp"
 
 #include <thread>
 #include <vector>

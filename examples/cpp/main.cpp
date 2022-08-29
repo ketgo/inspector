@@ -18,7 +18,7 @@
 #include <inspector/trace.hpp>
 
 #include "examples/cpp/init.hpp"
-#include "examples/cpp/task.hpp"
+#include "examples/cpp/periodic_task.hpp"
 
 /**
  * @brief Generator for prime numbers.
@@ -70,8 +70,8 @@ int main(int argc, char* argv[]) {
   FLAGS_logtostderr = 1;
   google::InitGoogleLogging(argv[0]);
 
-  // Register glog with the inspector library for logging
-  inspector::examples::RegisterGlog();
+  // Initialize inspector
+  inspector::examples::InitInspector();
 
   LOG(INFO) << "Starting Trace Generator...";
   PrimeNumberGenerator generator;

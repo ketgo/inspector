@@ -12,7 +12,29 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
+ ---
+
+ The module implements a periodic task decorator for async methods.
+
 """
 
-def test_sample():
-    assert True
+import time
+
+from typing import Callable
+
+
+class PeriodicTask:
+    """
+    Periodic task
+    """
+
+    def __init__(self, period: float) -> None:
+        self._period = period
+        
+    def run(self, func: Callable, *args, **kwargs) -> None:
+        """
+        Execute the periodic task.
+        """
+        while True:
+            func(*args, **kwargs)
+            time.sleep(self._period)

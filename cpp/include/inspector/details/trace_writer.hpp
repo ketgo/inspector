@@ -97,7 +97,7 @@ inline TraceWriter::~TraceWriter() {
 inline void TraceWriter::Write(const std::string& event) {
   auto status = queue_->Publish(event, max_attempt_);
   if (status == details::EventQueue::Status::FULL) {
-    LOG_ERROR << "Unable to write event as the shared event queue is full.";
+    LOG_ERROR << "Event Queue Full: Unable to write trace event.";
   }
 }
 

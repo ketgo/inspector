@@ -163,7 +163,7 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::
     return size;
   }
 
-  // Start marker not present in the header so attempt a recover by searching
+  // Start marker not present in the header so attempt a recovery by searching
   // for the next start marker
   std::size_t size = 0;
   Cursor<BUFFER_SIZE> cursor = start + sizeof(MemoryBlock<T>);

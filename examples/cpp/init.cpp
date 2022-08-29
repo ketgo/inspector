@@ -18,30 +18,32 @@
 
 #include <glog/logging.h>
 
+#include <inspector/config.hpp>
 #include <inspector/trace.hpp>
 #include <inspector/logging.hpp>
 
 namespace inspector {
 namespace examples {
+namespace {
 
 // -------------------------------------------------------------
 // Code section to add glog as the logger for inspector library.
 // -------------------------------------------------------------
 
-class InfoLogger : public inspector::Logger {
+class InfoLogger : public Logger {
   void operator<<(const std::string& message) { LOG(INFO) << message; }
 };
 
-class WarnLogger : public inspector::Logger {
+class WarnLogger : public Logger {
   void operator<<(const std::string& message) { LOG(WARNING) << message; }
 };
 
-class ErrorLogger : public inspector::Logger {
+class ErrorLogger : public Logger {
   void operator<<(const std::string& message) { LOG(ERROR) << message; }
 };
 
 /**
- * @brief Register glog library with the inspector library to enable logging.
+ * @brief Register Glog with inspector for logging.
  *
  */
 void RegisterGlog() {
@@ -51,6 +53,20 @@ void RegisterGlog() {
   RegisterLogger(LogLevel::INFO, info);
   RegisterLogger(LogLevel::WARN, warn);
   RegisterLogger(LogLevel::ERROR, error);
+}
+
+}  // namespace
+
+/**
+ * @brief Register glog library with the inspector library to enable logging.
+ *
+ */
+void InitInspector() {
+  // Remove event queue on exit
+  SetRemoveEventQueueOnExit(true);
+
+  // Register Glog
+  RegisterGlog();
 }
 
 // ----------------------------------------------------------------
