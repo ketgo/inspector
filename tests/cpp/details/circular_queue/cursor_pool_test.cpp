@@ -34,9 +34,10 @@ constexpr auto kMaxAttempts = 32;
 constexpr auto kBufferSize = 124;
 constexpr auto kCursorTimeoutNs = 200000UL;  // 0.2 ms
 
-using Cursor = circular_queue::AtomicCursor;
-using CursorPool = circular_queue::CursorPool<kPoolSize>;
-using CursorHandle = circular_queue::CursorHandle;
+using Cursor = circular_queue::Cursor<kBufferSize>;
+using AtomicCursor = circular_queue::AtomicCursor<kBufferSize>;
+using CursorPool = circular_queue::CursorPool<kPoolSize, kBufferSize>;
+using CursorHandle = circular_queue::CursorHandle<kBufferSize>;
 
 // AtomicCursor hasher
 class AtomicCursorHash {
@@ -46,7 +47,7 @@ class AtomicCursorHash {
   }
 
  private:
-  std::hash<Cursor*> hash_;
+  std::hash<AtomicCursor*> hash_;
 };
 
 // Allocate method run from different threads
@@ -61,7 +62,7 @@ TEST(CircularQueueCursorPoolTestFixture, TestAllocateSingleThread) {
 
   std::array<CursorHandle, kThreadCount> handles;
   auto null_count = 0;
-  std::unordered_set<Cursor*> unique_cursors;
+  std::unordered_set<AtomicCursor*> unique_cursors;
   for (size_t i = 0; i < kThreadCount; ++i) {
     handles[i] = pool.Allocate(kMaxAttempts);
     if (!handles[i]) {
@@ -85,7 +86,7 @@ TEST(CircularQueueCursorPoolTestFixture, TestAllocateMultipleThread) {
 
   // Tracking null handles
   auto null_count = 0;
-  std::unordered_set<Cursor*> unique_cursors;
+  std::unordered_set<AtomicCursor*> unique_cursors;
   for (auto& handle : handles) {
     if (!handle) {
       ++null_count;
@@ -97,8 +98,8 @@ TEST(CircularQueueCursorPoolTestFixture, TestAllocateMultipleThread) {
 }
 
 TEST(CircularQueueCursorPoolTestFixture, TestIsBehind) {
-  utils::RandomNumberGenerator<size_t> rand(kBufferSize / 2,
-                                            kBufferSize + kBufferSize / 2);
+  utils::RandomNumberGenerator<size_t> rand(kBufferSize - 10, kBufferSize + 10);
+  Cursor start(false, 0);
   size_t min = std::numeric_limits<size_t>::max();
   size_t max = std::numeric_limits<size_t>::min();
   std::array<CursorHandle, kThreadCount> handles;
@@ -107,19 +108,18 @@ TEST(CircularQueueCursorPoolTestFixture, TestIsBehind) {
   for (size_t i = 0; i < kThreadCount; ++i) {
     handles[i] = pool.Allocate(kMaxAttempts);
     if (handles[i]) {
-      auto cursor = handles[i]->load(std::memory_order_seq_cst);
-      cursor = {false, rand()};
-      min = min > cursor.Location() ? cursor.Location() : min;
-      max = max < cursor.Location() ? cursor.Location() : max;
-      handles[i]->store(cursor, std::memory_order_seq_cst);
+      auto location = rand();
+      handles[i]->store(start + location);
+      min = min > location ? location : min;
+      max = max < location ? location : max;
     }
   }
 
-  ASSERT_TRUE(pool.IsBehind({false, min / 2}));
-  ASSERT_FALSE(pool.IsBehind({false, (min + max) / 2}));
-  ASSERT_FALSE(pool.IsBehind({false, 2 * max}));
-  ASSERT_FALSE(pool.IsBehind({true, min / 2}));
-  ASSERT_TRUE(pool.IsBehind({true, 2 * max}));
+  ASSERT_TRUE(pool.IsBehind(start + (min - 5)));
+  ASSERT_FALSE(pool.IsBehind(start + min));
+  ASSERT_FALSE(pool.IsBehind(start + (min + max) / 2));
+  ASSERT_FALSE(pool.IsBehind(start + max));
+  ASSERT_FALSE(pool.IsBehind(start + (max + 5)));
 }
 
 TEST(CircularQueueCursorPoolTestFixture, TestIsBehindWithStaleCursor) {
@@ -141,8 +141,8 @@ TEST(CircularQueueCursorPoolTestFixture, TestIsBehindWithStaleCursor) {
 }
 
 TEST(CircularQueueCursorPoolTestFixture, TestIsAhead) {
-  utils::RandomNumberGenerator<size_t> rand(kBufferSize / 2,
-                                            kBufferSize + kBufferSize / 2);
+  Cursor start(false, 0);
+  utils::RandomNumberGenerator<size_t> rand(kBufferSize - 10, kBufferSize + 10);
   size_t min = std::numeric_limits<size_t>::max();
   size_t max = std::numeric_limits<size_t>::min();
   std::array<CursorHandle, kThreadCount> handles;
@@ -151,19 +151,18 @@ TEST(CircularQueueCursorPoolTestFixture, TestIsAhead) {
   for (size_t i = 0; i < kThreadCount; ++i) {
     handles[i] = pool.Allocate(kMaxAttempts);
     if (handles[i]) {
-      auto cursor = handles[i]->load(std::memory_order_seq_cst);
-      cursor = {false, rand()};
-      min = min > cursor.Location() ? cursor.Location() : min;
-      max = max < cursor.Location() ? cursor.Location() : max;
-      handles[i]->store(cursor, std::memory_order_seq_cst);
+      auto location = rand();
+      handles[i]->store(start + location);
+      min = min > location ? location : min;
+      max = max < location ? location : max;
     }
   }
 
-  ASSERT_FALSE(pool.IsAhead({false, min / 2}));
-  ASSERT_FALSE(pool.IsAhead({false, (min + max) / 2}));
-  ASSERT_TRUE(pool.IsAhead({false, 2 * max}));
-  ASSERT_TRUE(pool.IsAhead({true, min / 2}));
-  ASSERT_FALSE(pool.IsAhead({true, 2 * max}));
+  ASSERT_FALSE(pool.IsAhead(start + (min - 5)));
+  ASSERT_FALSE(pool.IsAhead(start + min));
+  ASSERT_FALSE(pool.IsAhead(start + (min + max) / 2));
+  ASSERT_FALSE(pool.IsAhead(start + max));
+  ASSERT_TRUE(pool.IsAhead(start + (max + 5)));
 }
 
 TEST(CircularQueueCursorPoolTestFixture, TestIsAheadWithStaleCursor) {

@@ -26,14 +26,16 @@ namespace circular_queue {
 // ============================================================================
 
 /**
- * @brief The class `CursorHandle` exposes an atomic cursor and provides a
- * convenient RAII way for managing its state.
+ * @brief The class `CursorHandle` exposes an atomic circular queue cursor and
+ * provides a convenient RAII way for managing its state.
  *
  * @note The class does not satisfy CopyConstructable and CopyAssignable
  * concepts. However, it does satisfy MoveConstructable and MoveAssignable
  * concepts.
  *
+ * @tparam BUFFER_SIZE Size of the circular queue buffer.
  */
+template <std::size_t BUFFER_SIZE>
 class CursorHandle {
  public:
   CursorHandle(const CursorHandle &other) = delete;
@@ -51,7 +53,8 @@ class CursorHandle {
    * @param cursor Reference to the cursor.
    * @param cursor_state Reference to the cursor state.
    */
-  CursorHandle(AtomicCursor &cursor, AtomicCursorState &cursor_state);
+  CursorHandle(AtomicCursor<BUFFER_SIZE> &cursor,
+               AtomicCursorState &cursor_state);
 
   /**
    * @brief Construct a new Cursor Handle object.
@@ -64,7 +67,8 @@ class CursorHandle {
    * @note This CTOR avoids the need to perform an atomic load of the cursor
    * state.
    */
-  CursorHandle(AtomicCursor &cursor, AtomicCursorState &cursor_state,
+  CursorHandle(AtomicCursor<BUFFER_SIZE> &cursor,
+               AtomicCursorState &cursor_state,
                const CursorState &reserved_state);
 
   /**
@@ -86,13 +90,13 @@ class CursorHandle {
    * @brief Dereference operators
    *
    */
-  AtomicCursor &operator*() const;
+  AtomicCursor<BUFFER_SIZE> &operator*() const;
 
   /**
    * @brief Reference operator
    *
    */
-  AtomicCursor *operator->() const;
+  AtomicCursor<BUFFER_SIZE> *operator->() const;
 
   /**
    * @brief Check if handle is not null.
@@ -124,7 +128,7 @@ class CursorHandle {
    */
   void Release();
 
-  AtomicCursor *cursor_;
+  AtomicCursor<BUFFER_SIZE> *cursor_;
   AtomicCursorState *cursor_state_;
   CursorState reserved_state_;
 };
@@ -133,7 +137,8 @@ class CursorHandle {
 // CursorHandle Implementation
 // ------------------------------------
 
-inline void CursorHandle::Release() {
+template <std::size_t BUFFER_SIZE>
+void CursorHandle<BUFFER_SIZE>::Release() {
   if (cursor_state_) {
     // Set the cursor state to released only if its state has not changed. This
     // prevents a re-release of the same cursor which might lead to a data race.
@@ -145,23 +150,27 @@ inline void CursorHandle::Release() {
 
 // ------------- public ---------------
 
-inline CursorHandle::CursorHandle()
+template <std::size_t BUFFER_SIZE>
+CursorHandle<BUFFER_SIZE>::CursorHandle()
     : cursor_(nullptr), cursor_state_(nullptr), reserved_state_() {}
 
-inline CursorHandle::CursorHandle(AtomicCursor &cursor,
-                                  AtomicCursorState &cursor_state)
+template <std::size_t BUFFER_SIZE>
+CursorHandle<BUFFER_SIZE>::CursorHandle(AtomicCursor<BUFFER_SIZE> &cursor,
+                                        AtomicCursorState &cursor_state)
     : cursor_(std::addressof(cursor)),
       cursor_state_(std::addressof(cursor_state)),
       reserved_state_(cursor_state_->load(std::memory_order_seq_cst)) {}
 
-inline CursorHandle::CursorHandle(AtomicCursor &cursor,
-                                  AtomicCursorState &cursor_state,
-                                  const CursorState &reserved_state)
+template <std::size_t BUFFER_SIZE>
+CursorHandle<BUFFER_SIZE>::CursorHandle(AtomicCursor<BUFFER_SIZE> &cursor,
+                                        AtomicCursorState &cursor_state,
+                                        const CursorState &reserved_state)
     : cursor_(std::addressof(cursor)),
       cursor_state_(std::addressof(cursor_state)),
       reserved_state_(reserved_state) {}
 
-inline CursorHandle::CursorHandle(CursorHandle &&other)
+template <std::size_t BUFFER_SIZE>
+CursorHandle<BUFFER_SIZE>::CursorHandle(CursorHandle &&other)
     : cursor_(other.cursor_),
       cursor_state_(other.cursor_state_),
       reserved_state_(other.reserved_state_) {
@@ -169,7 +178,9 @@ inline CursorHandle::CursorHandle(CursorHandle &&other)
   other.cursor_state_ = nullptr;
 }
 
-inline CursorHandle &CursorHandle::operator=(CursorHandle &&other) {
+template <std::size_t BUFFER_SIZE>
+CursorHandle<BUFFER_SIZE> &CursorHandle<BUFFER_SIZE>::operator=(
+    CursorHandle &&other) {
   if (this != &other) {
     Release();
     cursor_ = other.cursor_;
@@ -181,15 +192,23 @@ inline CursorHandle &CursorHandle::operator=(CursorHandle &&other) {
   return *this;
 }
 
-inline AtomicCursor &CursorHandle::operator*() const { return *cursor_; }
+template <std::size_t BUFFER_SIZE>
+AtomicCursor<BUFFER_SIZE> &CursorHandle<BUFFER_SIZE>::operator*() const {
+  return *cursor_;
+}
 
-inline AtomicCursor *CursorHandle::operator->() const { return cursor_; }
+template <std::size_t BUFFER_SIZE>
+AtomicCursor<BUFFER_SIZE> *CursorHandle<BUFFER_SIZE>::operator->() const {
+  return cursor_;
+}
 
-inline CursorHandle::operator bool() const {
+template <std::size_t BUFFER_SIZE>
+CursorHandle<BUFFER_SIZE>::operator bool() const {
   return cursor_ != nullptr && cursor_state_ != nullptr;
 }
 
-inline bool CursorHandle::IsValid() const {
+template <std::size_t BUFFER_SIZE>
+bool CursorHandle<BUFFER_SIZE>::IsValid() const {
   if (*this) {
     auto current_state = cursor_state_->load(std::memory_order_seq_cst);
     return current_state == reserved_state_;
@@ -197,7 +216,10 @@ inline bool CursorHandle::IsValid() const {
   return false;
 }
 
-inline CursorHandle::~CursorHandle() { Release(); }
+template <std::size_t BUFFER_SIZE>
+CursorHandle<BUFFER_SIZE>::~CursorHandle() {
+  Release();
+}
 
 // ============================================================================
 

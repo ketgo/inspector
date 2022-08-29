@@ -24,14 +24,15 @@ using namespace inspector::details;
 
 namespace {
 
-using AtomicCursor = circular_queue::AtomicCursor;
+constexpr auto kBufferSize = 124;
+constexpr auto kStartMarker = 249214;
+
+using AtomicCursor = circular_queue::AtomicCursor<kBufferSize>;
 using CursorState = circular_queue::CursorState;
 using AtomicCursorState = circular_queue::AtomicCursorState;
-using CursorHandle = circular_queue::CursorHandle;
+using CursorHandle = circular_queue::CursorHandle<kBufferSize>;
 using MemoryBlock = circular_queue::MemoryBlock<char>;
-using MemoryBlockHandle = circular_queue::MemoryBlockHandle<char>;
-
-constexpr auto kBufferSize = sizeof(MemoryBlock) + 10;
+using MemoryBlockHandle = circular_queue::MemoryBlockHandle<char, kBufferSize>;
 
 }  // namespace
 
@@ -43,7 +44,7 @@ TEST(MemoryBlockHandleTestFixture, TestConstructor) {
   CursorHandle cursor_handle(cursor, cursor_state);
   std::array<char, kBufferSize> buffer;
   auto *block = reinterpret_cast<MemoryBlock *>(buffer.data());
-  block->start_marker = circular_queue::kStartMarker;
+  block->start_marker = kStartMarker;
   block->size = 10;
 
   {

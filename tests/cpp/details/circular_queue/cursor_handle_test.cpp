@@ -22,10 +22,12 @@ using namespace inspector::details;
 
 namespace {
 
-using AtomicCursor = circular_queue::AtomicCursor;
+constexpr auto kBufferSize = 10;
+
+using AtomicCursor = circular_queue::AtomicCursor<kBufferSize>;
 using CursorState = circular_queue::CursorState;
 using AtomicCursorState = circular_queue::AtomicCursorState;
-using CursorHandle = circular_queue::CursorHandle;
+using CursorHandle = circular_queue::CursorHandle<kBufferSize>;
 
 }  // namespace
 

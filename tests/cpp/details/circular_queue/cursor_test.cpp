@@ -22,13 +22,15 @@ using namespace inspector::details;
 
 namespace {
 
-using Cursor = circular_queue::Cursor;
-using AtomicCursor = std::atomic<circular_queue::Cursor>;
+constexpr auto kBufferSize = 10;
+
+using Cursor = circular_queue::Cursor<kBufferSize>;
+using AtomicCursor = circular_queue::AtomicCursor<kBufferSize>;
 
 }  // namespace
 
 TEST(CursorTestFixture, TestAddOperation) {
-  Cursor cursor(false, std::numeric_limits<std::size_t>::max());
+  Cursor cursor(false, kBufferSize - 1);
 
   auto new_cursor = cursor + 5;
   ASSERT_TRUE(new_cursor.Overflow());
@@ -37,4 +39,11 @@ TEST(CursorTestFixture, TestAddOperation) {
 
 TEST(CursorTestFixture, TestAtomicCursorIsLockFree) {
   ASSERT_TRUE(AtomicCursor().is_lock_free());
+}
+
+TEST(CursorTestFixture, TestIsBehind) {
+  Cursor cursor(false, 2);
+  ASSERT_TRUE(cursor < cursor + (kBufferSize - 1));
+  ASSERT_FALSE(cursor < cursor + kBufferSize);
+  ASSERT_FALSE(cursor < cursor + (kBufferSize + 1));
 }

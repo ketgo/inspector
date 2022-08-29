@@ -63,13 +63,6 @@ class CircularQueueTestFixture : public ::testing::Test {
     }
     data = std::string(span.Data(), span.Size());
   }
-
-  void PrintQueue() const {
-    for (std::size_t i = 0; i < kBufferSize; ++i) {
-      std::cout << queue_.Data()[i] << ",";
-    }
-    std::cout << "\n";
-  }
 };
 
 TEST_F(CircularQueueTestFixture, TestPublishConsumeSingleThread) {
@@ -159,9 +152,10 @@ TEST_F(CircularQueueTestFixture, TestPublishToFullQueue) {
   for (std::size_t i = 0; i < count; ++i) {
     Publish(data);
   }
+  ASSERT_EQ(queue_.Publish(data), Queue::Status::FULL);
+}
 
-  PrintQueue();
-  auto status = queue_.Publish(data);
-  PrintQueue();
-  ASSERT_EQ(status, Queue::Status::OK);
+TEST_F(CircularQueueTestFixture, TestConsumeFromEmptyQueue) {
+  Queue::ReadSpan span;
+  ASSERT_EQ(queue_.Consume(span), Queue::Status::EMPTY);
 }

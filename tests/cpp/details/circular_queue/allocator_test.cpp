@@ -33,8 +33,10 @@ constexpr auto kStartMark = 924926508;
 using Allocator =
     circular_queue::Allocator<char, kBufferSize, kMaxProducers, kMaxConsumers>;
 using MemoryBlock = circular_queue::MemoryBlock<char>;
-using WriteMemoryBlockHandle = circular_queue::MemoryBlockHandle<char>;
-using ReadMemoryBlockHandle = circular_queue::MemoryBlockHandle<const char>;
+using WriteMemoryBlockHandle =
+    circular_queue::MemoryBlockHandle<char, kBufferSize>;
+using ReadMemoryBlockHandle =
+    circular_queue::MemoryBlockHandle<const char, kBufferSize>;
 
 }  // namespace
 

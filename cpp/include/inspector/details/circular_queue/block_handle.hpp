@@ -34,8 +34,9 @@ namespace circular_queue {
  * concepts.
  *
  * @tparam T Type of objects stored in the memory block.
+ * @tparam BUFFER_SIZE Size of the circular queue buffer.
  */
-template <class T>
+template <class T, std::size_t BUFFER_SIZE>
 class MemoryBlockHandle {
  public:
   /**
@@ -50,7 +51,7 @@ class MemoryBlockHandle {
    * @param block Reference to the memory block.
    * @param handle Rvalue reference to the cursor handle.
    */
-  MemoryBlockHandle(MemoryBlock<T>& block, CursorHandle&& handle);
+  MemoryBlockHandle(MemoryBlock<T>& block, CursorHandle<BUFFER_SIZE>&& handle);
 
   /**
    * @brief Get the number of objects of type T stored in the memory block.
@@ -90,44 +91,45 @@ class MemoryBlockHandle {
 
  private:
   MemoryBlock<T>* block_;
-  CursorHandle handle_;
+  CursorHandle<BUFFER_SIZE> handle_;
 };
 
 // --------------------------------
 // MemoryBlockHandle Implementation
 // --------------------------------
 
-template <class T>
-MemoryBlockHandle<T>::MemoryBlockHandle() : block_(nullptr), handle_() {}
+template <class T, std::size_t BUFFER_SIZE>
+MemoryBlockHandle<T, BUFFER_SIZE>::MemoryBlockHandle()
+    : block_(nullptr), handle_() {}
 
-template <class T>
-MemoryBlockHandle<T>::MemoryBlockHandle(MemoryBlock<T>& block,
-                                        CursorHandle&& handle)
+template <class T, std::size_t BUFFER_SIZE>
+MemoryBlockHandle<T, BUFFER_SIZE>::MemoryBlockHandle(
+    MemoryBlock<T>& block, CursorHandle<BUFFER_SIZE>&& handle)
     : block_(std::addressof(block)), handle_(std::move(handle)) {}
 
-template <class T>
-std::size_t MemoryBlockHandle<T>::Size() const {
+template <class T, std::size_t BUFFER_SIZE>
+std::size_t MemoryBlockHandle<T, BUFFER_SIZE>::Size() const {
   return block_->size;
 }
 
-template <class T>
-T* MemoryBlockHandle<T>::Data() const {
+template <class T, std::size_t BUFFER_SIZE>
+T* MemoryBlockHandle<T, BUFFER_SIZE>::Data() const {
   return block_->data;
 }
 
-template <class T>
-T& MemoryBlockHandle<T>::operator[](std::size_t n) const {
+template <class T, std::size_t BUFFER_SIZE>
+T& MemoryBlockHandle<T, BUFFER_SIZE>::operator[](std::size_t n) const {
   assert(n < block_->size);
   return block_->data[n];
 }
 
-template <class T>
-MemoryBlockHandle<T>::operator bool() const {
+template <class T, std::size_t BUFFER_SIZE>
+MemoryBlockHandle<T, BUFFER_SIZE>::operator bool() const {
   return block_ != nullptr && bool(handle_);
 }
 
-template <class T>
-bool MemoryBlockHandle<T>::IsValid() const {
+template <class T, std::size_t BUFFER_SIZE>
+bool MemoryBlockHandle<T, BUFFER_SIZE>::IsValid() const {
   if (handle_.IsValid()) {
     return block_ != nullptr;
   }

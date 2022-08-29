@@ -16,8 +16,6 @@
 
 #pragma once
 
-#include <cassert>
-
 #include <inspector/details/circular_queue/block_handle.hpp>
 #include <inspector/details/circular_queue/cursor_pool.hpp>
 
@@ -59,8 +57,8 @@ class Allocator {
    * @param max_attempt The maximum number of attempts.
    * @returns Pointer to the memory block.
    */
-  MemoryBlockHandle<T> Allocate(const std::size_t size,
-                                std::size_t max_attempt);
+  MemoryBlockHandle<T, BUFFER_SIZE> Allocate(const std::size_t size,
+                                             std::size_t max_attempt);
 
   /**
    * @brief Allocate memory in the circular queue for reading.
@@ -68,7 +66,8 @@ class Allocator {
    * @param max_attempt The maximum number of attempts.
    * @returns Pointer to the memory block.
    */
-  MemoryBlockHandle<const T> Allocate(std::size_t max_attempt) const;
+  MemoryBlockHandle<const T, BUFFER_SIZE> Allocate(
+      std::size_t max_attempt) const;
 
   /**
    * @brief Get the raw buffer data.
@@ -84,7 +83,7 @@ class Allocator {
    * @param cursor Constant reference to the cursor.
    * @returns Pointer to the memory block.
    */
-  MemoryBlock<T> *GetMemoryBlock(const Cursor &cursor);
+  MemoryBlock<T> *GetMemoryBlock(const Cursor<BUFFER_SIZE> &cursor);
 
   /**
    * @brief Get read-only memory block at the given cursor location on the
@@ -93,7 +92,7 @@ class Allocator {
    * @param cursor Constant reference to the cursor.
    * @returns Pointer to the memory block.
    */
-  MemoryBlock<const T> *GetMemoryBlock(const Cursor &cursor) const;
+  MemoryBlock<const T> *GetMemoryBlock(const Cursor<BUFFER_SIZE> &cursor) const;
 
   /**
    * @brief Get or recover the block size of the memory block located at the
@@ -112,13 +111,14 @@ class Allocator {
    * was recovered.
    */
   std::pair<std::size_t, bool> GetOrRecoverMemoryBlockSize(
-      const Cursor &start, const Cursor &end) const;
+      const Cursor<BUFFER_SIZE> &start, const Cursor<BUFFER_SIZE> &end) const;
 
-  unsigned char data_[BUFFER_SIZE];              // data buffer
-  CursorPool<MAX_PRODUCERS> write_pool_;         // write cursor pool
-  AtomicCursor write_head_;                      // write head cursor
-  mutable CursorPool<MAX_CONSUMERS> read_pool_;  // read cursor pool
-  mutable AtomicCursor read_head_;               // read head cursor
+  unsigned char data_[BUFFER_SIZE];                    // data buffer
+  CursorPool<MAX_PRODUCERS, BUFFER_SIZE> write_pool_;  // write cursor pool
+  AtomicCursor<BUFFER_SIZE> write_head_;               // write head cursor
+  mutable CursorPool<MAX_CONSUMERS, BUFFER_SIZE>
+      read_pool_;                                // read cursor pool
+  mutable AtomicCursor<BUFFER_SIZE> read_head_;  // read head cursor
   const uint32_t start_marker_;                  // start marker
 };
 
@@ -128,8 +128,9 @@ class Allocator {
 
 template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
           std::size_t MAX_CONSUMERS>
-MemoryBlock<T> *Allocator<T, BUFFER_SIZE, MAX_PRODUCERS,
-                          MAX_CONSUMERS>::GetMemoryBlock(const Cursor &cursor) {
+MemoryBlock<T>
+    *Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::GetMemoryBlock(
+        const Cursor<BUFFER_SIZE> &cursor) {
   return reinterpret_cast<MemoryBlock<T> *>(
       &data_[cursor.Location() % BUFFER_SIZE]);
 }
@@ -138,7 +139,7 @@ template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
           std::size_t MAX_CONSUMERS>
 MemoryBlock<T const>
     *Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::GetMemoryBlock(
-        const Cursor &cursor) const {
+        const Cursor<BUFFER_SIZE> &cursor) const {
   return reinterpret_cast<MemoryBlock<const T> *>(
       const_cast<unsigned char *>(&data_[cursor.Location() % BUFFER_SIZE]));
 }
@@ -146,9 +147,9 @@ MemoryBlock<T const>
 template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
           std::size_t MAX_CONSUMERS>
 std::pair<std::size_t, bool>
-Allocator<T, BUFFER_SIZE, MAX_PRODUCERS,
-          MAX_CONSUMERS>::GetOrRecoverMemoryBlockSize(const Cursor &start,
-                                                      const Cursor &end) const {
+Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::
+    GetOrRecoverMemoryBlockSize(const Cursor<BUFFER_SIZE> &start,
+                                const Cursor<BUFFER_SIZE> &end) const {
   auto *block = GetMemoryBlock(start);
   // Check if the memory block header contains a valid size by checking for the
   // existance of the start marker
@@ -165,7 +166,7 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS,
   // Start marker not present in the header so attempt a recover by searching
   // for the next start marker
   std::size_t size = 0;
-  Cursor cursor = start + sizeof(MemoryBlock<T>);
+  Cursor<BUFFER_SIZE> cursor = start + sizeof(MemoryBlock<T>);
   while (cursor < end) {
     block = GetMemoryBlock(cursor);
     if (block->start_marker == start_marker_) {
@@ -201,14 +202,14 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocator(
     : write_pool_(timeout_ns),
       read_pool_(timeout_ns),
       start_marker_(start_marker) {
-  Cursor cursor(false, 0);
+  Cursor<BUFFER_SIZE> cursor(false, 0);
   write_head_.store(cursor, std::memory_order_seq_cst);
   read_head_.store(cursor, std::memory_order_seq_cst);
 }
 
 template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
           std::size_t MAX_CONSUMERS>
-MemoryBlockHandle<T>
+MemoryBlockHandle<T, BUFFER_SIZE>
 Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
     const std::size_t size, std::size_t max_attempt) {
   // Get the size of memory block to allocate for writing
@@ -227,16 +228,11 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
     // Allocate block only if the end location is ahead of all the allocated
     // read cursors and the read head, and the read head is equal or behind the
     // write head.
-    // BUG: Need to fix cursor by setting a max location value == BUFFER_SIZE.
-    // Overflow will occur when we excced this value.
     if (read_head <= write_head && read_pool_.IsAhead(end) && read_head < end) {
       cursor_h->store(write_head, std::memory_order_seq_cst);
       // Set write head to new value if its original value has not already been
       // changed by another writer.
       if (write_head_.compare_exchange_weak(write_head, end + 1)) {
-        std::cout << " READ_HEAD: " << read_head.Location()
-                  << " WRITE_HEAD: " << write_head.Location()
-                  << " NEW_WRITE_HEAD: " << (end + 1).Location() << "\n";
         auto *block = GetMemoryBlock(write_head);
         block->size = size;
         block->start_marker = start_marker_;
@@ -255,7 +251,7 @@ Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
 
 template <class T, std::size_t BUFFER_SIZE, std::size_t MAX_PRODUCERS,
           std::size_t MAX_CONSUMERS>
-MemoryBlockHandle<const T>
+MemoryBlockHandle<const T, BUFFER_SIZE>
 Allocator<T, BUFFER_SIZE, MAX_PRODUCERS, MAX_CONSUMERS>::Allocate(
     std::size_t max_attempt) const {
   // Attempt to get a read cursor from the cursor pool

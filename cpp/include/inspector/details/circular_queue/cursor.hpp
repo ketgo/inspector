@@ -17,6 +17,7 @@
 #pragma once
 
 #include <atomic>
+#include <cassert>
 
 namespace inspector {
 namespace details {
@@ -27,8 +28,8 @@ namespace circular_queue {
 /**
  * @brief Circular queue cursor.
  *
- * The cursor represents a location to an object inside the circular queue. A 64
- * bit data structure is used to store the following values:
+ * The cursor represents a location to an object inside the circular queue
+ * buffer. A 64 bit data structure is used to store the following values:
  *
  *  a. [Bit 0]: Overflow sign of the cursor. The overflow sign is used to check
  *              for the overflow phase. Upon overflow the sign is flipped.
@@ -38,7 +39,9 @@ namespace circular_queue {
  * @note The cursor is restricted to 64 bits in order to make the atomic type
  * `AtomicCursor` lock free.
  *
+ * @tparam BUFFER_SIZE Size of the circular queue buffer.
  */
+template <std::size_t BUFFER_SIZE>
 class Cursor {
  public:
   /**
@@ -113,13 +116,12 @@ class Cursor {
   Cursor operator+(const std::size_t value) const;
 
   /**
-   * @brief Subtract a value to the location stored in the cursor to get a new
-   * cursor.
+   * @brief Update the location stored in the cursor by adding the given value.
    *
-   * @param offset Value to subtract.
-   * @returns Cursor containing updated location value.
+   * @param offset Value to add.
+   * @returns Reference to the updated cursor.
    */
-  Cursor operator-(const std::size_t value) const;
+  Cursor &operator+=(const std::size_t value);
 
  private:
   /**
@@ -136,47 +138,66 @@ class Cursor {
 // Cursor Implementation
 // ---------------------------------------
 
-inline Cursor::Cursor(const bool overflow, const std::size_t location)
-    : overflow_(overflow), location_(location) {}
+template <std::size_t BUFFER_SIZE>
+void Cursor<BUFFER_SIZE>::FlipOverflow() {
+  overflow_ = !overflow_;
+}
 
-inline bool Cursor::Overflow() const { return overflow_; }
+// ---------- public ----------------
 
-inline void Cursor::FlipOverflow() { overflow_ = !overflow_; }
+template <std::size_t BUFFER_SIZE>
+Cursor<BUFFER_SIZE>::Cursor(const bool overflow, const std::size_t location)
+    : overflow_(overflow), location_(location) {
+  assert(location < BUFFER_SIZE);
+}
 
-inline uint64_t Cursor::Location() const { return location_; }
+template <std::size_t BUFFER_SIZE>
+bool Cursor<BUFFER_SIZE>::Overflow() const {
+  return overflow_;
+}
 
-inline bool Cursor::operator<(const Cursor &cursor) const {
+template <std::size_t BUFFER_SIZE>
+uint64_t Cursor<BUFFER_SIZE>::Location() const {
+  return location_;
+}
+
+template <std::size_t BUFFER_SIZE>
+bool Cursor<BUFFER_SIZE>::operator<(const Cursor &cursor) const {
   return overflow_ == cursor.overflow_ ? location_ < cursor.location_
                                        : location_ > cursor.location_;
 }
 
-inline bool Cursor::operator<=(const Cursor &cursor) const {
+template <std::size_t BUFFER_SIZE>
+bool Cursor<BUFFER_SIZE>::operator<=(const Cursor &cursor) const {
   return overflow_ == cursor.overflow_ ? location_ <= cursor.location_
                                        : location_ > cursor.location_;
 }
 
-inline bool Cursor::operator==(const Cursor &cursor) const {
+template <std::size_t BUFFER_SIZE>
+bool Cursor<BUFFER_SIZE>::operator==(const Cursor &cursor) const {
   return overflow_ == cursor.overflow_ && location_ <= cursor.location_;
 }
 
-inline bool Cursor::operator!=(const Cursor &cursor) const {
+template <std::size_t BUFFER_SIZE>
+bool Cursor<BUFFER_SIZE>::operator!=(const Cursor &cursor) const {
   return !(*this == cursor);
 }
 
-inline Cursor Cursor::operator+(const std::size_t value) const {
-  Cursor rvalue(overflow_, location_ + value);
-  if (rvalue.location_ < location_) {
-    rvalue.FlipOverflow();
-  }
+template <std::size_t BUFFER_SIZE>
+Cursor<BUFFER_SIZE> Cursor<BUFFER_SIZE>::operator+(
+    const std::size_t value) const {
+  Cursor rvalue(overflow_, location_);
+  rvalue += value;
   return rvalue;
 }
 
-inline Cursor Cursor::operator-(const std::size_t value) const {
-  Cursor rvalue(overflow_, location_ - value);
-  if (rvalue.location_ > location_) {
-    rvalue.FlipOverflow();
+template <std::size_t BUFFER_SIZE>
+Cursor<BUFFER_SIZE> &Cursor<BUFFER_SIZE>::operator+=(const std::size_t value) {
+  if ((location_ + value) / BUFFER_SIZE) {
+    FlipOverflow();
   }
-  return rvalue;
+  location_ = (location_ + value) % BUFFER_SIZE;
+  return *this;
 }
 
 // ============================================================================
@@ -185,7 +206,8 @@ inline Cursor Cursor::operator-(const std::size_t value) const {
  * @brief Lock free atomic cursor.
  *
  */
-using AtomicCursor = std::atomic<Cursor>;
+template <std::size_t BUFFER_SIZE>
+using AtomicCursor = std::atomic<Cursor<BUFFER_SIZE>>;
 
 // ============================================================================
 

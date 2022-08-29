@@ -29,12 +29,12 @@ namespace circular_queue {
 
 /**
  * @brief A lock-free and wait-free pool of cursors used by the circular queue
- * for read/write operations. The pool also contains the head cursor which
- * contains the read/write head location.
+ * for read/write operations.
  *
  * @tparam POOL_SIZE Number of cursors in the pool.
+ * @tparam BUFFER_SIZE Size of the circular queue buffer.
  */
-template <std::size_t POOL_SIZE>
+template <std::size_t POOL_SIZE, std::size_t BUFFER_SIZE>
 class CursorPool {
  public:
   /**
@@ -50,7 +50,7 @@ class CursorPool {
    *
    * @returns `true` if behind else `false`.
    */
-  bool IsBehind(const Cursor &cursor) const;
+  bool IsBehind(const Cursor<BUFFER_SIZE> &cursor) const;
 
   /**
    * @brief Check if the given cursor is ahead of all the allocated cursors in
@@ -58,7 +58,7 @@ class CursorPool {
    *
    * @returns `true` if ahead else `false`.
    */
-  bool IsAhead(const Cursor &cursor) const;
+  bool IsAhead(const Cursor<BUFFER_SIZE> &cursor) const;
 
   /**
    * @brief Allocate a cursor from available set of free cursors.
@@ -70,7 +70,7 @@ class CursorPool {
    * @param max_attempt Maximum number of attempts to perform.
    * @returns Pointer to the allocated cursor.
    */
-  CursorHandle Allocate(std::size_t max_attempt);
+  CursorHandle<BUFFER_SIZE> Allocate(std::size_t max_attempt);
 
  private:
   /**
@@ -82,7 +82,7 @@ class CursorPool {
   bool IsStale(const CursorState &cursor_state) const;
 
   mutable AtomicCursorState cursor_state_[POOL_SIZE];
-  AtomicCursor cursor_[POOL_SIZE];
+  AtomicCursor<BUFFER_SIZE> cursor_[POOL_SIZE];
   const uint64_t timeout_ns_;
 };
 
@@ -90,8 +90,9 @@ class CursorPool {
 // CursorPool Implementation
 // -----------------------------
 
-template <std::size_t POOL_SIZE>
-bool CursorPool<POOL_SIZE>::IsStale(const CursorState &cursor_state) const {
+template <std::size_t POOL_SIZE, std::size_t BUFFER_SIZE>
+bool CursorPool<POOL_SIZE, BUFFER_SIZE>::IsStale(
+    const CursorState &cursor_state) const {
   CursorState current(
       true, std::chrono::system_clock::now().time_since_epoch().count());
   if (timeout_ns_ < (current.timestamp - cursor_state.timestamp)) {
@@ -102,11 +103,11 @@ bool CursorPool<POOL_SIZE>::IsStale(const CursorState &cursor_state) const {
 
 // ------- public --------------
 
-template <std::size_t POOL_SIZE>
-CursorPool<POOL_SIZE>::CursorPool(const uint64_t timeout_ns)
+template <std::size_t POOL_SIZE, std::size_t BUFFER_SIZE>
+CursorPool<POOL_SIZE, BUFFER_SIZE>::CursorPool(const uint64_t timeout_ns)
     : timeout_ns_(timeout_ns) {
   // Initial cursor value
-  Cursor cursor(false, 0);
+  Cursor<BUFFER_SIZE> cursor(false, 0);
   CursorState cursor_state(false, 0);
   for (std::size_t idx = 0; idx < POOL_SIZE; ++idx) {
     cursor_[idx].store(cursor, std::memory_order_seq_cst);
@@ -114,17 +115,17 @@ CursorPool<POOL_SIZE>::CursorPool(const uint64_t timeout_ns)
   }
 }
 
-template <std::size_t POOL_SIZE>
-bool CursorPool<POOL_SIZE>::IsBehind(const Cursor &cursor) const {
+template <std::size_t POOL_SIZE, std::size_t BUFFER_SIZE>
+bool CursorPool<POOL_SIZE, BUFFER_SIZE>::IsBehind(
+    const Cursor<BUFFER_SIZE> &cursor) const {
   for (std::size_t idx = 0; idx < POOL_SIZE; ++idx) {
     auto cursor_state = cursor_state_[idx].load(std::memory_order_seq_cst);
     if (cursor_state.allocated) {
       auto _cursor = cursor_[idx].load(std::memory_order_seq_cst);
       if (_cursor <= cursor) {
         if (IsStale(cursor_state)) {
-          CursorState released_state(false, 0);
-          cursor_state_[idx].compare_exchange_strong(
-              cursor_state, released_state, std::memory_order_seq_cst);
+          cursor_state_[idx].compare_exchange_strong(cursor_state, {false, 0},
+                                                     std::memory_order_seq_cst);
           continue;
         }
         return false;
@@ -134,17 +135,17 @@ bool CursorPool<POOL_SIZE>::IsBehind(const Cursor &cursor) const {
   return true;
 }
 
-template <std::size_t POOL_SIZE>
-bool CursorPool<POOL_SIZE>::IsAhead(const Cursor &cursor) const {
+template <std::size_t POOL_SIZE, std::size_t BUFFER_SIZE>
+bool CursorPool<POOL_SIZE, BUFFER_SIZE>::IsAhead(
+    const Cursor<BUFFER_SIZE> &cursor) const {
   for (std::size_t idx = 0; idx < POOL_SIZE; ++idx) {
     auto cursor_state = cursor_state_[idx].load(std::memory_order_seq_cst);
     if (cursor_state.allocated) {
       auto _cursor = cursor_[idx].load(std::memory_order_seq_cst);
       if (cursor <= _cursor) {
         if (IsStale(cursor_state)) {
-          CursorState released_state(false, 0);
-          cursor_state_[idx].compare_exchange_strong(
-              cursor_state, released_state, std::memory_order_seq_cst);
+          cursor_state_[idx].compare_exchange_strong(cursor_state, {false, 0},
+                                                     std::memory_order_seq_cst);
           continue;
         }
         return false;
@@ -154,8 +155,9 @@ bool CursorPool<POOL_SIZE>::IsAhead(const Cursor &cursor) const {
   return true;
 }
 
-template <std::size_t POOL_SIZE>
-CursorHandle CursorPool<POOL_SIZE>::Allocate(std::size_t max_attempt) {
+template <std::size_t POOL_SIZE, std::size_t BUFFER_SIZE>
+CursorHandle<BUFFER_SIZE> CursorPool<POOL_SIZE, BUFFER_SIZE>::Allocate(
+    std::size_t max_attempt) {
   while (max_attempt) {
     const std::size_t idx = Random() % POOL_SIZE;
     CursorState expected(false, 0);

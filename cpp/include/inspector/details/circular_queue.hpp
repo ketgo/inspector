@@ -19,10 +19,6 @@
 #include <inspector/details/span.hpp>
 #include <inspector/details/circular_queue/allocator.hpp>
 
-// TODO: Release cursors for stale processes which have abruptly died. Note that
-// if we reprocess the message pointed by these cursors, we have the
-// AtleastOnce delivery. If we ignore these messages then we have the
-// AtmostOnce delivery.
 // TODO: Change the consumer API by introducing a DynamicSpan class.
 
 namespace inspector {
@@ -123,7 +119,7 @@ class CircularQueue {
    * reading.
    *
    */
-  using ReadSpan = circular_queue::MemoryBlockHandle<const T>;
+  using ReadSpan = circular_queue::MemoryBlockHandle<const T, BUFFER_SIZE>;
 
   /**
    * @brief Default maximum number of attempts made when publishing or consuming
