@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from python.inspector import Reader, Config, testing
+from py_inspector import Reader, Config, testing
 
 
 def setup_module():

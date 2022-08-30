@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+/**
+ * @brief Header file exposes API to create shared memory objects.
+ *
+ */
+
 #pragma once
 
 #include <fcntl.h> /* For O_* constants */
@@ -28,7 +33,7 @@
 
 namespace inspector {
 namespace details {
-namespace shared_object {
+namespace system {
 
 /**
  * @brief Create a shared object of type T with given globally unique name and
@@ -43,7 +48,7 @@ namespace shared_object {
  * @returns Pointer to the shared object.
  */
 template <class T, class... Args>
-T* Create(const std::string& name, Args&&... args) {
+T* CreateSharedObject(const std::string& name, Args&&... args) {
   static_assert(std::is_trivially_copyable<T>::value,
                 "The data type used does not have a trivial memory layout.");
 
@@ -65,7 +70,9 @@ T* Create(const std::string& name, Args&&... args) {
 }
 
 /**
- * @brief Create a shared object of type T with given globally unique name.
+ * @brief Get an existing shared object of type T with given globally unique
+ * name. If the shared object does not exist then the method throws an
+ * exception.
  *
  * @tparam T The type of shared object.
  * @param name Constant reference to the system unique name of the shared
@@ -73,7 +80,7 @@ T* Create(const std::string& name, Args&&... args) {
  * @returns Pointer to the shared object.
  */
 template <class T>
-T* Get(const std::string& name) {
+T* GetSharedObject(const std::string& name) {
   static_assert(std::is_trivially_copyable<T>::value,
                 "The data type used does not have a trivial memory layout.");
 
@@ -107,13 +114,13 @@ T* Get(const std::string& name) {
  * @returns Pointer to the shared object.
  */
 template <class T, class... Args>
-T* GetOrCreate(const std::string& name, Args&&... args) {
+T* GetOrCreateSharedObject(const std::string& name, Args&&... args) {
   T* rvalue;
   try {
-    rvalue = Create<T>(name, std::forward<Args>(args)...);
+    rvalue = CreateSharedObject<T>(name, std::forward<Args>(args)...);
   } catch (const std::system_error& error) {
     if (error.code().value() == EEXIST) {
-      rvalue = Get<T>(name);
+      rvalue = GetSharedObject<T>(name);
     } else {
       throw error;
     }
@@ -129,12 +136,12 @@ T* GetOrCreate(const std::string& name, Args&&... args) {
  * @param name Constant reference to the system unique name of the shared
  * object.
  */
-inline void Remove(const std::string& name) {
+inline void RemoveSharedObject(const std::string& name) {
   if (shm_unlink(name.c_str()) < 0) {
     throw std::system_error(errno, std::generic_category(), "shm_unlink");
   }
 }
 
-}  // namespace shared_object
+}  // namespace system
 }  // namespace details
 }  // namespace inspector

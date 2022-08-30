@@ -16,4 +16,4 @@
 
 # Py-Inspector
 
-The package `py-instector` provides python binding for the Inspector trace utility.
+The package `py-inspector` provides python binding for the Inspector trace utility.

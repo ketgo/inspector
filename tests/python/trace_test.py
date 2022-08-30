@@ -14,9 +14,9 @@
  limitations under the License.
 """
 
-from typing import List
+import py_inspector as inspector
 
-from python import inspector
+from typing import List
 
 
 def setup_module():

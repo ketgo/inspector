@@ -17,7 +17,7 @@
 #include "utils/threads.hpp"
 #include "utils/chrono.hpp"
 
-#include <inspector/details/shared_object.hpp>
+#include <inspector/details/system/shared_object.hpp>
 
 using namespace inspector::details;
 
@@ -46,16 +46,16 @@ __attribute__((no_sanitize("thread"))) void Update(TestData* obj) {
 }  // namespace
 
 TEST(SharedObjectTestFixture, TestSingleThread) {
-  auto obj = shared_object::GetOrCreate<TestData>(kSharedObjectName, 10);
+  auto obj = system::GetOrCreateSharedObject<TestData>(kSharedObjectName, 10);
   ASSERT_EQ(obj->value, 10);
-  shared_object::Remove(kSharedObjectName);
+  system::RemoveSharedObject(kSharedObjectName);
 }
 
 TEST(SharedObjectTestFixture, TestMultipleThreads) {
-  auto obj = shared_object::GetOrCreate<TestData>(kSharedObjectName, 0);
+  auto obj = system::GetOrCreateSharedObject<TestData>(kSharedObjectName, 0);
   utils::RunThreads(kTestThreadCount, &Update, obj);
   // NOTE: Due to the race condition the counter value should be less than max
   // possible value.
   ASSERT_LT(obj->value, kTestCycleCount * kTestThreadCount);
-  shared_object::Remove(kSharedObjectName);
+  system::RemoveSharedObject(kSharedObjectName);
 }

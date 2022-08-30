@@ -117,8 +117,8 @@ inline TraceEvent TraceEvent::Parse(const std::string& event_str) {
 
 inline TraceEvent::TraceEvent(const char type, const std::string& name)
     : timestamp_(std::chrono::system_clock::now().time_since_epoch().count()),
-      pid_(details::GetProcessId()),
-      tid_(details::GetThreadId()),
+      pid_(details::system::GetProcessId()),
+      tid_(details::system::GetThreadId()),
       type_(type),
       name_(name),
       payload_() {}

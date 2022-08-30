@@ -19,6 +19,9 @@ py_library(
     srcs = [
         "periodic_task.py",
     ],
+    imports = [
+        ".",
+    ],
     deps = [],
 )
 
@@ -27,6 +30,7 @@ py_binary(
     srcs = [
         "run.py",
     ],
+    main = "run.py",
     deps = [
         ":periodic_task",
         "//python:inspector",

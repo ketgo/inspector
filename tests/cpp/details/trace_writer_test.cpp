@@ -42,7 +42,7 @@ TEST_F(TraceWriterTestFixture, TestWrite) {
   details::TraceWriter::Get().Write(test_event);
 
   // Testing for written event
-  auto queue = details::shared_object::GetOrCreate<details::EventQueue>(
+  auto queue = details::system::GetOrCreateSharedObject<details::EventQueue>(
       details::Config::Get().queue_system_unique_name);
   details::EventQueue::ReadSpan span;
   ASSERT_EQ(queue->Consume(span), details::EventQueue::Status::OK);

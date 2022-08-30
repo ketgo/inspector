@@ -25,6 +25,7 @@ The file contains itemized tasks to be completed in the different parts of the r
 [ ] Refactor initialization API for the inspector library. Maybe just expose a `InitInspector` method to set configuration settings. 
 [ ] Design an approach for masterless shared object handling. That is, removal of a shared object should be done by the last process using the object. Furthermore, the approach should be fail safe. 
 [ ] Need an improved recovery approach which better handles the false start_marker scenario. Furthermore, the approach should utilize the fact of having multiple concurrent consumers to quickly recover to a valid state.
+[ ] Extend trace event data struct to implement user defined events. This is needed to implement kernel tracer.
 
 ## Monitors
 

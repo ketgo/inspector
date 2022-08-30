@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-from python.inspector import TraceEvent
+from py_inspector import TraceEvent
 
 
 def test_trace_event_load():

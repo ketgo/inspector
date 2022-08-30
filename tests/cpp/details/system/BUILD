@@ -13,37 +13,14 @@
 # limitations under the License.
 
 cc_test(
-    name = "random_test",
+    name = "shared_object_test",
     srcs = [
-        "random_test.cpp",
+        "shared_object_test.cpp",
     ],
-    deps = [
-        "//cpp:inspector",
-        "@gtest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "circular_queue_test",
-    srcs = [
-        "circular_queue_test.cpp",
-    ],
-    args = ["--gtest_repeat=100"],
     deps = [
         "//cpp:inspector",
         "//utils:chrono",
         "//utils:threads",
-        "@gtest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "trace_writer_test",
-    srcs = [
-        "trace_writer_test.cpp",
-    ],
-    deps = [
-        "//cpp:inspector",
         "@gtest//:gtest_main",
     ],
 )

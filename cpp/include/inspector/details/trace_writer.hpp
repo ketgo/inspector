@@ -21,7 +21,7 @@
 #include <inspector/details/config.hpp>
 #include <inspector/details/event_queue.hpp>
 #include <inspector/details/logging.hpp>
-#include <inspector/details/shared_object.hpp>
+#include <inspector/details/system.hpp>
 
 namespace inspector {
 namespace details {
@@ -76,7 +76,7 @@ inline TraceWriter::TraceWriter()
     : remove_(details::Config::Get().queue_remove_on_exit),
       max_attempt_(details::Config::Get().read_max_attempt),
       queue_name_(details::Config::Get().queue_system_unique_name),
-      queue_(details::shared_object::GetOrCreate<details::EventQueue>(
+      queue_(details::system::GetOrCreateSharedObject<details::EventQueue>(
           queue_name_)) {}
 
 // ----------- public -----------------
@@ -90,7 +90,7 @@ inline TraceWriter& TraceWriter::Get() {
 inline TraceWriter::~TraceWriter() {
   if (remove_) {
     LOG_INFO << "Marking the shared event queue for removal.";
-    details::shared_object::Remove(queue_name_);
+    details::system::RemoveSharedObject(queue_name_);
   }
 }
 

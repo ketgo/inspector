@@ -32,8 +32,8 @@ TEST(TraceEventTestFixture, TestConstructor) {
 
   auto event = TraceEvent::Parse(trace_event.String());
   ASSERT_NE(event.Timestamp(), 0);
-  ASSERT_EQ(event.ProcessId(), details::GetProcessId());
-  ASSERT_EQ(event.ThreadId(), details::GetThreadId());
+  ASSERT_EQ(event.ProcessId(), details::system::GetProcessId());
+  ASSERT_EQ(event.ThreadId(), details::system::GetThreadId());
   ASSERT_EQ(event.Type(), kTestTraceEventType);
   ASSERT_EQ(event.Name(), kTestTraceEventName);
   ASSERT_EQ(event.Payload(), "");
@@ -45,8 +45,8 @@ TEST(TraceEventTestFixture, TestSetArgs) {
 
   auto event = TraceEvent::Parse(trace_event.String());
   ASSERT_NE(event.Timestamp(), 0);
-  ASSERT_EQ(event.ProcessId(), details::GetProcessId());
-  ASSERT_EQ(event.ThreadId(), details::GetThreadId());
+  ASSERT_EQ(event.ProcessId(), details::system::GetProcessId());
+  ASSERT_EQ(event.ThreadId(), details::system::GetThreadId());
   ASSERT_EQ(event.Type(), kTestTraceEventType);
   ASSERT_EQ(event.Name(), kTestTraceEventName);
   ASSERT_EQ(event.Payload(), "testing|a|1|3.54");

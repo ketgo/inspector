@@ -17,8 +17,8 @@
 import argparse
 import logging
 
-from monitors.cli.periodic_task import PeriodicTask
-from python.inspector import Reader
+from periodic_task import PeriodicTask
+from py_inspector import Reader
 
 LOG = logging.getLogger(__name__)
 

@@ -30,11 +30,16 @@ constexpr auto kEventQueueName = "inspector-reader-test";
 class ReaderTestFixture : public ::testing::Test {
  protected:
   std::shared_ptr<Reader> reader_;
+  details::EventQueue* queue_;
 
   void SetUp() override {
-    reader_ = std::make_shared<Reader>(kEventQueueName, kMaxAttempt, true);
+    queue_ = details::system::CreateSharedObject<details::EventQueue>(
+        kEventQueueName);
+    reader_ = std::make_shared<Reader>(kEventQueueName, kMaxAttempt);
   }
-  void TearDown() override {}
+  void TearDown() override {
+    details::system::RemoveSharedObject(kEventQueueName);
+  }
 };
 
 TEST_F(ReaderTestFixture, IterateEmptyQueue) {
@@ -48,12 +53,10 @@ TEST_F(ReaderTestFixture, IterateEmptyQueue) {
 
 TEST_F(ReaderTestFixture, IterateNonEmptyQueue) {
   // Preparing queue by publishing a test event for testing.
-  auto queue =
-      details::shared_object::GetOrCreate<details::EventQueue>(kEventQueueName);
   std::string test_event_1 = "testing_1";
-  ASSERT_EQ(queue->Publish(test_event_1), details::EventQueue::Status::OK);
+  ASSERT_EQ(queue_->Publish(test_event_1), details::EventQueue::Status::OK);
   std::string test_event_2 = "testing_2";
-  ASSERT_EQ(queue->Publish(test_event_2), details::EventQueue::Status::OK);
+  ASSERT_EQ(queue_->Publish(test_event_2), details::EventQueue::Status::OK);
 
   std::vector<std::string> events;
   for (auto&& event : *reader_) {

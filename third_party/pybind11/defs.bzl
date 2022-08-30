@@ -23,6 +23,7 @@ load("@rules_python//python:defs.bzl", "py_library")
 def pybind_library(
         name,
         soname = None,
+        imports = [],
         **kwargs):
     _soname = soname if soname else name
     pybind_extension(
@@ -36,4 +37,5 @@ def pybind_library(
         data = [
             ":{}.so".format(_soname),
         ],
+        imports = imports,
     )
