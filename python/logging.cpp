@@ -80,12 +80,5 @@ void BindLogging(py::module& m) {
   // and any logging done in these objects will cause segfault once the
   // interpreter terminates.
   auto atexit = py::module_::import("atexit");
-  atexit.attr("register")(py::cpp_function([]() {
-    inspector::RegisterLogger(inspector::LogLevel::INFO,
-                              inspector::NullLogger());
-    inspector::RegisterLogger(inspector::LogLevel::WARN,
-                              inspector::NullLogger());
-    inspector::RegisterLogger(inspector::LogLevel::ERROR,
-                              inspector::NullLogger());
-  }));
+  atexit.attr("register")(py::cpp_function(&inspector::UnregsiterAllLoggers));
 }

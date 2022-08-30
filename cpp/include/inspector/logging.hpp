@@ -30,4 +30,23 @@ inline void RegisterLogger(LogLevel level, Logger& logger) {
   details::Log::RegisterLogger(level, logger);
 }
 
+/**
+ * @brief Unregister any registered logger for the given log level.
+ *
+ * @param level Log Level.
+ */
+inline void UnregsiterLogger(LogLevel level) {
+  RegisterLogger(level, NullLogger());
+}
+
+/**
+ * @brief Unregister all registered loggers.
+ *
+ */
+inline void UnregsiterAllLoggers() {
+  RegisterLogger(LogLevel::INFO, NullLogger());
+  RegisterLogger(LogLevel::WARN, NullLogger());
+  RegisterLogger(LogLevel::ERROR, NullLogger());
+}
+
 }  // namespace inspector

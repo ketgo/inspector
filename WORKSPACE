@@ -36,8 +36,8 @@ node_repositories()
 
 npm_install(
     name = "npm",
-    package_json = "//monitors/web/frontend:package.json",
-    package_lock_json = "//monitors/web/frontend:package-lock.json",
+    package_json = "//tools/viewers/web/frontend:package.json",
+    package_lock_json = "//tools/viewers/web/frontend:package-lock.json",
 )
 
 http_archive(
