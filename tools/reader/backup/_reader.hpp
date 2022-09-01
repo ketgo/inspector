@@ -16,22 +16,21 @@
 
 #pragma once
 
+#include <cassert>
+#include <cstring>
+#include <thread>
+
 #include <inspector/details/config.hpp>
 #include <inspector/details/event_queue.hpp>
+#include <inspector/details/logging.hpp>
+#include <inspector/details/system.hpp>
 
 namespace inspector {
 
 /**
- * @brief The class `Reader` can be used to consume trace and metric events
- * generated using the inspector library.
- *
- * The Reader consumes trace and metric events from the shared event queue used
- * by the inspector library. It exposes the standard iterator interface which
- * can be used in a `for` loop to read the events. Internally, the reader spawns
- * multiple basic reader instances running concurrently in a thread pool. Each
- * basic reader consumes events from the shared queue and forwards them onto an
- * internal chronologically ordered priority queue. The iterator interface in
- * turn pops events from this priority queue.
+ * @brief The class `Reader` can be used to consume events from the shared queue
+ * containing trace or metrics events. It exposes the standard iterator
+ * interface which can be used in a `for` loop to consume the events.
  *
  */
 class Reader {
@@ -40,7 +39,7 @@ class Reader {
    * @brief Iterator to iterate over events in the event queue.
    *
    * The Iterator class is a forward-only direction iterator. It consumes events
-   * from the prioirty queue while iterating.
+   * from the event queue while iterating.
    *
    */
   class Iterator {
@@ -60,7 +59,15 @@ class Reader {
     bool operator!=(const Iterator& other) const;
 
    private:
+    Iterator(const details::EventQueue* queue, const std::size_t max_attempt,
+             details::EventQueue::Status status);
+
     void Next();
+
+    details::EventQueue* queue_;
+    std::size_t max_attempt_;
+    details::EventQueue::Status status_;
+    std::string event_;
   };
 
   /**
@@ -134,6 +141,99 @@ class Reader {
   const std::string queue_name_;
   details::EventQueue* queue_;
 };
+
+// ---------------------------------
+// Reader::Iterator Implementation
+// ---------------------------------
+
+inline Reader::Iterator::Iterator(const details::EventQueue* queue,
+                                  const std::size_t max_attempt,
+                                  details::EventQueue::Status status)
+    : queue_(const_cast<details::EventQueue*>(queue)),
+      max_attempt_(max_attempt),
+      status_(status) {}
+
+inline void Reader::Iterator::Next() {
+  details::EventQueue::ReadSpan span;
+  status_ = queue_->Consume(span, max_attempt_);
+  if (status_ == details::EventQueue::Status::OK) {
+    event_ = {span.Data(), span.Size()};
+  }
+}
+
+// ------------ public -------------
+
+inline Reader::Iterator::Iterator()
+    : queue_(nullptr),
+      max_attempt_(0),
+      status_(details::EventQueue::Status::OK) {}
+
+inline std::string* Reader::Iterator::operator->() { return &event_; }
+
+inline std::string& Reader::Iterator::operator*() { return event_; }
+
+inline Reader::Iterator& Reader::Iterator::operator++() {
+  Next();
+  return *this;
+}
+
+inline Reader::Iterator Reader::Iterator::operator++(int) {
+  Iterator rvalue = *this;
+  Next();
+  return rvalue;
+}
+
+inline bool Reader::Iterator::operator==(const Iterator& other) const {
+  return queue_ == other.queue_ && status_ == other.status_;
+}
+
+inline bool Reader::Iterator::operator!=(const Iterator& other) const {
+  return !(*this == other);
+}
+
+// ---------------------------------
+// Reader Implementation
+// ---------------------------------
+
+// static
+inline details::EventQueue* Reader::GetEventQueue(
+    const std::string queue_name, const std::size_t max_attempt,
+    const std::chrono::milliseconds interval) {
+  assert(max_attempt > 0);
+  auto attempts = 0;
+  while (true) {
+    try {
+      return details::system::GetSharedObject<details::EventQueue>(queue_name);
+    } catch (const std::system_error& error) {
+      if (error.code().value() != ENOENT || max_attempt <= ++attempts) {
+        throw error;
+      }
+      LOG_ERROR << "Event queue '" << queue_name << "' not found. Retrying in '"
+                << interval.count() << " ms'...";
+      std::this_thread::sleep_for(interval);
+    }
+  }
+}
+
+// ----------- public --------------
+
+inline Reader::Reader(const std::string& queue_name,
+                      const std::size_t max_attempt,
+                      const std::size_t max_connection_attempt,
+                      const std::chrono::milliseconds connection_interval)
+    : max_attempt_(max_attempt),
+      queue_name_(queue_name),
+      queue_(GetEventQueue(queue_name_, max_connection_attempt,
+                           connection_interval)) {}
+
+inline Reader::Iterator Reader::begin() const {
+  Reader::Iterator it(queue_, max_attempt_, details::EventQueue::Status::OK);
+  return ++it;
+}
+
+inline Reader::Iterator Reader::end() const {
+  return {queue_, max_attempt_, details::EventQueue::Status::EMPTY};
+}
 
 // ---------------------------------
 
