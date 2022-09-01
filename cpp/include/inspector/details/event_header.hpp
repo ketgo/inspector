@@ -14,21 +14,27 @@
  * limitations under the License.
  */
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#pragma once
 
-namespace py = pybind11;
+#include <cstdint>
 
-void BindConfig(py::module& m);
-void BindLogging(py::module& m);
-void BindTrace(py::module& m);
-void BindTesting(py::module& m);
+namespace inspector {
+namespace details {
 
-PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
-  m.doc() = "Tool set to capture real time application traces for inspection.";
+/**
+ * @brief Common header expected in all the trace or metric events.
+ *
+ */
+struct __attribute__((packed)) EventHeader {
+  // Type of event. This field is used to distinguish different events.
+  uint8_t type;
+  // Timestamp in nano seconds when the event occured.
+  int64_t timestamp;
+  // Identifier of the process in which the event occured or is observed.
+  int32_t pid;
+  // Identifier of the thread in which the event occured or is observed.
+  int32_t tid;
+};
 
-  BindConfig(m);
-  BindLogging(m);
-  BindTrace(m);
-  BindTesting(m);
-}
+}  // namespace details
+}  // namespace inspector

@@ -1,12 +1,12 @@
 /**
  * Copyright 2022 Ketan Goyal
- *
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * 
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,13 +18,8 @@
 #include <pybind11/stl.h>
 
 #include <inspector/reader.hpp>
-#include <inspector/details/trace_writer.hpp>
 
 namespace py = pybind11;
-
-void WriteTestEvent(const std::string& event) {
-  inspector::details::TraceWriter::Get().Write(event);
-}
 
 /**
  * @brief Binding event reader to the given python module.
@@ -40,7 +35,4 @@ void BindReader(py::module& m) {
             return py::make_iterator(reader.begin(), reader.end());
           },
           py::keep_alive<0, 1>());
-
-  auto test_module = m.def_submodule("testing", "Module for testing.");
-  test_module.def("write_test_event", &WriteTestEvent);
 }

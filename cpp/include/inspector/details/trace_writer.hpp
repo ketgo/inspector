@@ -16,12 +16,11 @@
 
 #pragma once
 
-#include <inspector/trace_event.hpp>
-
 #include <inspector/details/config.hpp>
 #include <inspector/details/event_queue.hpp>
 #include <inspector/details/logging.hpp>
 #include <inspector/details/system.hpp>
+#include <inspector/details/trace_event.hpp>
 
 namespace inspector {
 namespace details {
@@ -115,14 +114,17 @@ inline void WriteTraceEvent(const TraceEvent& event) {
 /**
  * @brief Construct and write a trace event with the given arguments.
  *
+ * @param phase Phase of the event.
+ * @param name Constant reference to the event name.
+ * @param args COnstant reference to event arguments.
  */
 template <class... Args>
-inline void WriteTraceEvent(const char type, const std::string& name,
+inline void WriteTraceEvent(const char phase, const std::string& name,
                             const Args&... args) {
   if (inspector::details::Config::Get().disable_tracing) {
     return;
   }
-  TraceEvent event(type, name);
+  TraceEvent event(phase, name);
   event.SetArgs(args...);
   WriteTraceEvent(event);
 }

@@ -22,9 +22,9 @@ using namespace inspector;
 
 namespace {
 
-class MockLogger : public Logger {
+class FakeLogger : public Logger {
  public:
-  MockLogger() {}
+  FakeLogger() {}
   void operator<<(const std::string& log) { message_ = log; }
   const std::string& Message() const { return message_; }
 
@@ -35,7 +35,7 @@ class MockLogger : public Logger {
 }  // namespace
 
 TEST(LoggingTestFixture, Log) {
-  MockLogger info_logger, warn_logger;
+  FakeLogger info_logger, warn_logger;
 
   RegisterLogger(LogLevel::INFO, info_logger);
   RegisterLogger(LogLevel::WARN, warn_logger);

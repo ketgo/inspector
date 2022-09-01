@@ -22,15 +22,23 @@ using namespace inspector;
 
 namespace {
 static constexpr auto kMaxAttempt = 32;
-}
+static constexpr auto kEventQueueName = "inspector-trace_writer-test";
+}  // namespace
 
 class TraceWriterTestFixture : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
     details::Config::Get().write_max_attempt = kMaxAttempt;
-    details::Config::Get().queue_system_unique_name =
-        "inspector-trace_writer-test";
+    details::Config::Get().queue_system_unique_name = kEventQueueName;
     details::Config::Get().queue_remove_on_exit = true;
+  }
+
+  static std::string Consume() {
+    static auto queue =
+        details::system::GetSharedObject<details::EventQueue>(kEventQueueName);
+    details::EventQueue::ReadSpan span;
+    queue->Consume(span);
+    return std::string(span.Data(), span.Size());
   }
 
   void SetUp() override {}
@@ -42,9 +50,5 @@ TEST_F(TraceWriterTestFixture, TestWrite) {
   details::TraceWriter::Get().Write(test_event);
 
   // Testing for written event
-  auto queue = details::system::GetOrCreateSharedObject<details::EventQueue>(
-      details::Config::Get().queue_system_unique_name);
-  details::EventQueue::ReadSpan span;
-  ASSERT_EQ(queue->Consume(span), details::EventQueue::Status::OK);
-  ASSERT_EQ(test_event, std::string(span.Data(), span.Size()));
+  ASSERT_EQ(test_event, Consume());
 }
