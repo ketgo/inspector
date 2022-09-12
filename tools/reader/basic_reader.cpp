@@ -16,6 +16,8 @@
 
 #include "tools/reader/basic_reader.hpp"
 
+#include <inspector/details/system.hpp>
+
 namespace inspector {
 
 // ---------------------------------
@@ -33,7 +35,7 @@ void BasicReader::Iterator::Next() {
   details::EventQueue::ReadSpan span;
   status_ = queue_->Consume(span, max_attempt_);
   if (status_ == details::EventQueue::Status::OK) {
-    event_ = {span.Data(), span.Size()};
+    event_ = Event::Parse(span.Data(), span.Size());
   }
 }
 
@@ -44,9 +46,9 @@ BasicReader::Iterator::Iterator()
       max_attempt_(0),
       status_(details::EventQueue::Status::OK) {}
 
-std::string* BasicReader::Iterator::operator->() { return &event_; }
+Event* BasicReader::Iterator::operator->() { return &event_; }
 
-std::string& BasicReader::Iterator::operator*() { return event_; }
+Event& BasicReader::Iterator::operator*() { return event_; }
 
 BasicReader::Iterator& BasicReader::Iterator::operator++() {
   Next();
@@ -72,17 +74,22 @@ bool BasicReader::Iterator::operator!=(const Iterator& other) const {
 // ---------------------------------
 
 BasicReader::BasicReader(details::EventQueue& queue,
-                         const std::size_t max_attempt)
-    : queue_(std::addressof(queue)), max_attempt_(max_attempt) {}
+                         const std::size_t read_max_attempt)
+    : queue_(std::addressof(queue)), read_max_attempt_(read_max_attempt) {}
+
+BasicReader::BasicReader(const std::string& queue_name,
+                         const std::size_t read_max_attempt)
+    : queue_(details::system::GetSharedObject<details::EventQueue>(queue_name)),
+      read_max_attempt_(read_max_attempt) {}
 
 BasicReader::Iterator BasicReader::begin() const {
-  BasicReader::Iterator it(queue_, max_attempt_,
+  BasicReader::Iterator it(queue_, read_max_attempt_,
                            details::EventQueue::Status::OK);
   return ++it;
 }
 
 BasicReader::Iterator BasicReader::end() const {
-  return {queue_, max_attempt_, details::EventQueue::Status::EMPTY};
+  return {queue_, read_max_attempt_, details::EventQueue::Status::EMPTY};
 }
 
 // ---------------------------------

@@ -19,6 +19,7 @@
 #include <memory>
 
 #include <inspector/details/system.hpp>
+#include <inspector/details/trace_event.hpp>
 
 #include "tools/reader/basic_reader.hpp"
 
@@ -52,7 +53,7 @@ class BasicReaderTestFixture : public ::testing::Test {
 details::EventQueue* BasicReaderTestFixture::queue_;
 
 TEST_F(BasicReaderTestFixture, IterateEmptyQueue) {
-  std::vector<std::string> events;
+  std::vector<Event> events;
   for (auto&& event : *reader_) {
     events.push_back(std::move(event));
   }
@@ -62,17 +63,27 @@ TEST_F(BasicReaderTestFixture, IterateEmptyQueue) {
 
 TEST_F(BasicReaderTestFixture, IterateNonEmptyQueue) {
   // Preparing queue by publishing a test event for testing.
-  std::string test_event_1 = "testing_1";
-  ASSERT_EQ(queue_->Publish(test_event_1), details::EventQueue::Status::OK);
-  std::string test_event_2 = "testing_2";
-  ASSERT_EQ(queue_->Publish(test_event_2), details::EventQueue::Status::OK);
+  details::TraceEvent test_event_1('T', "TestTraceEvent1");
+  ASSERT_EQ(queue_->Publish(test_event_1.String()),
+            details::EventQueue::Status::OK);
+  details::TraceEvent test_event_2('T', "TestTraceEvent2");
+  ASSERT_EQ(queue_->Publish(test_event_2.String()),
+            details::EventQueue::Status::OK);
 
-  std::vector<std::string> events;
+  std::vector<Event> events;
   for (auto&& event : *reader_) {
     events.push_back(std::move(event));
   }
 
   ASSERT_EQ(events.size(), 2);
-  ASSERT_EQ(events[0], test_event_1);
-  ASSERT_EQ(events[1], test_event_2);
+  ASSERT_EQ(events[0].Type(), 0);
+  ASSERT_NE(events[0].Timestamp(), 0);
+  ASSERT_EQ(events[0].Pid(), details::system::GetProcessId());
+  ASSERT_EQ(events[0].Tid(), details::system::GetThreadId());
+  ASSERT_EQ(events[0].Payload(), "T|TestTraceEvent1");
+  ASSERT_EQ(events[1].Type(), 0);
+  ASSERT_NE(events[1].Timestamp(), 0);
+  ASSERT_EQ(events[1].Pid(), details::system::GetProcessId());
+  ASSERT_EQ(events[1].Tid(), details::system::GetThreadId());
+  ASSERT_EQ(events[1].Payload(), "T|TestTraceEvent2");
 }

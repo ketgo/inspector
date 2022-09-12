@@ -34,5 +34,6 @@ py_binary(
     deps = [
         ":periodic_task",
         "//python:inspector",
+        "//tools/reader:reader_py",
     ],
 )

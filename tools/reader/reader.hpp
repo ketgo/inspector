@@ -16,8 +16,13 @@
 
 #pragma once
 
+#include <thread>
+#include <vector>
+
 #include <inspector/details/config.hpp>
 #include <inspector/details/event_queue.hpp>
+
+#include "tools/reader/priority_queue.h"
 
 namespace inspector {
 
@@ -35,6 +40,9 @@ namespace inspector {
  *
  */
 class Reader {
+  // Buffer to store trace events in chronological order
+  using Buffer = SlidingWindowPriorityQueue<std::string>;
+
  public:
   /**
    * @brief Iterator to iterate over events in the event queue.
@@ -60,7 +68,10 @@ class Reader {
     bool operator!=(const Iterator& other) const;
 
    private:
+    Iterator(Buffer& buffer);
     void Next();
+
+    Buffer* buffer_;
   };
 
   /**
@@ -82,6 +93,22 @@ class Reader {
   }
 
   /**
+   * @brief Get the default number of workers used by the reader.
+   *
+   */
+  static constexpr std::size_t DefaultWorkerCount() {
+    return 4;  // 4 workers
+  }
+
+  /**
+   * @brief Get the default buffer window size.
+   *
+   */
+  static constexpr int64_t DefaultBufferWindowSize() {
+    return 2000000000;  // 2s
+  }
+
+  /**
    * @brief Construct a new Reader object.
    *
    * The reader expects the event queue to already exist during construction. If
@@ -91,20 +118,31 @@ class Reader {
    * @param queue_name Constant reference to the queue name containing trace
    * events. Note that the name used should be unique accross the operating
    * system.
-   * @param max_attempt Maximum number of attempts to make when reading an event
-   * from the queue.
    * @param max_connection_attempt Maximum number of event queue connection
    * attempts.
    * @param connection_interval Number of milliseconds to wait between each
    * connection attempt.
+   * @param read_max_attempt Maximum number of attempts to make when reading an
+   * event from the queue.
+   * @param thread_count Number of background workers reading trace events.
+   * @param buffer_window_size Window size used by the internal event buffer.
    */
   Reader(
       const std::string& queue_name =
           details::Config::Get().queue_system_unique_name,
-      const std::size_t max_attempt = details::Config::Get().read_max_attempt,
       const std::size_t max_connection_attempt = DefaultMaxConnectionAttempt(),
       const std::chrono::milliseconds connection_interval =
-          DefaultConnectionAttemptInterval());
+          DefaultConnectionAttemptInterval(),
+      const std::size_t read_max_attempt =
+          details::Config::Get().read_max_attempt,
+      const std::size_t worker_count = DefaultWorkerCount(),
+      const int64_t buffer_window_size = DefaultBufferWindowSize());
+
+  /**
+   * @brief Destroy the Reader object.
+   *
+   */
+  ~Reader();
 
   // NOTE: We break our naming convention for the methods `begin` and `end` in
   // order to support the standard `for` loop expressions, i.e. `for(auto& x:
@@ -114,25 +152,12 @@ class Reader {
   Iterator end() const;
 
  private:
-  /**
-   * @brief Get the event queue where trace events are stored.
-   *
-   * The method attempts to get the event queue where the trace events are
-   * stored. On failure, the method keeps on trying to get the queue until the
-   * given max attempt value is reached.
-   *
-   * @param queue_name Constant reference to the queue name.
-   * @param max_attempt Maximum number of attempts to get the queue.
-   * @param interval Number of milliseconds to wait before each attempt.
-   * @returns Pointer to the event queue.
-   */
-  static details::EventQueue* GetEventQueue(
-      const std::string queue_name, const std::size_t max_attempt,
-      const std::chrono::milliseconds interval);
+  void RunWorker();
 
-  const std::size_t max_attempt_;  // Max number of read attempts
-  const std::string queue_name_;
   details::EventQueue* queue_;
+  const std::size_t read_max_attempt_;
+  std::vector<std::thread> workers_;
+  Buffer buffer_;
 };
 
 // ---------------------------------

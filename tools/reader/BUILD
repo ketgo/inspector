@@ -12,6 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//third_party/pybind11:defs.bzl", "pybind_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "event",
+    srcs = [
+        "event.cpp",
+    ],
+    hdrs = [
+        "event.hpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+    ],
+)
+
+cc_test(
+    name = "event_test",
+    srcs = [
+        "event_test.cpp",
+    ],
+    deps = [
+        ":event",
+        "@gtest//:gtest_main",
+    ],
+)
+
 cc_library(
     name = "basic_reader",
     srcs = [
@@ -21,7 +49,7 @@ cc_library(
         "basic_reader.hpp",
     ],
     deps = [
-        "//cpp:inspector",
+        ":event",
     ],
 )
 
@@ -33,5 +61,58 @@ cc_test(
     deps = [
         ":basic_reader",
         "@gtest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "priority_queue",
+    hdrs = [
+        "priority_queue.h",
+    ],
+    deps = [],
+)
+
+cc_test(
+    name = "priority_queue_test",
+    srcs = [
+        "priority_queue_test.cpp",
+    ],
+    deps = [
+        ":priority_queue",
+        "@gtest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "reader",
+    srcs = ["reader.cpp"],
+    hdrs = [
+        "reader.hpp",
+    ],
+    deps = [
+        ":basic_reader",
+        ":priority_queue",
+    ],
+)
+
+cc_test(
+    name = "reader_test",
+    srcs = [
+        "reader_test.cpp",
+    ],
+    deps = [
+        ":reader",
+        "@gtest//:gtest_main",
+    ],
+)
+
+pybind_library(
+    name = "reader_py",
+    srcs = [
+        "reader_py.cpp",
+    ],
+    soname = "reader_py",
+    deps = [
+        ":basic_reader",
     ],
 )

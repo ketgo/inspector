@@ -18,7 +18,7 @@ import argparse
 import logging
 
 from periodic_task import PeriodicTask
-from py_inspector import Reader
+from tools.reader.reader_py import BasicReader
 
 LOG = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class TraceReader:
     """
 
     def __init__(self) -> None:
-        self._reader = Reader()
+        self._reader = BasicReader()
 
     def __call__(self) -> None:
         LOG.debug("Consuming trace events...")

@@ -16,9 +16,10 @@
 
 #pragma once
 
-#include <string>
-
+#include <inspector/details/config.hpp>
 #include <inspector/details/event_queue.hpp>
+
+#include "tools/reader/event.hpp"
 
 namespace inspector {
 
@@ -47,8 +48,8 @@ class BasicReader {
 
     // Standard forward iterator interface
 
-    std::string* operator->();
-    std::string& operator*();
+    Event* operator->();
+    Event& operator*();
     Iterator& operator++();
     Iterator operator++(int);
     bool operator==(const Iterator& other) const;
@@ -63,17 +64,31 @@ class BasicReader {
     details::EventQueue* queue_;
     const std::size_t max_attempt_;
     details::EventQueue::Status status_;
-    std::string event_;
+    Event event_;
   };
+
+  /**
+   * @brief Construct a new Basic Reader object
+   *
+   * @param queue_name Constant reference to the queue name containing trace
+   * events. Note that the name used should be unique accross the operating
+   * system.
+   * @param read_max_attempt Maximum number of attempts to make when reading an
+   * event from the queue.
+   */
+  BasicReader(const std::string& queue_name =
+                  details::Config::Get().queue_system_unique_name,
+              const std::size_t read_max_attempt =
+                  details::Config::Get().read_max_attempt);
 
   /**
    * @brief Construct a new BasicReader object.
    *
    * @param queue Reference to the event queue containing trace events.
-   * @param max_attempt Maximum number of attempts to make when reading an event
-   * from the queue.
+   * @param read_max_attempt Maximum number of attempts to make when reading an
+   * event from the queue.
    */
-  BasicReader(details::EventQueue& queue, const std::size_t max_attempt);
+  BasicReader(details::EventQueue& queue, const std::size_t read_max_attempt);
 
   // NOTE: We break our naming convention for the methods `begin` and `end` in
   // order to support the standard `for` loop expressions, i.e. `for(auto& x:
@@ -84,7 +99,7 @@ class BasicReader {
 
  private:
   details::EventQueue* queue_;
-  const std::size_t max_attempt_;
+  const std::size_t read_max_attempt_;
 };
 
 }  // namespace inspector
