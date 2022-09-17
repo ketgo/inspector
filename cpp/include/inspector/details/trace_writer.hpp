@@ -16,12 +16,11 @@
 
 #pragma once
 
-#include <inspector/trace_event.hpp>
-
 #include <inspector/details/config.hpp>
 #include <inspector/details/event_queue.hpp>
 #include <inspector/details/logging.hpp>
 #include <inspector/details/system.hpp>
+#include <inspector/details/trace_event.hpp>
 
 namespace inspector {
 namespace details {
@@ -74,7 +73,7 @@ class TraceWriter {
 
 inline TraceWriter::TraceWriter()
     : remove_(details::Config::Get().queue_remove_on_exit),
-      max_attempt_(details::Config::Get().read_max_attempt),
+      max_attempt_(details::Config::Get().max_read_attempt),
       queue_name_(details::Config::Get().queue_system_unique_name),
       queue_(details::system::GetOrCreateSharedObject<details::EventQueue>(
           queue_name_)) {}
@@ -115,14 +114,17 @@ inline void WriteTraceEvent(const TraceEvent& event) {
 /**
  * @brief Construct and write a trace event with the given arguments.
  *
+ * @param phase Phase of the event.
+ * @param name Constant reference to the event name.
+ * @param args COnstant reference to event arguments.
  */
 template <class... Args>
-inline void WriteTraceEvent(const char type, const std::string& name,
+inline void WriteTraceEvent(const char phase, const std::string& name,
                             const Args&... args) {
   if (inspector::details::Config::Get().disable_tracing) {
     return;
   }
-  TraceEvent event(type, name);
+  TraceEvent event(phase, name);
   event.SetArgs(args...);
   WriteTraceEvent(event);
 }

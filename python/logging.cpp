@@ -22,12 +22,6 @@
 namespace py = pybind11;
 
 /**
- * @brief Method used for testing only.
- *
- */
-void WriteTestLog() { LOG_ERROR << "Test Log Message"; }
-
-/**
  * @brief Adaptor for python logging module.
  *
  */
@@ -71,9 +65,6 @@ void BindLogging(py::module& m) {
 
   static PythonLogger error_logger("error", py_logger);
   inspector::RegisterLogger(inspector::LogLevel::ERROR, error_logger);
-
-  auto test_module = m.def_submodule("testing", "Module for testing.");
-  test_module.def("write_test_log", &WriteTestLog);
 
   // Unregister python logger before interpreter exits. This is required since
   // the C++ static objects have lifetime greater than that of the interpreter

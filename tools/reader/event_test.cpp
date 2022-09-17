@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <gtest/gtest.h>
 
-namespace py = pybind11;
+#include <inspector/details/trace_event.hpp>
 
-void BindConfig(py::module& m);
-void BindLogging(py::module& m);
-void BindTrace(py::module& m);
-void BindTesting(py::module& m);
+#include "tools/reader/event.hpp"
 
-PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
-  m.doc() = "Tool set to capture real time application traces for inspection.";
+using namespace inspector;
 
-  BindConfig(m);
-  BindLogging(m);
-  BindTrace(m);
-  BindTesting(m);
+TEST(EventTestFixture, TestParser) {
+  details::TraceEvent trace_event('T', "TestTraceEvent");
+  std::string event_str = trace_event.String();
+
+  auto event = Event::Parse(event_str.data(), event_str.size());
+  ASSERT_EQ(event.Type(), 0);
+  ASSERT_NE(event.Timestamp(), 0);
+  ASSERT_EQ(event.Pid(), details::system::GetProcessId());
+  ASSERT_EQ(event.Tid(), details::system::GetThreadId());
+  ASSERT_EQ(event.Payload(), "T|TestTraceEvent");
 }

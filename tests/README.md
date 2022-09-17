@@ -14,4 +14,4 @@
  limitations under the License.
 -->
 
-The folder contains tests only for the inspector trace lib. All trace monitor tests are located within the `monitor` package.
+The folder contains tests for the user facing inspector library API.

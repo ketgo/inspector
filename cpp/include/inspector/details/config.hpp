@@ -57,8 +57,8 @@ class Config {
 
   std::string queue_system_unique_name;
   bool queue_remove_on_exit;
-  std::size_t read_max_attempt;
-  std::size_t write_max_attempt;
+  std::size_t max_read_attempt;
+  std::size_t max_write_attempt;
   bool disable_tracing;
 
  private:
@@ -76,8 +76,8 @@ class Config {
 inline Config::Config()
     : queue_system_unique_name(kEventQueueSystemUniqueName),
       queue_remove_on_exit(kEventQueueRemoveOnExit),
-      read_max_attempt(kMaxAttempt),
-      write_max_attempt(kMaxAttempt),
+      max_read_attempt(kMaxAttempt),
+      max_write_attempt(kMaxAttempt),
       disable_tracing(false) {}
 
 // --------- public -----------

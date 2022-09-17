@@ -16,94 +16,83 @@
 
 import py_inspector as inspector
 
-from typing import List
-
 
 def setup_module():
     inspector.Config().EVENT_QUEUE_NAME = "inspector-trace-test"
     inspector.Config().REMOVE_EVENT_QUEUE_ON_EXIT = True
 
 
-def consume() -> List[inspector.TraceEvent]:
-    reader = inspector.Reader()
-    return [inspector.TraceEvent.load(event) for event in reader]
+def consume() -> inspector.testing.Event:
+    return inspector.testing.consume_test_event()
 
 
 def test_sync_begin():
     inspector.sync_begin("test_sync", 1, "one", arg=[])
 
-    events = consume()
-    assert len(events) == 1
-    assert events[0].type == "B"
-    assert events[0].name == "test_sync"
-    assert events[0].payload == "1|one|arg=[]"
+    event = consume()
+    assert event.phase == "B"
+    assert event.name == "test_sync"
+    assert event.args == "1|one|arg=[]"
 
 
 def test_sync_end():
     inspector.sync_end("test_sync")
 
-    events = consume()
-    assert len(events) == 1
-    assert events[0].type == "E"
-    assert events[0].name == "test_sync"
-    assert events[0].payload == ""
+    event = consume()
+    assert event.phase == "E"
+    assert event.name == "test_sync"
+    assert event.args == ""
 
 
 def test_async_begin():
     inspector.async_begin("test_async", 1, "one", arg=[])
 
-    events = consume()
-    assert len(events) == 1
-    assert events[0].type == "b"
-    assert events[0].name == "test_async"
-    assert events[0].payload == "1|one|arg=[]"
+    event = consume()
+    assert event.phase == "b"
+    assert event.name == "test_async"
+    assert event.args == "1|one|arg=[]"
 
 
 def test_async_instance():
     inspector.async_instance("test_async", 1, "one", arg=[])
 
-    events = consume()
-    assert len(events) == 1
-    assert events[0].type == "n"
-    assert events[0].name == "test_async"
-    assert events[0].payload == "1|one|arg=[]"
+    event = consume()
+    assert event.phase == "n"
+    assert event.name == "test_async"
+    assert event.args == "1|one|arg=[]"
 
 
 def test_async_end():
     inspector.async_end("test_async", 1, "one", arg=[])
 
-    events = consume()
-    assert len(events) == 1
-    assert events[0].type == "e"
-    assert events[0].name == "test_async"
-    assert events[0].payload == "1|one|arg=[]"
+    event = consume()
+    assert event.phase == "e"
+    assert event.name == "test_async"
+    assert event.args == "1|one|arg=[]"
 
 
 def test_flow_begin():
     inspector.flow_begin("test_flow", 1, "one", arg=[])
 
-    events = consume()
-    assert len(events) == 1
-    assert events[0].type == "s"
-    assert events[0].name == "test_flow"
-    assert events[0].payload == "1|one|arg=[]"
+    event = consume()
+    assert event.phase == "s"
+    assert event.name == "test_flow"
+    assert event.args == "1|one|arg=[]"
 
 
 def test_flow_instance():
     inspector.flow_instance("test_flow", 1, "one", arg=[])
 
-    events = consume()
-    assert len(events) == 1
-    assert events[0].type == "t"
-    assert events[0].name == "test_flow"
-    assert events[0].payload == "1|one|arg=[]"
+    event = consume()
+    assert event.phase == "t"
+    assert event.name == "test_flow"
+    assert event.args == "1|one|arg=[]"
 
 
 def test_flow_end():
     inspector.flow_end("test_flow", 1, "one", arg=[])
 
-    events = consume()
-    assert len(events) == 1
-    assert events[0].type == "f"
-    assert events[0].name == "test_flow"
-    assert events[0].payload == "1|one|arg=[]"
+    event = consume()
+    assert event.phase == "f"
+    assert event.name == "test_flow"
+    assert event.args == "1|one|arg=[]"

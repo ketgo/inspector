@@ -17,24 +17,9 @@
 import argparse
 import logging
 
-from periodic_task import PeriodicTask
-from py_inspector import Reader
+from tools.reader.reader_py import Reader
 
 LOG = logging.getLogger(__name__)
-
-
-class TraceReader:
-    """
-    Trace event reader
-    """
-
-    def __init__(self) -> None:
-        self._reader = Reader()
-
-    def __call__(self) -> None:
-        LOG.debug("Consuming trace events...")
-        for trace in self._reader:
-            print(trace)
 
 
 def parse_args() -> argparse.Namespace:
@@ -43,7 +28,16 @@ def parse_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(prog="monitor", description="Trace monitor CLI.")
     parser.add_argument(
-        "--period", type=float, help="Period of monitoring.", default=0.1
+        "--max_attempt",
+        type=int,
+        help="Maximum number of attempts to make when reading an event from the queue.",
+        default=32,
+    )
+    parser.add_argument(
+        "--polling_interval",
+        type=float,
+        help="Event queue consumer polling internval in seconds.",
+        default=0.01,
     )
     return parser.parse_args()
 
@@ -53,7 +47,13 @@ def main():
     args = parse_args()
 
     LOG.info("Starting trace consumer...")
-    PeriodicTask(args.period).run(TraceReader())
+
+    reader = Reader(
+        max_read_attempt=args.max_attempt, polling_interval=args.polling_interval
+    )
+    LOG.debug("Consuming trace events...")
+    for trace in reader:
+        print(trace)
 
 
 if __name__ == "__main__":

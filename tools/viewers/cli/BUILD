@@ -12,18 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_python//python:defs.bzl", "py_binary", "py_library")
-
-py_library(
-    name = "periodic_task",
-    srcs = [
-        "periodic_task.py",
-    ],
-    imports = [
-        ".",
-    ],
-    deps = [],
-)
+load("@rules_python//python:defs.bzl", "py_binary")
 
 py_binary(
     name = "run",
@@ -32,7 +21,7 @@ py_binary(
     ],
     main = "run.py",
     deps = [
-        ":periodic_task",
         "//python:inspector",
+        "//tools/reader:reader_py",
     ],
 )

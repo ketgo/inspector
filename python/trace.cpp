@@ -30,7 +30,7 @@ void PythonTraceEventNoArgs(const std::string& name) {
   if (inspector::details::Config::Get().disable_tracing) {
     return;
   }
-  inspector::TraceEvent event(TraceTag, name);
+  inspector::details::TraceEvent event(TraceTag, name);
   inspector::details::WriteTraceEvent(event);
 }
 
@@ -40,7 +40,7 @@ void PythonTraceEvent(const std::string& name, const py::args& args,
   if (inspector::details::Config::Get().disable_tracing) {
     return;
   }
-  inspector::TraceEvent event(TraceTag, name);
+  inspector::details::TraceEvent event(TraceTag, name);
   for (auto& arg : args) {
     event.SetArgs(py::str(arg));
   }

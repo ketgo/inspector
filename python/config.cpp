@@ -35,10 +35,10 @@ void BindConfig(py::module& m) {
                      &inspector::details::Config::queue_system_unique_name)
       .def_readwrite("REMOVE_EVENT_QUEUE_ON_EXIT",
                      &inspector::details::Config::queue_remove_on_exit)
-      .def_readwrite("WRITE_MAX_ATTEMPT",
-                     &inspector::details::Config::write_max_attempt)
-      .def_readwrite("READ_MAX_ATTEMPT",
-                     &inspector::details::Config::read_max_attempt)
+      .def_readwrite("MAX_WRITE_ATTEMPT",
+                     &inspector::details::Config::max_write_attempt)
+      .def_readwrite("MAX_READ_ATTEMPT",
+                     &inspector::details::Config::max_read_attempt)
       .def_readwrite("DISABLE_TRACING",
                      &inspector::details::Config::disable_tracing);
 }

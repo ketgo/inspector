@@ -24,34 +24,13 @@ cc_test(
 )
 
 cc_test(
-    name = "reader_test",
-    srcs = [
-        "reader_test.cpp",
-    ],
-    deps = [
-        "//cpp:inspector",
-        "@gtest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "trace_event_test",
-    srcs = [
-        "trace_event_test.cpp",
-    ],
-    deps = [
-        "//cpp:inspector",
-        "@gtest//:gtest_main",
-    ],
-)
-
-cc_test(
     name = "trace_test",
     srcs = [
         "trace_test.cpp",
     ],
     deps = [
         "//cpp:inspector",
+        "//utils:strings",
         "@gtest//:gtest_main",
     ],
 )
