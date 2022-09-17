@@ -67,7 +67,7 @@ inline void SetRemoveEventQueueOnExit(bool remove) {
  * @return std::size_t
  */
 inline std::size_t WriteMaxAttempt() {
-  return details::Config::Get().write_max_attempt;
+  return details::Config::Get().max_write_attempt;
 }
 
 /**
@@ -76,7 +76,7 @@ inline std::size_t WriteMaxAttempt() {
  * @param max_attempt
  */
 inline void SetWriteMaxAttempt(const std::size_t max_attempt) {
-  details::Config::Get().write_max_attempt = max_attempt;
+  details::Config::Get().max_write_attempt = max_attempt;
 }
 
 /**
@@ -85,7 +85,7 @@ inline void SetWriteMaxAttempt(const std::size_t max_attempt) {
  * @return std::size_t
  */
 inline std::size_t ReadMaxAttempt() {
-  return details::Config::Get().read_max_attempt;
+  return details::Config::Get().max_read_attempt;
 }
 
 /**
@@ -94,7 +94,7 @@ inline std::size_t ReadMaxAttempt() {
  * @param max_attempt
  */
 inline void SetReadMaxAttempt(const std::size_t max_attempt) {
-  details::Config::Get().read_max_attempt = max_attempt;
+  details::Config::Get().max_read_attempt = max_attempt;
 }
 
 /**

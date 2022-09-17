@@ -16,6 +16,7 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/chrono.h>
 
 #include <inspector/logging.hpp>
 
@@ -98,9 +99,9 @@ PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
       .def_property_readonly("payload", &inspector::Event::Payload)
       .def("__str__", [](const inspector::Event& self) {
         std::stringstream stream;
-        stream << R"({"type":)" << self.Type() << R"(,"timestamp":)"
+        stream << R"({"type":)" << (int)self.Type() << R"(,"timestamp":)"
                << self.Timestamp() << R"(,"pid":)" << self.Pid() << R"(,"tid":)"
-               << self.Tid() << R"(,"payload":)" << self.Payload();
+               << self.Tid() << R"(,"payload":")" << self.Payload() << R"("})";
         return stream.str();
       });
 
@@ -112,7 +113,11 @@ PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
 
   py::class_<inspector::BasicReader>(m, "BasicReader")
       .def(py::init())
-      .def(py::init<const std::string&, const std::size_t>())
+      .def(py::init<const std::string&, const std::size_t>(),
+           py::arg("queue_name") =
+               inspector::details::Config::Get().queue_system_unique_name,
+           py::arg("max_read_attempt") =
+               inspector::details::Config::Get().max_read_attempt)
       .def(
           "__iter__",
           [](const inspector::BasicReader& reader) {
@@ -128,10 +133,31 @@ PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
 
   py::class_<inspector::Reader>(m, "Reader")
       .def(py::init())
-      .def(py::init<const std::string&, const std::size_t, const std::size_t,
-                    const int64_t>())
+      .def(py::init<const std::string&, const std::size_t,
+                    const std::chrono::microseconds&, const std::size_t,
+                    const int64_t>(),
+           py::arg("queue_name") =
+               inspector::details::Config::Get().queue_system_unique_name,
+           py::arg("max_read_attempt") =
+               inspector::details::Config::Get().max_read_attempt,
+           py::arg("polling_interval") =
+               inspector::Reader::DefaultPollingInterval(),
+           py::arg("worker_count") = inspector::Reader::DefaultWorkerCount(),
+           py::arg("buffer_window_size") =
+               inspector::Reader::DefaultBufferWindowSize())
       .def(py::init<const std::chrono::microseconds&, const std::string&,
-                    const std::size_t, const std::size_t, const int64_t>())
+                    const std::size_t, const std::chrono::microseconds&,
+                    const std::size_t, const int64_t>(),
+           py::arg("timeout"),
+           py::arg("queue_name") =
+               inspector::details::Config::Get().queue_system_unique_name,
+           py::arg("max_read_attempt") =
+               inspector::details::Config::Get().max_read_attempt,
+           py::arg("polling_interval") =
+               inspector::Reader::DefaultPollingInterval(),
+           py::arg("worker_count") = inspector::Reader::DefaultWorkerCount(),
+           py::arg("buffer_window_size") =
+               inspector::Reader::DefaultBufferWindowSize())
       .def(
           "__iter__",
           [](const inspector::Reader& reader) {

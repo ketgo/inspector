@@ -73,22 +73,22 @@ class BasicReader {
    * @param queue_name Constant reference to the queue name containing trace
    * events. Note that the name used should be unique accross the operating
    * system.
-   * @param read_max_attempt Maximum number of attempts to make when reading an
+   * @param max_read_attempt Maximum number of attempts to make when reading an
    * event from the queue.
    */
   BasicReader(const std::string& queue_name =
                   details::Config::Get().queue_system_unique_name,
-              const std::size_t read_max_attempt =
-                  details::Config::Get().read_max_attempt);
+              const std::size_t max_read_attempt =
+                  details::Config::Get().max_read_attempt);
 
   /**
    * @brief Construct a new BasicReader object.
    *
    * @param queue Reference to the event queue containing trace events.
-   * @param read_max_attempt Maximum number of attempts to make when reading an
+   * @param max_read_attempt Maximum number of attempts to make when reading an
    * event from the queue.
    */
-  BasicReader(details::EventQueue& queue, const std::size_t read_max_attempt);
+  BasicReader(details::EventQueue& queue, const std::size_t max_read_attempt);
 
   // NOTE: We break our naming convention for the methods `begin` and `end` in
   // order to support the standard `for` loop expressions, i.e. `for(auto& x:
@@ -99,7 +99,7 @@ class BasicReader {
 
  private:
   details::EventQueue* queue_;
-  const std::size_t read_max_attempt_;
+  const std::size_t max_read_attempt_;
 };
 
 }  // namespace inspector

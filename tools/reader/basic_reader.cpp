@@ -74,22 +74,22 @@ bool BasicReader::Iterator::operator!=(const Iterator& other) const {
 // ---------------------------------
 
 BasicReader::BasicReader(details::EventQueue& queue,
-                         const std::size_t read_max_attempt)
-    : queue_(std::addressof(queue)), read_max_attempt_(read_max_attempt) {}
+                         const std::size_t max_read_attempt)
+    : queue_(std::addressof(queue)), max_read_attempt_(max_read_attempt) {}
 
 BasicReader::BasicReader(const std::string& queue_name,
-                         const std::size_t read_max_attempt)
+                         const std::size_t max_read_attempt)
     : queue_(details::system::GetSharedObject<details::EventQueue>(queue_name)),
-      read_max_attempt_(read_max_attempt) {}
+      max_read_attempt_(max_read_attempt) {}
 
 BasicReader::Iterator BasicReader::begin() const {
-  BasicReader::Iterator it(queue_, read_max_attempt_,
+  BasicReader::Iterator it(queue_, max_read_attempt_,
                            details::EventQueue::Status::OK);
   return ++it;
 }
 
 BasicReader::Iterator BasicReader::end() const {
-  return {queue_, read_max_attempt_, details::EventQueue::Status::EMPTY};
+  return {queue_, max_read_attempt_, details::EventQueue::Status::EMPTY};
 }
 
 // ---------------------------------

@@ -88,6 +88,10 @@ class Reader {
     return 4;  // 4 workers
   }
 
+  static constexpr std::chrono::microseconds DefaultPollingInterval() {
+    return std::chrono::microseconds{1000};  // 1ms
+  }
+
   /**
    * @brief Get the default buffer window size.
    *
@@ -107,15 +111,19 @@ class Reader {
    * @param queue_name Constant reference to the queue name containing trace
    * events. Note that the name used should be unique accross the operating
    * system.
-   * @param read_max_attempt Maximum number of attempts to make when reading an
+   * @param max_read_attempt Maximum number of attempts to make when reading an
    * event from the queue.
-   * @param thread_count Number of background workers reading trace events.
+   * @param polling_interval_ms Event queue consumer polling internval in
+   * microseconds.
+   * @param worker_count Number of background workers reading trace events.
    * @param buffer_window_size Window size used by the internal event buffer.
    */
   Reader(const std::string& queue_name =
              details::Config::Get().queue_system_unique_name,
-         const std::size_t read_max_attempt =
-             details::Config::Get().read_max_attempt,
+         const std::size_t max_read_attempt =
+             details::Config::Get().max_read_attempt,
+         const std::chrono::microseconds& polling_interval_ms =
+             DefaultPollingInterval(),
          const std::size_t worker_count = DefaultWorkerCount(),
          const int64_t buffer_window_size = DefaultBufferWindowSize());
 
@@ -132,16 +140,20 @@ class Reader {
    * @param queue_name Constant reference to the queue name containing trace
    * events. Note that the name used should be unique accross the operating
    * system.
-   * @param read_max_attempt Maximum number of attempts to make when reading an
+   * @param max_read_attempt Maximum number of attempts to make when reading an
    * event from the queue.
-   * @param thread_count Number of background workers reading trace events.
+   * @param polling_interval_ms Event queue consumer polling internval in
+   * microseconds.
+   * @param worker_count Number of background workers reading trace events.
    * @param buffer_window_size Window size used by the internal event buffer.
    */
   Reader(const std::chrono::microseconds& timeout_ms,
          const std::string& queue_name =
              details::Config::Get().queue_system_unique_name,
-         const std::size_t read_max_attempt =
-             details::Config::Get().read_max_attempt,
+         const std::size_t max_read_attempt =
+             details::Config::Get().max_read_attempt,
+         const std::chrono::microseconds& polling_interval_ms =
+             DefaultPollingInterval(),
          const std::size_t worker_count = DefaultWorkerCount(),
          const int64_t buffer_window_size = DefaultBufferWindowSize());
 
@@ -173,7 +185,8 @@ class Reader {
   void StopWorkers();
 
   details::EventQueue* queue_;
-  const std::size_t read_max_attempt_;
+  const std::size_t max_read_attempt_;
+  const std::chrono::microseconds polling_interval_ms_;
   std::vector<std::thread> workers_;
   mutable Buffer buffer_;
   mutable std::atomic_bool stop_;

@@ -73,7 +73,7 @@ class TraceWriter {
 
 inline TraceWriter::TraceWriter()
     : remove_(details::Config::Get().queue_remove_on_exit),
-      max_attempt_(details::Config::Get().read_max_attempt),
+      max_attempt_(details::Config::Get().max_read_attempt),
       queue_name_(details::Config::Get().queue_system_unique_name),
       queue_(details::system::GetOrCreateSharedObject<details::EventQueue>(
           queue_name_)) {}

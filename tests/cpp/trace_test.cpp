@@ -59,7 +59,7 @@ struct Event {
 class TracerTestFixture : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
-    details::Config::Get().write_max_attempt = kMaxAttempt;
+    details::Config::Get().max_write_attempt = kMaxAttempt;
     details::Config::Get().queue_system_unique_name = kEventQueueName;
     details::Config::Get().queue_remove_on_exit = true;
   }

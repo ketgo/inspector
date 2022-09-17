@@ -83,12 +83,12 @@ void Reader::StartWorkers() {
   for (auto& worker : workers_) {
     worker = std::thread([&]() {
       while (!stop_.load()) {
-        BasicReader reader(*queue_, read_max_attempt_);
+        BasicReader reader(*queue_, max_read_attempt_);
         for (auto&& event : reader) {
           // Push the event to the priority queue buffer
           buffer_.Push({event.Timestamp(), std::move(event)});
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        std::this_thread::sleep_for(polling_interval_ms_);
       }
     });
   }
@@ -106,10 +106,14 @@ void Reader::StopWorkers() {
 // ----------- public --------------
 
 Reader::Reader(const std::string& queue_name,
-               const std::size_t read_max_attempt,
-               const std::size_t worker_count, const int64_t buffer_window_size)
+               const std::size_t max_read_attempt,
+               const std::chrono::microseconds& polling_interval_ms,
+               const std::size_t worker_count,
+
+               const int64_t buffer_window_size)
     : queue_(details::system::GetSharedObject<details::EventQueue>(queue_name)),
-      read_max_attempt_(read_max_attempt),
+      max_read_attempt_(max_read_attempt),
+      polling_interval_ms_(polling_interval_ms),
       workers_(worker_count),
       buffer_(buffer_window_size),
       stop_(false),
@@ -119,10 +123,12 @@ Reader::Reader(const std::string& queue_name,
 
 Reader::Reader(const std::chrono::microseconds& timeout_ms,
                const std::string& queue_name,
-               const std::size_t read_max_attempt,
+               const std::size_t max_read_attempt,
+               const std::chrono::microseconds& polling_interval_ms,
                const std::size_t worker_count, const int64_t buffer_window_size)
     : queue_(details::system::GetSharedObject<details::EventQueue>(queue_name)),
-      read_max_attempt_(read_max_attempt),
+      max_read_attempt_(max_read_attempt),
+      polling_interval_ms_(polling_interval_ms),
       workers_(worker_count),
       buffer_(buffer_window_size),
       stop_(false),
