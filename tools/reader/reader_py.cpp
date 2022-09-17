@@ -21,6 +21,7 @@
 
 #include "tools/reader/event.hpp"
 #include "tools/reader/basic_reader.hpp"
+#include "tools/reader/reader.hpp"
 
 namespace py = pybind11;
 
@@ -115,6 +116,25 @@ PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
       .def(
           "__iter__",
           [](const inspector::BasicReader& reader) {
+            return py::make_iterator(reader.begin(), reader.end());
+          },
+          py::keep_alive<0, 1>());
+
+  // ------------------------------------------------------
+
+  // ------------------------------------------------------
+  // Binding Reader
+  // ------------------------------------------------------
+
+  py::class_<inspector::Reader>(m, "Reader")
+      .def(py::init())
+      .def(py::init<const std::string&, const std::size_t, const std::size_t,
+                    const int64_t>())
+      .def(py::init<const std::chrono::microseconds&, const std::string&,
+                    const std::size_t, const std::size_t, const int64_t>())
+      .def(
+          "__iter__",
+          [](const inspector::Reader& reader) {
             return py::make_iterator(reader.begin(), reader.end());
           },
           py::keep_alive<0, 1>());

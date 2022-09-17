@@ -52,6 +52,13 @@ const int32_t& Event::Tid() const { return tid_; }
 
 const std::string& Event::Payload() const { return payload_; }
 
+bool Event::operator==(const Event& other) const {
+  return type_ == other.type_ && timestamp_ == other.timestamp_ &&
+         pid_ == other.pid_ && tid_ == other.tid_ && payload_ == other.payload_;
+}
+
+bool Event::operator!=(const Event& other) const { return !(*this == other); }
+
 // ------------------------------------------------------
 
 }  // namespace inspector

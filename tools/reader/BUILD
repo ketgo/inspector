@@ -113,6 +113,6 @@ pybind_library(
     ],
     soname = "reader_py",
     deps = [
-        ":basic_reader",
+        ":reader",
     ],
 )

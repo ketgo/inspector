@@ -16,88 +16,127 @@
 
 #include "tools/reader/reader.hpp"
 
-#include <cassert>
-#include <iostream>
-
-#include <inspector/details/logging.hpp>
 #include <inspector/details/system.hpp>
 
 #include "tools/reader/basic_reader.hpp"
 
 namespace inspector {
-namespace {
 
-/**
- * @brief Get the event queue where trace events are stored.
- *
- * The method attempts to get the event queue where the trace events are
- * stored. On failure, the method keeps on trying to get the queue until the
- * given max attempt value is reached.
- *
- * @param queue_name Constant reference to the queue name.
- * @param max_attempt Maximum number of attempts to get the queue.
- * @param interval Number of milliseconds to wait before each attempt.
- * @returns Pointer to the event queue.
- */
-details::EventQueue* GetEventQueue(const std::string queue_name,
-                                   const std::size_t max_attempt,
-                                   const std::chrono::milliseconds interval) {
-  assert(max_attempt > 0);
-  std::size_t attempts = 0;
-  while (true) {
-    try {
-      return details::system::GetSharedObject<details::EventQueue>(queue_name);
-    } catch (const std::system_error& error) {
-      if (error.code().value() != ENOENT || max_attempt <= ++attempts) {
-        throw error;
-      }
-      LOG_ERROR << "Event queue '" << queue_name << "' not found. Retrying in '"
-                << interval.count() << " ms'...";
-      std::this_thread::sleep_for(interval);
-    }
+// ---------------------------------
+// Reader::Iterator Implementation
+// ---------------------------------
+
+Reader::Iterator::Iterator(Buffer& buffer,
+                           const std::chrono::microseconds& timeout_ms)
+    : event_(0, {}),
+      buffer_(std::addressof(buffer)),
+      timeout_ms_(timeout_ms),
+      timeout_(false) {}
+
+Reader::Iterator::Iterator(Buffer& buffer, bool timeout)
+    : event_(0, {}),
+      buffer_(std::addressof(buffer)),
+      timeout_ms_(0),
+      timeout_(timeout) {}
+
+void Reader::Iterator::Next() {
+  if (timeout_ms_.count()) {
+    timeout_ = !(buffer_->Pop(event_, timeout_ms_));
+  } else {
+    buffer_->Pop(event_);
   }
 }
 
-}  // namespace
+// ---------- public --------------
+
+Reader::Iterator::Iterator()
+    : event_(0, {}), buffer_(nullptr), timeout_ms_(0), timeout_(false) {}
+
+Event* Reader::Iterator::operator->() { return &event_.second; }
+
+Event& Reader::Iterator::operator*() { return event_.second; }
+
+Reader::Iterator& Reader::Iterator::operator++() {
+  Next();
+  return *this;
+}
+
+Reader::Iterator Reader::Iterator::operator++(int) {
+  Iterator rvalue = *this;
+  Next();
+  return rvalue;
+}
+
+bool Reader::Iterator::operator==(const Iterator& other) const {
+  return buffer_ == other.buffer_ && timeout_ == other.timeout_;
+}
+
+bool Reader::Iterator::operator!=(const Iterator& other) const {
+  return !(*this == other);
+}
 
 // ---------------------------------
 // Reader Implementation
 // ---------------------------------
 
-void Reader::RunWorker() {
-  BasicReader reader(*queue_, read_max_attempt_);
-  while (true) {
-    for (auto&& event : reader) {
-      // TODO: Parse the event and push it to priority queue.
-      std::cout << event << "\n";
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds{1});
-  }
-}
-
-// ----------- public --------------
-
-Reader::Reader(const std::string& queue_name,
-               const std::size_t max_connection_attempt,
-               const std::chrono::milliseconds connection_interval,
-               const std::size_t read_max_attempt,
-               const std::size_t worker_count, const int64_t buffer_window_size)
-    : queue_(GetEventQueue(queue_name, max_connection_attempt,
-                           connection_interval)),
-      read_max_attempt_(read_max_attempt),
-      workers_(worker_count),
-      buffer_(buffer_window_size) {
+void Reader::StartWorkers() {
   for (auto& worker : workers_) {
-    worker = std::thread(&Reader::RunWorker, this);
+    worker = std::thread([&]() {
+      while (!stop_.load()) {
+        BasicReader reader(*queue_, read_max_attempt_);
+        for (auto&& event : reader) {
+          // Push the event to the priority queue buffer
+          buffer_.Push({event.Timestamp(), std::move(event)});
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds{1});
+      }
+    });
   }
 }
 
-Reader::~Reader() {
+void Reader::StopWorkers() {
+  stop_.store(true);
   for (auto& worker : workers_) {
     if (worker.joinable()) {
       worker.join();
     }
   }
 }
+
+// ----------- public --------------
+
+Reader::Reader(const std::string& queue_name,
+               const std::size_t read_max_attempt,
+               const std::size_t worker_count, const int64_t buffer_window_size)
+    : queue_(details::system::GetSharedObject<details::EventQueue>(queue_name)),
+      read_max_attempt_(read_max_attempt),
+      workers_(worker_count),
+      buffer_(buffer_window_size),
+      stop_(false),
+      timeout_ms_(0) {
+  StartWorkers();
+}
+
+Reader::Reader(const std::chrono::microseconds& timeout_ms,
+               const std::string& queue_name,
+               const std::size_t read_max_attempt,
+               const std::size_t worker_count, const int64_t buffer_window_size)
+    : queue_(details::system::GetSharedObject<details::EventQueue>(queue_name)),
+      read_max_attempt_(read_max_attempt),
+      workers_(worker_count),
+      buffer_(buffer_window_size),
+      stop_(false),
+      timeout_ms_(timeout_ms) {
+  StartWorkers();
+}
+
+Reader::~Reader() { StopWorkers(); }
+
+Reader::Iterator Reader::begin() const {
+  Iterator it(buffer_, timeout_ms_);
+  return ++it;
+}
+
+Reader::Iterator Reader::end() const { return {buffer_, true}; }
 
 }  // namespace inspector

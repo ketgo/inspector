@@ -20,7 +20,8 @@
 
 namespace {
 constexpr auto kTestWindowSize = 50;
-}
+constexpr auto kWaitTimeout = std::chrono::microseconds{100};
+}  // namespace
 
 TEST(SlidingWindowPriorityQueueTestFixture, TestEmptyQueue) {
   inspector::SlidingWindowPriorityQueue<int> queue(kTestWindowSize);
@@ -35,6 +36,7 @@ TEST(SlidingWindowPriorityQueueTestFixture, TestFullQueue) {
   queue.Push({10, 1});
   queue.Push({20, 2});
   queue.Push({59, 3});
+  ASSERT_FALSE(queue.Push({60, 4}, kWaitTimeout));
   ASSERT_FALSE(queue.TryPush({60, 4}));
 }
 
@@ -59,5 +61,6 @@ TEST(SlidingWindowPriorityQueueTestFixture, TestForElementsWithinWindow) {
   queue.Pop(value);
   ASSERT_EQ(value.first, 40);
   ASSERT_EQ(value.second, 3);
+  ASSERT_FALSE(queue.Pop(value, kWaitTimeout));
   ASSERT_FALSE(queue.TryPop(value));
 }

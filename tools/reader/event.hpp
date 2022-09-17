@@ -34,6 +34,9 @@ class Event {
   const int32_t& Tid() const;
   const std::string& Payload() const;
 
+  bool operator==(const Event& other) const;
+  bool operator!=(const Event& other) const;
+
  protected:
   int8_t type_;
   int64_t timestamp_;
