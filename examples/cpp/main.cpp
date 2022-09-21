@@ -37,7 +37,8 @@ class PrimeNumberGenerator {
    *
    */
   void operator()() {
-    inspector::SyncScope _prime("PrimeNumberGenerator");
+    TRACE_SCOPE("PrimeNumberGenerator");
+
     while (!IsPrime(++last_prime_))
       ;
     LOG(INFO) << "Next Prime: " << last_prime_;

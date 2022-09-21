@@ -36,8 +36,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--polling_interval",
         type=float,
-        help="Event queue consumer polling internval in seconds.",
+        help="Event queue consumer polling interval in seconds.",
         default=0.01,
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        help="Timeout in seconds when waiting for new events to consume.",
+        default=30.0,
     )
     return parser.parse_args()
 
@@ -49,7 +55,9 @@ def main():
     LOG.info("Starting trace consumer...")
 
     reader = Reader(
-        max_read_attempt=args.max_attempt, polling_interval=args.polling_interval
+        timeout=args.timeout,
+        max_read_attempt=args.max_attempt,
+        polling_interval=args.polling_interval,
     )
     LOG.debug("Consuming trace events...")
     for trace in reader:

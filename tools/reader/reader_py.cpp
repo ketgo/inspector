@@ -26,6 +26,10 @@
 
 namespace py = pybind11;
 
+// TODO: Need an approach to send singnal to reader. If the reader is waiting
+// then the python script freezes since the threads dont know that a SIGTERM or
+// SIGINT has been recieved.
+
 namespace {
 
 /**

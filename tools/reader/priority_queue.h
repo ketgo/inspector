@@ -89,6 +89,12 @@ class SlidingWindowPriorityQueue {
   SlidingWindowPriorityQueue(const int64_t window_size);
 
   /**
+   * @brief Destroy the Sliding Window Priority Queue object.
+   *
+   */
+  ~SlidingWindowPriorityQueue();
+
+  /**
    * @brief Push a given timestamped value into the queue.
    *
    * The method pushes a given timestamped value into the priority queue. If the
@@ -192,7 +198,7 @@ class SlidingWindowPriorityQueue {
   /**
    * @brief Try to pop the oldest timestamped value from the queue.
    *
-   * The method attempts to pop the oldest timestampled value from the queue. If
+   * The method attempts to pop the oldest timestamped value from the queue. If
    * the queue is empty, no operation is performed and `false` is returned.
    * Otherwise the oldest value is popped and `true` is returned.
    *
@@ -215,13 +221,29 @@ class SlidingWindowPriorityQueue {
    */
   size_type Size() const;
 
+  /**
+   * @brief The closes the queue so that no more timestamped values can be
+   * pushed or popped from the queue. As part of closing, it also unblocks any
+   * waiting producers and/or consumers.
+   *
+   */
+  void Close() const;
+
+  /**
+   * @brief The method opens the queue so that timestamped values can be pushed
+   * and popped from the queue.
+   *
+   */
+  void Open() const;
+
  private:
+  mutable bool closed_;
   const int64_t window_size_;
   int64_t lower_bound_;
   int64_t upper_bound_;
   ChronologicalPriorityQueue<T> queue_;
   mutable std::mutex mutex_;
-  std::condition_variable cv_not_full_, cv_not_empty_;
+  mutable std::condition_variable cv_not_full_, cv_not_empty_;
 };
 
 // -------------------------------------------
@@ -231,7 +253,14 @@ class SlidingWindowPriorityQueue {
 template <class T>
 SlidingWindowPriorityQueue<T>::SlidingWindowPriorityQueue(
     const int64_t window_size)
-    : window_size_(window_size), lower_bound_(0), upper_bound_(0) {}
+    : window_size_(window_size), lower_bound_(0), upper_bound_(0) {
+  Open();
+}
+
+template <class T>
+SlidingWindowPriorityQueue<T>::~SlidingWindowPriorityQueue() {
+  Close();
+}
 
 template <class T>
 void SlidingWindowPriorityQueue<T>::Push(const value_type& value) {
@@ -244,15 +273,19 @@ void SlidingWindowPriorityQueue<T>::Push(const value_type& value) {
       return;
     }
 
-    //  Wait till the queue is not full. The queue is considered to be full if
-    //  the new lower bound is still less than the timestamp of the oldest
-    //  value in the queue.
+    //  Wait till the queue is not full or is closed. The queue is considered to
+    //  be full if the new lower bound is still less than the timestamp of the
+    //  oldest value in the queue.
     cv_not_full_.wait(lock, [&]() {
       auto lower_bound = (value.first > upper_bound_)
                              ? value.first - window_size_
                              : lower_bound_;
-      return queue_.empty() || queue_.top().first > lower_bound;
+      return queue_.empty() || queue_.top().first > lower_bound || closed_;
     });
+    // Check if the queue is closed
+    if (closed_) {
+      return;
+    }
 
     queue_.push(value);
     lower_bound_ = (value.first > upper_bound_) ? value.first - window_size_
@@ -274,15 +307,19 @@ void SlidingWindowPriorityQueue<T>::Push(value_type&& value) {
       return;
     }
 
-    //  Wait till the queue is not full. The queue is considered to be full if
-    //  the new lower bound is still less than the timestamp of the oldest
-    //  value in the queue.
+    //  Wait till the queue is not full or closed. The queue is considered to be
+    //  full if the new lower bound is still less than the timestamp of the
+    //  oldest value in the queue.
     cv_not_full_.wait(lock, [&]() {
       auto lower_bound = (value.first > upper_bound_)
                              ? value.first - window_size_
                              : lower_bound_;
-      return queue_.empty() || queue_.top().first > lower_bound;
+      return queue_.empty() || queue_.top().first > lower_bound || closed_;
     });
+    // Check if the queue is closed
+    if (closed_) {
+      return;
+    }
 
     queue_.push(std::move(value));
     lower_bound_ = (value.first > upper_bound_) ? value.first - window_size_
@@ -305,18 +342,18 @@ bool SlidingWindowPriorityQueue<T>::Push(
       return false;
     }
 
-    //  Wait till the queue is not full. The queue is considered to be full if
-    //  the new lower bound is still less than the timestamp of the oldest
-    //  value in the queue.
+    //  Wait till the queue is not full or closed. The queue is considered to be
+    //  full if the new lower bound is still less than the timestamp of the
+    //  oldest value in the queue.
     auto not_full = cv_not_full_.wait_for(lock, timeout_ms, [&]() {
       auto lower_bound = (value.first > upper_bound_)
                              ? value.first - window_size_
                              : lower_bound_;
-      return queue_.empty() || queue_.top().first > lower_bound;
+      return queue_.empty() || queue_.top().first > lower_bound || closed_;
     });
-    // Check if timeout occured while waiting and if so then return without
-    // performing any operations.
-    if (!not_full) {
+    // Check if timeout occured while waiting or if the queue is closed. If so,
+    // then return without performing any operations.
+    if (!not_full || closed_) {
       return false;
     }
 
@@ -350,11 +387,11 @@ bool SlidingWindowPriorityQueue<T>::Push(
       auto lower_bound = (value.first > upper_bound_)
                              ? value.first - window_size_
                              : lower_bound_;
-      return queue_.empty() || queue_.top().first > lower_bound;
+      return queue_.empty() || queue_.top().first > lower_bound || closed_;
     });
-    // Check if timeout occured while waiting and if so then return without
-    // performing any operations.
-    if (!not_full) {
+    // Check if timeout occured while waiting or if the queue is closed. If so,
+    // then return without performing any operations.
+    if (!not_full || closed_) {
       return false;
     }
 
@@ -372,6 +409,11 @@ bool SlidingWindowPriorityQueue<T>::Push(
 template <class T>
 bool SlidingWindowPriorityQueue<T>::TryPush(const value_type& value) {
   std::unique_lock<std::mutex> lock(mutex_);
+
+  // Check if the queue is closed
+  if (closed_) {
+    return false;
+  }
 
   // Check if the given value has a timestamp less than the current sliding
   // window lower bound. If so then skip operation.
@@ -397,6 +439,11 @@ bool SlidingWindowPriorityQueue<T>::TryPush(const value_type& value) {
 template <class T>
 bool SlidingWindowPriorityQueue<T>::TryPush(value_type&& value) {
   std::unique_lock<std::mutex> lock(mutex_);
+
+  // Check if the queue is closed
+  if (closed_) {
+    return false;
+  }
 
   // Check if the given value has a timestamp less than the current sliding
   // window lower bound. If so then skip operation.
@@ -425,7 +472,11 @@ void SlidingWindowPriorityQueue<T>::Pop(value_type& value) {
     std::unique_lock<std::mutex> lock(mutex_);
 
     // Wait till the queue is not empty.
-    cv_not_empty_.wait(lock, [&]() { return !queue_.empty(); });
+    cv_not_empty_.wait(lock, [&]() { return !queue_.empty() || closed_; });
+    // Check if the queue is closed
+    if (closed_) {
+      return;
+    }
 
     value = queue_.top();
     queue_.pop();
@@ -441,11 +492,11 @@ bool SlidingWindowPriorityQueue<T>::Pop(
     std::unique_lock<std::mutex> lock(mutex_);
 
     // Wait till the queue is not empty.
-    auto not_empty = cv_not_empty_.wait_for(lock, timeout_ms,
-                                            [&]() { return !queue_.empty(); });
-    // Check if timeout occured while waiting and if so then return without
-    // performing any operations.
-    if (!not_empty) {
+    auto not_empty = cv_not_empty_.wait_for(
+        lock, timeout_ms, [&]() { return !queue_.empty() || closed_; });
+    // Check if timeout occured while waiting or if the queue is closed. If so,
+    // then return without performing any operations.
+    if (!not_empty || closed_) {
       return false;
     }
 
@@ -461,6 +512,11 @@ bool SlidingWindowPriorityQueue<T>::Pop(
 template <class T>
 bool SlidingWindowPriorityQueue<T>::TryPop(value_type& value) {
   std::unique_lock<std::mutex> lock(mutex_);
+
+  // Check if the queue is closed
+  if (closed_) {
+    return false;
+  }
 
   if (!queue_.empty()) {
     value = queue_.top();
@@ -482,6 +538,23 @@ typename SlidingWindowPriorityQueue<T>::size_type
 SlidingWindowPriorityQueue<T>::Size() const {
   std::unique_lock<std::mutex> lock(mutex_);
   return queue_.size();
+}
+
+template <class T>
+void SlidingWindowPriorityQueue<T>::Close() const {
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
+    closed_ = true;
+  }
+  // Notify all the waiting producer and consumer threads.
+  cv_not_full_.notify_all();
+  cv_not_empty_.notify_all();
+}
+
+template <class T>
+void SlidingWindowPriorityQueue<T>::Open() const {
+  std::unique_lock<std::mutex> lock(mutex_);
+  closed_ = false;
 }
 
 // -------------------------------------------

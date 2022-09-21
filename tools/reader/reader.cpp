@@ -79,7 +79,8 @@ bool Reader::Iterator::operator!=(const Iterator& other) const {
 // Reader Implementation
 // ---------------------------------
 
-void Reader::StartWorkers() {
+void Reader::Start() {
+  // Starting all worker threads
   for (auto& worker : workers_) {
     worker = std::thread([&]() {
       while (!stop_.load()) {
@@ -92,10 +93,12 @@ void Reader::StartWorkers() {
       }
     });
   }
+  // Starting signal handler thread
 }
 
-void Reader::StopWorkers() {
+void Reader::Stop() {
   stop_.store(true);
+  // Waiting for all the worker threads to terminate.
   for (auto& worker : workers_) {
     if (worker.joinable()) {
       worker.join();
@@ -118,7 +121,7 @@ Reader::Reader(const std::string& queue_name,
       buffer_(buffer_window_size),
       stop_(false),
       timeout_ms_(0) {
-  StartWorkers();
+  Start();
 }
 
 Reader::Reader(const std::chrono::microseconds& timeout_ms,
@@ -133,10 +136,10 @@ Reader::Reader(const std::chrono::microseconds& timeout_ms,
       buffer_(buffer_window_size),
       stop_(false),
       timeout_ms_(timeout_ms) {
-  StartWorkers();
+  Start();
 }
 
-Reader::~Reader() { StopWorkers(); }
+Reader::~Reader() { Stop(); }
 
 Reader::Iterator Reader::begin() const {
   Iterator it(buffer_, timeout_ms_);

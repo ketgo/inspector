@@ -38,6 +38,7 @@ constexpr auto kAsyncEndTag = 'e';
 constexpr auto kFlowBeginTag = 's';
 constexpr auto kFlowInstanceTag = 't';
 constexpr auto kFlowEndTag = 'f';
+constexpr auto kCounterTag = 'C';
 
 /**
  * @brief The class `Kwarg` represents a keyword argument.
@@ -86,7 +87,7 @@ Kwarg<T> MakeKwarg(const char* name, const T& value) {
 
 // ------------------------------------
 // Synchronous Scope Trace Events
-// =============================
+// ====================================
 //
 //  Synchronous scope trace events are published to trace scopes within a method
 //  call.
@@ -143,7 +144,7 @@ inline SyncScope::~SyncScope() { SyncEnd(name_); }
 
 // ------------------------------------
 // Asynchronous Scope Trace Events
-// ==============================
+// ====================================
 
 /**
  * @brief Create an asynchronous begin trace event.
@@ -192,7 +193,7 @@ void AsyncEnd(const std::string& name, const Args&... args) {
 
 // ------------------------------------
 // Flow Scope Trace Events
-// ==============================
+// ====================================
 
 /**
  * @brief Create a flow begin trace event.
@@ -240,5 +241,54 @@ void FlowEnd(const std::string& name, const Args&... args) {
 }
 
 // ------------------------------------
+// Counter Event
+// ====================================
+
+// TODO: Should be variadic keyword arguments having integer values
+template <class... Args>
+void Counters(const std::string& name, const Args&... args) {
+  details::WriteTraceEvent(kCounterTag, name, args...);
+}
+
+// ------------------------------------
 
 }  // namespace inspector
+
+// ------------------------------------
+// Convinence Macros
+// ------------------------------------
+
+// Utility macros to get unique scope name. These are meant for internal use.
+#define __UNIQUE_MAKER__(name, counter) __##name##counter__
+#define __MAKE_UNIQUE__(name) __UNIQUE_MAKER__(name, __COUNTER__)
+
+/**
+ * @brief Synchronous trace events.
+ *
+ */
+#define TRACE() inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(__func__)
+#define TRACE_SCOPE(name) inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(name)
+
+/**
+ * @brief Asynchronous trace events.
+ *
+ */
+#define TRACE_ASYNC_BEGIN(name) inspector::AsyncBegin(name)
+#define TRACE_ASYNC_INSTANCE(name) inspector::AsyncInstance(name)
+#define TRACE_ASYNC_END(name) inspector::AsyncEnd(name)
+
+/**
+ * @brief Flow trace events
+ *
+ */
+#define TRACE_FLOW_BEGIN(name) inspector::FlowBegin(name)
+#define TRACE_FLOW_INSTANCE(name) inspector::FlowInstance(name)
+#define TRACE_FLOW_END(name) inspector::FlowEnd(name)
+
+/**
+ * @brief Counter trace events
+ *
+ */
+#define TRACE_COUNTER(name, ...) inspector::Counters(name, __VA_ARGS__)
+
+// ------------------------------------

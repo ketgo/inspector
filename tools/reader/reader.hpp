@@ -172,17 +172,16 @@ class Reader {
 
  private:
   /**
-   * @brief Start background worker threads which consume trance and metric
-   * events from the event queue.
+   * @brief Starts all the background tasks.
    *
    */
-  void StartWorkers();
+  void Start();
 
   /**
-   * @brief Stop all the running worker threads.
+   * @brief Stops all the running background tasks.
    *
    */
-  void StopWorkers();
+  void Stop();
 
   details::EventQueue* queue_;
   const std::size_t max_read_attempt_;
