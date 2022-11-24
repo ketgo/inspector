@@ -20,12 +20,6 @@
 #include <mutex>
 #include <queue>
 
-// TODO: Correctly handle extreamly out of order events.
-// TODO: Better sliding window implementation which in turn results in better
-// outlier (extreamly out of order events) detection. The current implementation
-// is extreamly sensitive to outliers and thus can adversly effect sliding
-// window motion.
-
 namespace inspector {
 namespace internal {
 
@@ -45,7 +39,7 @@ class TimestampCompare {
 template <class T>
 bool TimestampCompare<T>::operator()(const std::pair<int64_t, T>& lhs,
                                      const std::pair<int64_t, T>& rhs) const {
-  return lhs.first > rhs.first;
+  return lhs.first >= rhs.first;
 }
 
 }  // namespace internal
@@ -99,8 +93,8 @@ class SlidingWindowPriorityQueue {
    *
    * The method pushes a given timestamped value into the priority queue. If the
    * queue is full, it blocks until the value is pushed. The queue is taken to
-   * be full if pushing the timestamped value slides the time window. The window
-   * is allowed to be slided only when the oldest value in the queue is popped.
+   * be full if pushing the timestamped value slides the time window pas the
+   * current oldest value.
    *
    * @param value Constant reference to the timestamped value.
    */
@@ -111,8 +105,8 @@ class SlidingWindowPriorityQueue {
    *
    * The method pushes a given timestamped value into the priority queue. If the
    * queue is full, it blocks until the value is pushed. The queue is taken to
-   * be full if pushing the timestamped value slides the time window. The window
-   * is allowed to be slided only when the oldest value in the queue is popped.
+   * be full if pushing the timestamped value slides the time window pas the
+   * current oldest value.
    *
    * @param value Rvalue reference to the timestamped value.
    */
@@ -124,8 +118,7 @@ class SlidingWindowPriorityQueue {
    * The method pushes a given timestamped value into the priority queue. If the
    * queue is full, it blocks until the value is pushed or timeout is reached.
    * The queue is taken to be full if pushing the timestamped value slides the
-   * time window. The window is allowed to be slided only when the oldest value
-   * in the queue is popped.
+   * time window pas the current oldest value.
    *
    * @param value Constant reference to the timestamped value.
    * @param timeout_ms Constant reference to the timeout in microseconds.
@@ -140,8 +133,7 @@ class SlidingWindowPriorityQueue {
    * The method pushes a given timestamped value into the priority queue. If the
    * queue is full, it blocks until the value is pushed or timeout is reached.
    * The queue is taken to be full if pushing the timestamped value slides the
-   * time window. The window is allowed to be slided only when the oldest value
-   * in the queue is popped.
+   * time window pas the current oldest value.
    *
    * @param value Rvalue reference to the timestamped value.
    * @param timeout_ms Constant reference to the timeout in microseconds.
@@ -351,7 +343,7 @@ bool SlidingWindowPriorityQueue<T>::Push(
                              : lower_bound_;
       return queue_.empty() || queue_.top().first > lower_bound || closed_;
     });
-    // Check if timeout occured while waiting or if the queue is closed. If so,
+    // Check if timeout occurred while waiting or if the queue is closed. If so,
     // then return without performing any operations.
     if (!not_full || closed_) {
       return false;
@@ -389,7 +381,7 @@ bool SlidingWindowPriorityQueue<T>::Push(
                              : lower_bound_;
       return queue_.empty() || queue_.top().first > lower_bound || closed_;
     });
-    // Check if timeout occured while waiting or if the queue is closed. If so,
+    // Check if timeout occurred while waiting or if the queue is closed. If so,
     // then return without performing any operations.
     if (!not_full || closed_) {
       return false;
@@ -408,62 +400,71 @@ bool SlidingWindowPriorityQueue<T>::Push(
 
 template <class T>
 bool SlidingWindowPriorityQueue<T>::TryPush(const value_type& value) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
 
-  // Check if the queue is closed
-  if (closed_) {
-    return false;
-  }
+    // Check if the queue is closed
+    if (closed_) {
+      return false;
+    }
 
-  // Check if the given value has a timestamp less than the current sliding
-  // window lower bound. If so then skip operation.
-  if (value.first < lower_bound_) {
-    return false;
-  }
+    // Check if the given value has a timestamp less than the current sliding
+    // window lower bound. If so then skip operation.
+    if (value.first < lower_bound_) {
+      return false;
+    }
 
-  //  Check if the queue is not full. The queue is considered to be full if
-  //  the new lower bound is still less than the timestamp of the oldest
-  //  value in the queue.
-  auto lower_bound =
-      (value.first > upper_bound_) ? value.first - window_size_ : lower_bound_;
-  if (queue_.empty() || queue_.top().first > lower_bound) {
+    //  Check if the queue is not full. The queue is considered to be full if
+    //  the new lower bound is still less than the timestamp of the oldest
+    //  value in the queue.
+    auto lower_bound = (value.first > upper_bound_) ? value.first - window_size_
+                                                    : lower_bound_;
+    if (!queue_.empty() && queue_.top().first <= lower_bound) {
+      return false;
+    }
     queue_.push(value);
     lower_bound_ = lower_bound;
     upper_bound_ = lower_bound_ + window_size_;
-    return true;
   }
-  // Queue is full so no operation is performed
-  return false;
+  // Notify all consumer threads waiting for the queue to not be empty.
+  cv_not_empty_.notify_all();
+
+  return true;
 }
 
 template <class T>
 bool SlidingWindowPriorityQueue<T>::TryPush(value_type&& value) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
 
-  // Check if the queue is closed
-  if (closed_) {
-    return false;
-  }
+    // Check if the queue is closed
+    if (closed_) {
+      return false;
+    }
 
-  // Check if the given value has a timestamp less than the current sliding
-  // window lower bound. If so then skip operation.
-  if (value.first < lower_bound_) {
-    return false;
-  }
+    // Check if the given value has a timestamp less than the current sliding
+    // window lower bound. If so then skip operation.
+    if (value.first < lower_bound_) {
+      return false;
+    }
 
-  //  Check if the queue is not full. The queue is considered to be full if
-  //  the new lower bound is still less than the timestamp of the oldest
-  //  value in the queue.
-  auto lower_bound =
-      (value.first > upper_bound_) ? value.first - window_size_ : lower_bound_;
-  if (queue_.empty() || queue_.top().first > lower_bound) {
+    //  Check if the queue is not full. The queue is considered to be full if
+    //  the new lower bound is still less than the timestamp of the oldest
+    //  value in the queue.
+    auto lower_bound = (value.first > upper_bound_) ? value.first - window_size_
+                                                    : lower_bound_;
+    if (!queue_.empty() && queue_.top().first <= lower_bound) {
+      return false;
+    }
+
     queue_.push(std::move(value));
     lower_bound_ = lower_bound;
     upper_bound_ = lower_bound_ + window_size_;
-    return true;
   }
-  // Queue is empty so no operation is performed
-  return false;
+  // Notify all consumer threads waiting for the queue to not be empty.
+  cv_not_empty_.notify_all();
+
+  return true;
 }
 
 template <class T>
@@ -494,7 +495,7 @@ bool SlidingWindowPriorityQueue<T>::Pop(
     // Wait till the queue is not empty.
     auto not_empty = cv_not_empty_.wait_for(
         lock, timeout_ms, [&]() { return !queue_.empty() || closed_; });
-    // Check if timeout occured while waiting or if the queue is closed. If so,
+    // Check if timeout occurred while waiting or if the queue is closed. If so,
     // then return without performing any operations.
     if (!not_empty || closed_) {
       return false;
@@ -511,19 +512,21 @@ bool SlidingWindowPriorityQueue<T>::Pop(
 
 template <class T>
 bool SlidingWindowPriorityQueue<T>::TryPop(value_type& value) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
 
-  // Check if the queue is closed
-  if (closed_) {
-    return false;
-  }
+    // Check if the queue is closed
+    if (closed_ || queue_.empty()) {
+      return false;
+    }
 
-  if (!queue_.empty()) {
     value = queue_.top();
     queue_.pop();
-    return true;
   }
-  return false;
+  // Notify all producer threads waiting for the queue to not be full.
+  cv_not_full_.notify_all();
+
+  return true;
 }
 
 template <class T>

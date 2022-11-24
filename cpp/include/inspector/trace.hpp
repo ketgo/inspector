@@ -255,7 +255,7 @@ void Counters(const std::string& name, const Args&... args) {
 }  // namespace inspector
 
 // ------------------------------------
-// Convinence Macros
+// Convenience Macros
 // ------------------------------------
 
 // Utility macros to get unique scope name. These are meant for internal use.
