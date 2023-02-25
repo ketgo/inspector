@@ -41,6 +41,20 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "number_generator",
+    srcs = [
+        "number_generator.cpp",
+    ],
+    hdrs = [
+        "number_generator.hpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+        "@glog",
+    ],
+)
+
 cc_binary(
     name = "run",
     srcs = [
@@ -48,6 +62,7 @@ cc_binary(
     ],
     deps = [
         ":init",
+        ":number_generator",
         ":periodic_task",
     ],
 )

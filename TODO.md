@@ -18,14 +18,15 @@ The file contains itemized tasks to be completed in the different parts of the r
 
 ## Core Lib
 
-[-] Rigorous unit testing of circular queue, e.g. test behavior during overflow condition. Furthmore there are some components which have missing tests. 
-[X] Desing and implement option to enable and disable publishing trace events. The design should support multiple languages, e.g. cpp, python, etc.
+[-] Rigorous unit testing of circular queue, e.g. test behavior during overflow condition. Furthermore, there are some components which have missing tests. 
+[X] Design and implement option to enable and disable publishing trace events. The design should support multiple languages, e.g. cpp, python, etc.
 [X] Recover from stale cursors in the event queue.
 [ ] Implement three policies to handle the shared memory circular queue full condition: Log Policy, Wait Policy, Ignore Policy.
 [ ] Refactor initialization API for the inspector library. Maybe just expose a `InitInspector` method to set configuration settings. 
 [ ] Design an approach for masterless shared object handling. That is, removal of a shared object should be done by the last process using the object. Furthermore, the approach should be fail safe. 
 [ ] Need an improved recovery approach which better handles the false start_marker scenario. Furthermore, the approach should utilize the fact of having multiple concurrent consumers to quickly recover to a valid state.
 [X] Extend trace event data struct in order to support implementing different types of events published from other tracers (CPU, GPU, kernel, etc).
+[ ] Improved API for configuring lib.
 
 ## Monitors
 

@@ -50,7 +50,7 @@ class Reader {
    * @brief Iterator to iterate over events in the event queue.
    *
    * The Iterator class is a forward-only direction iterator. It consumes events
-   * from the prioirty queue while iterating.
+   * from the priority queue while iterating.
    *
    */
   class Iterator {
@@ -105,15 +105,15 @@ class Reader {
    *
    * The reader expects the event queue to already exist during construction. If
    * it does not exist then the CTOR will throw an exception. Furthermore, this
-   * version of the CTOR creats a blocking reader. A blocking reader will block
+   * version of the CTOR creates a blocking reader. A blocking reader will block
    * until a new event is observed when using the iterator interface.
    *
    * @param queue_name Constant reference to the queue name containing trace
-   * events. Note that the name used should be unique accross the operating
+   * events. Note that the name used should be unique across the operating
    * system.
    * @param max_read_attempt Maximum number of attempts to make when reading an
    * event from the queue.
-   * @param polling_interval_ms Event queue consumer polling internval in
+   * @param polling_interval_ms Event queue consumer polling interval in
    * microseconds.
    * @param worker_count Number of background workers reading trace events.
    * @param buffer_window_size Window size used by the internal event buffer.
@@ -132,17 +132,17 @@ class Reader {
    *
    * The reader expects the event queue to already exist during construction. If
    * it does not exist then the CTOR will throw an exception. Furthermore, this
-   * version of the CTOR creats a non-blocking reader. A non-blocking reader
+   * version of the CTOR creates a non-blocking reader. A non-blocking reader
    * will block until a new event is observed or timeout is reached when using
    * the iterator interface.
    *
    * @param timeout_ms Constant reference to read timeout in microseconds.
    * @param queue_name Constant reference to the queue name containing trace
-   * events. Note that the name used should be unique accross the operating
+   * events. Note that the name used should be unique across the operating
    * system.
    * @param max_read_attempt Maximum number of attempts to make when reading an
    * event from the queue.
-   * @param polling_interval_ms Event queue consumer polling internval in
+   * @param polling_interval_ms Event queue consumer polling interval in
    * microseconds.
    * @param worker_count Number of background workers reading trace events.
    * @param buffer_window_size Window size used by the internal event buffer.
