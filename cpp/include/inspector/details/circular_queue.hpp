@@ -18,6 +18,7 @@
 
 #include <inspector/details/span.hpp>
 #include <inspector/details/circular_queue/allocator.hpp>
+#include <inspector/details/circular_queue/status.hpp>
 
 // TODO: Change the consumer API by introducing a DynamicSpan class.
 
@@ -108,11 +109,7 @@ class CircularQueue {
    * @brief Enumerated set of possible status.
    *
    */
-  enum class Status {
-    OK = 0,     // Queue is ok for publishing and consumption
-    FULL = 1,   // Queue is full so can not publish
-    EMPTY = 2,  // Queue is empty so can not consume
-  };
+  using Status = circular_queue::Status;
 
   /**
    * @brief Span encapsulating a memory block in the circular queue reserved for
@@ -138,7 +135,7 @@ class CircularQueue {
 
   /**
    * @brief Get default start marker value. A start marker is a unique marker
-   * used to indicate start of a memory block and is primarly used in stale
+   * used to indicate start of a memory block and is primarily used in stale
    * block detection and recovery.
    *
    */
@@ -149,7 +146,7 @@ class CircularQueue {
    *
    * @param timeout_ns Cursor timeout in nano seconds.
    * @param start_marker Start marker used to split memory blocks. It is
-   * primarly used to recover memory block size for stale blocks written by
+   * primarily used to recover memory block size for stale blocks written by
    * abruptly terminated producers. Please use a value which is never going to
    * be a part of the actual message content.
    */

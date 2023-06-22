@@ -35,13 +35,13 @@ namespace details {
 namespace system {
 
 /**
- * @brief Get the OS unique idenfier of the process calling the method.
+ * @brief Get the OS unique identifier of the process calling the method.
  *
  */
 inline int32_t GetProcessId() { return getpid(); }
 
 /**
- * @brief Get the OS unique idenfier of the thread calling the method.
+ * @brief Get the OS unique identifier of the thread calling the method.
  *
  */
 inline int32_t GetThreadId() {
