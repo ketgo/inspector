@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-#pragma once
+#include <gtest/gtest.h>
 
-namespace inspector {
+#include <inspector/config.hpp>
 
-/**
- * @brief Data struct containing keyword arguments and values to be stored as
- * part of a trace scope.
- *
- * @tparam T Type of value.
- */
-template <class T>
-struct KwArgs {
-  const char* name;  //<- Name of argument.
-  const T& value;    //<- Value of argument.
-};
+using namespace inspector;
 
-}  // namespace inspector
+TEST(ConfigTestFixture, TestConstantEventQueueName) {
+  ASSERT_EQ(Config::eventQueueName(), Config::eventQueueName());
+}
+
+TEST(ConfigTestFixture, TestTraceEnableDisable) {
+  ASSERT_FALSE(Config::isTraceDisable());  // By default tracing is enabled
+  Config::disableTrace();
+  ASSERT_TRUE(Config::isTraceDisable());
+  Config::enableTrace();
+  ASSERT_FALSE(Config::isTraceDisable());
+}

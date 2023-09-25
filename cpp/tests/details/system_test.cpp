@@ -14,20 +14,12 @@
  * limitations under the License.
  */
 
-#pragma once
+#include <gtest/gtest.h>
 
-namespace inspector {
+#include "cpp/src/details/system.hpp"
 
-/**
- * @brief Data struct containing keyword arguments and values to be stored as
- * part of a trace scope.
- *
- * @tparam T Type of value.
- */
-template <class T>
-struct KwArgs {
-  const char* name;  //<- Name of argument.
-  const T& value;    //<- Value of argument.
-};
+using namespace inspector::details;
 
-}  // namespace inspector
+TEST(SystemTestFixture, TestGetPID) { ASSERT_NE(getPID(), 0); }
+
+TEST(SystemTestFixture, TestGetTID) { ASSERT_NE(getTID(), 0); }

@@ -18,103 +18,43 @@
 
 #include <string>
 
-#include <inspector/details/config.hpp>
-
 namespace inspector {
-
-// TODO: Better naming
-
-/**
- * @brief Get the Event Queue Name object
- *
- * @return std::string
- */
-inline std::string EventQueueName() {
-  return details::Config::Get().queue_system_unique_name;
-}
+namespace Config {
 
 /**
- * @brief Set the Event Queue Name object.
+ * @brief Get the name of the process shared event queue used by the inspector
+ * library to publish trace events for consumption by the trace reader.
  *
- * @param name
+ * @returns System unique name of the shared circular queue.
  */
-inline void SetEventQueueName(const std::string name) {
-  details::Config::Get().queue_system_unique_name = name;
-}
+std::string eventQueueName();
 
 /**
- * @brief
+ * @brief The method marks the process shared event queue for removal by the OS.
+ * Note that the queue gets removed by the OS only when all processes using the
+ * inspector lib terminate.
  *
- * @return true
- * @return false
  */
-inline bool RemoveEventQueueOnExit() {
-  return details::Config::Get().queue_remove_on_exit;
-}
+void removeEventQueue();
 
 /**
- * @brief Set the Queue Remove On Exit object
+ * @brief Check if tracing is disabled.
  *
- * @param flag
+ * @returns `true` if disabled else `false`.
  */
-inline void SetRemoveEventQueueOnExit(bool remove) {
-  details::Config::Get().queue_remove_on_exit = remove;
-}
+bool isTraceDisable();
 
 /**
- * @brief
+ * @brief Disable capturing of all trace events.
  *
- * @return std::size_t
  */
-inline std::size_t WriteMaxAttempt() {
-  return details::Config::Get().max_write_attempt;
-}
+void disableTrace();
 
 /**
- * @brief Set the Write Max Attempt object
- *
- * @param max_attempt
- */
-inline void SetWriteMaxAttempt(const std::size_t max_attempt) {
-  details::Config::Get().max_write_attempt = max_attempt;
-}
-
-/**
- * @brief
- *
- * @return std::size_t
- */
-inline std::size_t ReadMaxAttempt() {
-  return details::Config::Get().max_read_attempt;
-}
-
-/**
- * @brief Set the Write Max Attempt object
- *
- * @param max_attempt
- */
-inline void SetReadMaxAttempt(const std::size_t max_attempt) {
-  details::Config::Get().max_read_attempt = max_attempt;
-}
-
-/**
- * @brief
- *
- * @return true
- * @return false
- */
-inline bool IsTraceDisable() { return details::Config::Get().disable_tracing; }
-
-/**
- * @brief
+ * @brief Enable capturing of all trace events.
  *
  */
-inline void DisableTrace() { details::Config::Get().disable_tracing = true; }
+void enableTrace();
 
-/**
- * @brief
- *
- */
-inline void EnableTrace() { details::Config::Get().disable_tracing = false; }
-
+}  // namespace Config
 }  // namespace inspector

@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-#pragma once
+#include <inspector/event_.hpp>
 
 namespace inspector {
 
-/**
- * @brief Data struct containing keyword arguments and values to be stored as
- * part of a trace scope.
- *
- * @tparam T Type of value.
- */
-template <class T>
-struct KwArgs {
-  const char* name;  //<- Name of argument.
-  const T& value;    //<- Value of argument.
-};
+uint8_t Event::type() const { return type_; }
+
+uint8_t Event::category() const { return category_; }
+
+int64_t Event::timestamp() const { return timestamp_; }
+
+int32_t Event::pid() const { return pid_; }
+
+int32_t Event::tid() const { return tid_; }
+
+uint32_t Event::argsCount() const { return args_count_; }
 
 }  // namespace inspector

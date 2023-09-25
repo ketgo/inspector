@@ -16,18 +16,22 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace inspector {
+namespace details {
 
 /**
- * @brief Data struct containing keyword arguments and values to be stored as
- * part of a trace scope.
+ * @brief Get the OS unique identifier of the process calling the method.
  *
- * @tparam T Type of value.
  */
-template <class T>
-struct KwArgs {
-  const char* name;  //<- Name of argument.
-  const T& value;    //<- Value of argument.
-};
+int32_t getPID();
 
+/**
+ * @brief Get the OS unique identifier of the thread calling the method.
+ *
+ */
+int32_t getTID();
+
+}  // namespace details
 }  // namespace inspector

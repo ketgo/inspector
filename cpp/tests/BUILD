@@ -12,23 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(default_visibility = ["//visibility:public"])
-
-cc_library(
-    name = "inspector",
-    srcs = glob([
-        "src/**/*.cpp",
-        "src/**/*.hpp",
-    ]),
-    hdrs = glob([
-        "include/**/*.hpp",
-    ]),
-    includes = ["include"],
-    linkopts = select({
-        "@platforms//os:linux": ["-lrt"],
-        "//conditions:default": [],
-    }),
+cc_test(
+    name = "config_test",
+    srcs = [
+        "config_test.cpp",
+    ],
     deps = [
-        "@bigcat_ipc//cpp:bigcat",
+        "//cpp:inspector",
+        "@gtest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "logging_test",
+    srcs = [
+        "logging_test.cpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+        "@gtest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "trace_test",
+    srcs = [
+        "trace_test.cpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+        "//utils:strings",
+        "@gtest//:gtest_main",
     ],
 )

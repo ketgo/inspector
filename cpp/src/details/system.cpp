@@ -14,20 +14,33 @@
  * limitations under the License.
  */
 
-#pragma once
+#include "cpp/src/details/system.hpp"
+
+#include <unistd.h>
+#ifdef __APPLE__
+#include <sys/syscall.h>
+#endif
 
 namespace inspector {
+namespace details {
 
 /**
- * @brief Data struct containing keyword arguments and values to be stored as
- * part of a trace scope.
+ * @brief Get the OS unique identifier of the process calling the method.
  *
- * @tparam T Type of value.
  */
-template <class T>
-struct KwArgs {
-  const char* name;  //<- Name of argument.
-  const T& value;    //<- Value of argument.
-};
+int32_t getPID() { return getpid(); }
 
+/**
+ * @brief Get the OS unique identifier of the thread calling the method.
+ *
+ */
+int32_t getTID() {
+#ifdef __APPLE__
+  return syscall(SYS_thread_selfid);
+#else
+  return gettid();
+#endif
+}
+
+}  // namespace details
 }  // namespace inspector

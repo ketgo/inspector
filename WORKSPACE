@@ -15,6 +15,7 @@
 workspace(name = "inspector")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 # --------------------------------------
 # Python Rules
@@ -94,6 +95,16 @@ http_archive(
     sha256 = "122fb6b712808ef43fbf80f75c52a21c9760683dae470154f02bddfc61135022",
     strip_prefix = "glog-0.6.0",
     urls = ["https://github.com/google/glog/archive/v0.6.0.zip"],
+)
+
+# ----------------------------------------
+# Bigcat IPC
+# ----------------------------------------
+
+git_repository(
+    name = "bigcat_ipc",
+    remote = "git@github.com:ketgo/bigcat_ipc.git",
+    tag = "v0.1.0-alpha",
 )
 
 # ----------------------------------------

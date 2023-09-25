@@ -1,5 +1,5 @@
 /**
- * Copyright 2023 Ketan Goyal
+ * Copyright 2022 Ketan Goyal
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-#pragma once
+#include <inspector/logging.hpp>
+
+#include "cpp/src/details/logging.hpp"
 
 namespace inspector {
 
-/**
- * @brief Data struct containing keyword arguments and values to be stored as
- * part of a trace scope.
- *
- * @tparam T Type of value.
- */
-template <class T>
-struct KwArgs {
-  const char* name;  //<- Name of argument.
-  const T& value;    //<- Value of argument.
-};
+void registerLogger(LogLevel level, std::shared_ptr<Logger> logger) {
+  details::registerLogger(level, logger);
+}
+
+void unregisterLogger(LogLevel level) { details::unregisterLogger(level); }
+
+void unregisterAllLoggers() {
+  unregisterLogger(LogLevel::INFO);
+  unregisterLogger(LogLevel::WARN);
+  unregisterLogger(LogLevel::ERROR);
+}
 
 }  // namespace inspector

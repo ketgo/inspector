@@ -16,37 +16,63 @@
 
 #pragma once
 
-#include <inspector/details/logging.hpp>
+#include <memory>
+#include <string>
 
 namespace inspector {
+
+/**
+ * @brief Enumerated set of logging levels.
+ *
+ */
+enum class LogLevel {
+  INFO = 0,
+  WARN = 1,
+  ERROR = 2,
+};
+
+/**
+ * @brief Abstract logger class.
+ *
+ * A derived class must be registered by the user in order to enable logging in
+ * the inspector lib. The class acts as an adapter to any native logging lib
+ * used by the user.
+ *
+ */
+class Logger {
+ public:
+  virtual ~Logger() = default;
+
+  /**
+   * @brief Process a given log message.
+   *
+   * @param message Constant reference to log message.
+   */
+  virtual void operator<<(const std::string& message) = 0;
+};
 
 /**
  * @brief Register the given logger for the specified log level.
  *
  * @param level Log level.
- * @param logger Reference to the logger to use for logging.
+ * @param logger Shared pointer to the logger to use for logging.
  */
-inline void RegisterLogger(LogLevel level, Logger& logger) {
-  details::Log::RegisterLogger(level, logger);
-}
+void registerLogger(LogLevel level, std::shared_ptr<Logger> logger);
 
 /**
  * @brief Unregister any registered logger for the given log level.
  *
- * @param level Log Level.
+ * The method unregisters any registered logger for the given log level. After
+ * this call log messages at the log level will be ignored.
+ *
+ * @param level Log Level for which to unregister logger.
  */
-inline void UnregsiterLogger(LogLevel level) {
-  RegisterLogger(level, NullLogger());
-}
+void unregisterLogger(LogLevel level);
 
 /**
  * @brief Unregister all registered loggers.
  *
  */
-inline void UnregsiterAllLoggers() {
-  RegisterLogger(LogLevel::INFO, NullLogger());
-  RegisterLogger(LogLevel::WARN, NullLogger());
-  RegisterLogger(LogLevel::ERROR, NullLogger());
-}
+void unregisterAllLoggers();
 
 }  // namespace inspector

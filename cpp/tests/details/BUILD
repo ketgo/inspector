@@ -12,23 +12,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//third_party/pybind11:defs.bzl", "pybind_library")
-
-package(default_visibility = ["//visibility:public"])
-
-pybind_library(
-    name = "inspector",
+cc_test(
+    name = "system_test",
     srcs = [
-        "src/config.cpp",
-        "src/inspector.cpp",
-        "src/logging.cpp",
-        "src/testing.cpp",
-        "src/trace.cpp",
+        "system_test.cpp",
     ],
-    imports = ["."],
-    soname = "py_inspector",
+    deps = [
+        "//cpp:inspector",
+        "@gtest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "trace_event_test",
+    srcs = [
+        "trace_event_test.cpp",
+    ],
     deps = [
         "//cpp:inspector",
         "//utils:strings",
+        "@gtest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "trace_writer_test",
+    srcs = [
+        "trace_writer_test.cpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+        "@gtest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "serializer_test",
+    srcs = [
+        "serializer_test.cpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+        "@gtest//:gtest_main",
     ],
 )

@@ -14,20 +14,35 @@
  * limitations under the License.
  */
 
-#pragma once
+#include <inspector/config.hpp>
+
+#include <bigcat/circular_queue.hpp>
 
 namespace inspector {
+namespace Config {
+namespace {
 
 /**
- * @brief Data struct containing keyword arguments and values to be stored as
- * part of a trace scope.
+ * @brief Flag to turn on and off capturing of trace events.
  *
- * @tparam T Type of value.
+ * @returns Reference to the flag.
  */
-template <class T>
-struct KwArgs {
-  const char* name;  //<- Name of argument.
-  const T& value;    //<- Value of argument.
-};
+bool& traceFlag() {
+  static bool value = true;
+  return value;
+}
 
+}  // namespace
+
+std::string eventQueueName() { return "/inspector-56027e94-events"; }
+
+void removeEventQueue() { bigcat::CircularQueue::remove(eventQueueName()); }
+
+bool isTraceDisable() { return !traceFlag(); }
+
+void disableTrace() { traceFlag() = false; }
+
+void enableTrace() { traceFlag() = true; }
+
+}  // namespace Config
 }  // namespace inspector
