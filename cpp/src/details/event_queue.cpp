@@ -14,14 +14,34 @@
  * limitations under the License.
  */
 
-#include <inspector/details/trace_writer.hpp>
+#include <inspector/details/event_queue.hpp>
+
+#include <inspector/config.hpp>
 
 namespace inspector {
 namespace details {
+namespace {
 
-size_t& threadLocalCounter() {
-  thread_local size_t counter = 0;
-  return counter;
+/**
+ * @brief Get the circular queue configuration.
+ *
+ */
+bigcat::CircularQueue::Config queueConfig() {
+  return bigcat::CircularQueue::Config{
+      .buffer_size = 8 * 1024 * 1024,  // 8MB
+      .max_producers = 1024,
+      .max_consumers = 1024,
+      .timeout_ns = 30000000000,  // 30s
+      .start_marker = 811347036,  // "\\,\\0"
+  };
+}
+
+}  // namespace
+
+bigcat::CircularQueue& eventQueue() {
+  static bigcat::CircularQueue queue =
+      bigcat::CircularQueue::open(Config::eventQueueName(), queueConfig());
+  return queue;
 }
 
 }  // namespace details

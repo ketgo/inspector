@@ -16,7 +16,7 @@
 
 #include <gtest/gtest.h>
 
-#include "cpp/src/details/system.hpp"
+#include <inspector/details/system.hpp>
 
 using namespace inspector::details;
 

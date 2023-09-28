@@ -32,9 +32,16 @@ bool& traceFlag() {
   return value;
 }
 
+std::string& queueName() {
+  static std::string name = "/inspector-56027e94-events";
+  return name;
+}
+
 }  // namespace
 
-std::string eventQueueName() { return "/inspector-56027e94-events"; }
+std::string eventQueueName() { return queueName(); }
+
+void setEventQueueName(const std::string& name) { queueName() = name; }
 
 void removeEventQueue() { bigcat::CircularQueue::remove(eventQueueName()); }
 

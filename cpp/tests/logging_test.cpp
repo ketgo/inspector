@@ -17,8 +17,7 @@
 #include <gtest/gtest.h>
 
 #include <inspector/logging.hpp>
-
-#include "cpp/src/details/logging.hpp"
+#include <inspector/details/logging.hpp>
 
 using namespace inspector;
 

@@ -16,50 +16,17 @@
 
 #pragma once
 
-#include <string>
-
 #include <bigcat/circular_queue.hpp>
 
 namespace inspector {
 namespace details {
 
 /**
- * @brief The class `TraceWriter` is responsible for writing trace events in
- * bytes onto a process shared circular queue.
+ * @brief Get the event queue to store trace events.
  *
+ * @returns Reference to the event queue.
  */
-class TraceWriter {
- public:
-  /**
-   * @brief Get singleton instance of the trace writer.
-   *
-   * @returns Reference to the TraceWriter singleton.
-   */
-  static TraceWriter& instance();
-
-  /**
-   * @brief Destroy the TraceWriter object.
-   *
-   */
-  ~TraceWriter();
-
-  /**
-   * @brief
-   *
-   * @param trace_event
-   */
-  void write(const std::string& trace_event);
-
- private:
-  /**
-   * @brief Construct a new TraceWriter object.
-   *
-   */
-  TraceWriter();
-
-  // Circular queue to store trace events.
-  bigcat::CircularQueue queue_;
-};
+bigcat::CircularQueue& eventQueue();
 
 }  // namespace details
 }  // namespace inspector

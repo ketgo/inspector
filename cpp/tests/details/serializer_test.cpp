@@ -39,7 +39,7 @@ using TypeSetA =
     ::testing::Types<uint8_t, uint16_t, uint32_t, uint64_t, int16_t, int32_t,
                      int64_t, float, double, char>;
 INSTANTIATE_TYPED_TEST_SUITE_P(StorageSize, SerializationStorageSizeTestFixture,
-                               TypeSetA);
+                               TypeSetA, );
 
 TEST(SerializationStorageSizeTestFixture, TestStorageSizeStringLiteral) {
   const char* obj = "testing-1";
@@ -95,7 +95,7 @@ using TypeSetB =
     ::testing::Types<uint8_t, uint16_t, uint32_t, uint64_t, int16_t, int32_t,
                      int64_t, float, double, char, std::string>;
 INSTANTIATE_TYPED_TEST_SUITE_P(DumpAndLoad, SerializationDumpLoadTestFixture,
-                               TypeSetB);
+                               TypeSetB, );
 
 template <>
 uint8_t SerializationDumpLoadTestFixture<uint8_t>::value_ = 10;

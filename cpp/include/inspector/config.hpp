@@ -30,6 +30,14 @@ namespace Config {
 std::string eventQueueName();
 
 /**
+ * @brief Set the name of the process shared event queue used by the inspector
+ * library to publish trace events for consumption by the trace reader.
+ *
+ * @param name Constant reference to the name.
+ */
+void setEventQueueName(const std::string& name);
+
+/**
  * @brief The method marks the process shared event queue for removal by the OS.
  * Note that the queue gets removed by the OS only when all processes using the
  * inspector lib terminate.

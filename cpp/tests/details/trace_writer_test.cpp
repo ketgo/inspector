@@ -16,12 +16,12 @@
 
 #include <gtest/gtest.h>
 
-// #include <inspector/details/trace_writer.hpp>
-#include "cpp/src/details/trace_writer.hpp"
+#include <inspector/config.hpp>
+#include <inspector/details/event_queue.hpp>
+#include <inspector/details/trace_writer.hpp>
 
 using namespace inspector;
 
-/*
 namespace {
 static constexpr auto kMaxAttempt = 32;
 static constexpr auto kEventQueueName = "inspector-trace_writer-test";
@@ -29,29 +29,23 @@ static constexpr auto kEventQueueName = "inspector-trace_writer-test";
 
 class TraceWriterTestFixture : public ::testing::Test {
  protected:
-  static void SetUpTestSuite() {
-    details::Config::Get().max_write_attempt = kMaxAttempt;
-    details::Config::Get().queue_system_unique_name = kEventQueueName;
-    details::Config::Get().queue_remove_on_exit = true;
-  }
+  static void SetUpTestSuite() { Config::setEventQueueName(kEventQueueName); }
 
   static std::string Consume() {
-    static auto queue =
-        details::system::GetSharedObject<details::EventQueue>(kEventQueueName);
-    details::EventQueue::ReadSpan span;
-    queue->Consume(span);
-    return std::string(span.Data(), span.Size());
+    std::string message;
+    details::eventQueue().consume(message);
+    return message;
   }
 
   void SetUp() override {}
-  void TearDown() override {}
+  void TearDown() override { Config::removeEventQueue(); }
 };
 
-TEST_F(TraceWriterTestFixture, TestWrite) {
+TEST_F(TraceWriterTestFixture, TestWriteEvent) {
   std::string test_event = "testing";
-  details::TraceWriter::Get().Write(test_event);
+  details::writeEvent(1, 1, test_event.c_str());
 
   // Testing for written event
-  ASSERT_EQ(test_event, Consume());
+  const auto event = Consume();
+  ASSERT_EQ(test_event, event);
 }
-*/

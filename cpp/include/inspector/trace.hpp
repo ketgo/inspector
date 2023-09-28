@@ -18,16 +18,9 @@
 
 namespace inspector {
 
-/**
- * @brief Data struct containing keyword arguments and values to be stored as
- * part of a trace scope.
- *
- * @tparam T Type of value.
- */
-template <class T>
-struct KwArgs {
-  const char* name;  //<- Name of argument.
-  const T& value;    //<- Value of argument.
-};
+template <class... Args>
+void syncBegin(const char* name, const Args&... args);
+
+void syncEnd(const char* name);
 
 }  // namespace inspector

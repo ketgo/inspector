@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "cpp/src/details/logging.hpp"
+#include <inspector/details/logging.hpp>
 
 namespace inspector {
 namespace details {

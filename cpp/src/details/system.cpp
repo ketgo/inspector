@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "cpp/src/details/system.hpp"
+#include <inspector/details/system.hpp>
 
 #include <unistd.h>
 #ifdef __APPLE__

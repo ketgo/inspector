@@ -15,8 +15,7 @@
  */
 
 #include <inspector/logging.hpp>
-
-#include "cpp/src/details/logging.hpp"
+#include <inspector/details/logging.hpp>
 
 namespace inspector {
 
