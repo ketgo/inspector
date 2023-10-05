@@ -134,6 +134,34 @@ size_t storageSize<std::string>(const std::string& obj) {
   return sizeof(uint8_t) + sizeof(std::size_t) + obj.size() * sizeof(char);
 }
 
+size_t storageSizeOf(const DataType data_type) {
+  switch (data_type) {
+    case DataType::TYPE_INT16:
+      return sizeof(int16_t);
+    case DataType::TYPE_INT32:
+      return sizeof(int32_t);
+    case DataType::TYPE_INT64:
+      return sizeof(int64_t);
+    case DataType::TYPE_UINT8:
+      return sizeof(uint8_t);
+    case DataType::TYPE_UINT16:
+      return sizeof(uint16_t);
+    case DataType::TYPE_UINT32:
+      return sizeof(uint32_t);
+    case DataType::TYPE_UINT64:
+      return sizeof(uint64_t);
+    case DataType::TYPE_FLOAT:
+      return sizeof(float);
+    case DataType::TYPE_DOUBLE:
+      return sizeof(double);
+    case DataType::TYPE_CHAR:
+      return sizeof(char);
+    default:
+      break;
+  }
+  return 0;
+}
+
 // ---
 // `dump` Implementation
 // ---

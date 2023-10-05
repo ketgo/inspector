@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <inspector/details/event_queue.hpp>
+#include <inspector/details/queue.hpp>
 
 #include <inspector/config.hpp>
 

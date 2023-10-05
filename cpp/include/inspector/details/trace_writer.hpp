@@ -24,8 +24,7 @@
 
 #include <inspector/config.hpp>
 #include <inspector/details/event.hpp>
-#include <inspector/details/event_queue.hpp>
-#include <inspector/details/serializer.hpp>
+#include <inspector/details/queue.hpp>
 #include <inspector/details/system.hpp>
 
 namespace inspector {
@@ -40,20 +39,19 @@ void writeEvent(const uint8_t type, const uint8_t category, const char* name,
     return;
   }
   ++(threadLocalCounter());
-  auto result =
-      eventQueue().tryPublish(sizeof(EventHeader) + storageSize(name, args...));
+  auto result = eventQueue().tryPublish(Event::storageSize(name, args...));
   if (result.first != bigcat::CircularQueue::Status::OK) {
     return;
   }
-  auto* header = reinterpret_cast<EventHeader*>(result.second.data());
-  header->type = type;
-  header->category = category;
-  header->counter = threadLocalCounter();
-  header->timestamp =
+  auto event_view = Event::MutableView(result.second.data());
+  event_view.header().type = type;
+  event_view.header().category = category;
+  event_view.header().counter = threadLocalCounter();
+  event_view.header().timestamp =
       std::chrono::system_clock::now().time_since_epoch().count();
-  header->pid = getPID();
-  header->tid = getTID();
-  dump(result.second.data() + sizeof(EventHeader), name, args...);
+  event_view.header().pid = getPID();
+  event_view.header().tid = getTID();
+  event_view.addArgs(name, args...);
 }
 
 }  // namespace details

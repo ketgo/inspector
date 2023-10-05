@@ -75,6 +75,14 @@ size_t storageSize(const T& obj, const Args&... args) {
 }
 
 /**
+ * @brief Get the size in bytes used to store a given data type.
+ *
+ * @param data_type Type of data.
+ * @returns Size in bytes.
+ */
+size_t storageSizeOf(const DataType data_type);
+
+/**
  * @brief Dummy method which perform NOP. The method added to facilitate
  * parameter pack expansion.
  *
