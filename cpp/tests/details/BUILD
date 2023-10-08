@@ -33,14 +33,3 @@ cc_test(
         "@gtest//:gtest_main",
     ],
 )
-
-cc_test(
-    name = "serializer_test",
-    srcs = [
-        "serializer_test.cpp",
-    ],
-    deps = [
-        "//cpp:inspector",
-        "@gtest//:gtest_main",
-    ],
-)

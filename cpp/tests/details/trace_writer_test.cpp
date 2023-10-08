@@ -17,13 +17,13 @@
 #include <gtest/gtest.h>
 
 #include <inspector/config.hpp>
-#include <inspector/details/event_queue.hpp>
+#include <inspector/details/queue.hpp>
+#include <inspector/details/trace_event.hpp>
 #include <inspector/details/trace_writer.hpp>
 
 using namespace inspector;
 
 namespace {
-static constexpr auto kMaxAttempt = 32;
 static constexpr auto kEventQueueName = "inspector-trace_writer-test";
 }  // namespace
 
@@ -41,11 +41,15 @@ class TraceWriterTestFixture : public ::testing::Test {
   void TearDown() override { Config::removeEventQueue(); }
 };
 
-TEST_F(TraceWriterTestFixture, TestWriteEvent) {
+TEST_F(TraceWriterTestFixture, TestWriteTraceEvent) {
   std::string test_event = "testing";
-  details::writeEvent(1, 1, test_event.c_str());
+  details::writeTraceEvent(1, 1, test_event.c_str());
 
   // Testing for written event
-  const auto event = Consume();
-  ASSERT_EQ(test_event, event);
+  const auto data = Consume();
+  const auto event = details::TraceEvent::View(data.data());
+  ASSERT_EQ(event.type(), 1);
+  ASSERT_EQ(event.category(), 1);
+  ASSERT_EQ(std::string{event.name()}, test_event);
+  ASSERT_EQ(event.debugArgs().size(), 0);
 }

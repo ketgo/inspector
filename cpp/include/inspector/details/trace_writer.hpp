@@ -23,35 +23,48 @@
 #include <bigcat/circular_queue.hpp>
 
 #include <inspector/config.hpp>
-#include <inspector/details/event.hpp>
 #include <inspector/details/queue.hpp>
 #include <inspector/details/system.hpp>
+#include <inspector/details/trace_event.hpp>
 
 namespace inspector {
 namespace details {
 
+/**
+ * @brief Get the thread local counter.
+ *
+ * @returns Thread local counter value.
+ */
 size_t& threadLocalCounter();
 
+/**
+ * @brief Write a trace event to the process shared queue.
+ *
+ * @tparam Args Type of debug arguments.
+ * @param type Type of trace event.
+ * @param category Category of trace event.
+ * @param name Name of the trace event.
+ * @param args Debug arguments.
+ */
 template <class... Args>
-void writeEvent(const uint8_t type, const uint8_t category, const char* name,
-                const Args&... args) {
+void writeTraceEvent(const uint8_t type, const uint8_t category,
+                     const char* name, const Args&... args) {
   if (Config::isTraceDisable()) {
     return;
   }
-  ++(threadLocalCounter());
-  auto result = eventQueue().tryPublish(Event::storageSize(name, args...));
+  auto result = eventQueue().tryPublish(TraceEvent::storageSize(name, args...));
   if (result.first != bigcat::CircularQueue::Status::OK) {
     return;
   }
-  auto event_view = Event::MutableView(result.second.data());
-  event_view.header().type = type;
-  event_view.header().category = category;
-  event_view.header().counter = threadLocalCounter();
-  event_view.header().timestamp =
-      std::chrono::system_clock::now().time_since_epoch().count();
-  event_view.header().pid = getPID();
-  event_view.header().tid = getTID();
-  event_view.addArgs(name, args...);
+  auto event_view = TraceEvent::MutableView(result.second.data());
+  event_view.setType(type);
+  event_view.setCategory(category);
+  event_view.setCounter(++threadLocalCounter());
+  event_view.setTimestampNs(
+      std::chrono::system_clock::now().time_since_epoch().count());
+  event_view.setPid(getPID());
+  event_view.setTid(getTID());
+  event_view.addDebugArgs(name, args...);
 }
 
 }  // namespace details
