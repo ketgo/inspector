@@ -42,6 +42,8 @@ void setEventQueueName(const std::string& name);
  * Note that the queue gets removed by the OS only when all processes using the
  * inspector lib terminate.
  *
+ * @warning USE THIS METHOD VERY CAREFULLY! Writing trace events after removing
+ * the queue will result in segmentation faults.
  */
 void removeEventQueue();
 

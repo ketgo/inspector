@@ -16,15 +16,27 @@
 
 #pragma once
 
-#include <inspector/trace_event.hpp>
+#include <cstdint>
+#include <cstddef>
 
 namespace inspector {
 
 /**
- * @brief Read a stored trace event from the process shared queue.
+ * @brief Type of trace event data type.
  *
- * @returns An object of type `TraceEvent`.
  */
-TraceEvent readTraceEvent();
+using event_type_t = uint8_t;
+
+/**
+ * @brief Category of trace event data type.
+ *
+ */
+using event_category_t = uint8_t;
+
+/**
+ * @brief Timestamp data type.
+ *
+ */
+using timestamp_t = int64_t;
 
 }  // namespace inspector

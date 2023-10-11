@@ -52,19 +52,19 @@ void writeTraceEvent(const uint8_t type, const uint8_t category,
   if (Config::isTraceDisable()) {
     return;
   }
-  auto result = eventQueue().tryPublish(TraceEvent::storageSize(name, args...));
+  auto result = eventQueue().tryPublish(traceEventStorageSize(name, args...));
   if (result.first != bigcat::CircularQueue::Status::OK) {
     return;
   }
-  auto event_view = TraceEvent::MutableView(result.second.data());
-  event_view.setType(type);
-  event_view.setCategory(category);
-  event_view.setCounter(++threadLocalCounter());
-  event_view.setTimestampNs(
+  auto event = MutableTraceEvent(result.second.data());
+  event.setType(type);
+  event.setCategory(category);
+  event.setCounter(++threadLocalCounter());
+  event.setTimestampNs(
       std::chrono::system_clock::now().time_since_epoch().count());
-  event_view.setPid(getPID());
-  event_view.setTid(getTID());
-  event_view.addDebugArgs(name, args...);
+  event.setPid(getPID());
+  event.setTid(getTID());
+  event.addDebugArgs(name, args...);
 }
 
 }  // namespace details

@@ -16,10 +16,12 @@
 
 #include <gtest/gtest.h>
 
+#include <vector>
+
 #include <inspector/config.hpp>
 #include <inspector/details/queue.hpp>
-#include <inspector/details/trace_event.hpp>
 #include <inspector/details/trace_writer.hpp>
+#include <inspector/trace_event.hpp>
 
 using namespace inspector;
 
@@ -31,14 +33,17 @@ class TraceWriterTestFixture : public ::testing::Test {
  protected:
   static void SetUpTestSuite() { Config::setEventQueueName(kEventQueueName); }
 
-  static std::string Consume() {
-    std::string message;
-    details::eventQueue().consume(message);
-    return message;
+  static TraceEvent Consume() {
+    std::vector<uint8_t> event;
+    details::eventQueue().consume(event);
+    return TraceEvent(std::move(event));
   }
 
   void SetUp() override {}
-  void TearDown() override { Config::removeEventQueue(); }
+  void TearDown() override {
+    // BUG: This will result in seg fault when testing multiple test-cases
+    Config::removeEventQueue();
+  }
 };
 
 TEST_F(TraceWriterTestFixture, TestWriteTraceEvent) {
@@ -46,10 +51,10 @@ TEST_F(TraceWriterTestFixture, TestWriteTraceEvent) {
   details::writeTraceEvent(1, 1, test_event.c_str());
 
   // Testing for written event
-  const auto data = Consume();
-  const auto event = details::TraceEvent::View(data.data());
+  auto event = Consume();
   ASSERT_EQ(event.type(), 1);
   ASSERT_EQ(event.category(), 1);
+  ASSERT_TRUE(event.name());
   ASSERT_EQ(std::string{event.name()}, test_event);
   ASSERT_EQ(event.debugArgs().size(), 0);
 }
