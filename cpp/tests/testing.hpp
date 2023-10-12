@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-#include <inspector/trace_reader.hpp>
-
-#include <vector>
-
-#include <inspector/details/queue.hpp>
+#pragma once
 
 namespace inspector {
+namespace testing {
 
-TraceEvent readTraceEvent() {
-  std::vector<uint8_t> event;
-  details::eventQueue().consume(event);
-  return TraceEvent(std::move(event));
-}
+/**
+ * @brief The method marks the process shared event queue for removal by the OS.
+ * Used for testing trace writer and reader.
+ *
+ */
+void removeEventQueue();
 
+/**
+ * @brief Method to remove all events stored in the process shared event queue,
+ * resulting in the queue to be empty.
+ *
+ */
+void emptyEventQueue();
+
+}  // namespace testing
 }  // namespace inspector

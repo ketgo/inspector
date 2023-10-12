@@ -14,38 +14,27 @@
  * limitations under the License.
  */
 
+#include "cpp/tests/testing.hpp"
+
+#include <bigcat/circular_queue.hpp>
+#include <inspector/config.hpp>
 #include <inspector/details/queue.hpp>
 
-#include <atomic>
-
-#include <inspector/config.hpp>
-#include <inspector/details/logging.hpp>
-
 namespace inspector {
-namespace details {
-namespace {
+namespace testing {
 
-/**
- * @brief Get the circular queue configuration.
- *
- */
-bigcat::CircularQueue::Config queueConfig() {
-  return bigcat::CircularQueue::Config{
-      .buffer_size = 8 * 1024 * 1024,  // 8MB
-      .max_producers = 1024,
-      .max_consumers = 1024,
-      .timeout_ns = 30000000000,  // 30s
-      .start_marker = 811347036,  // "\\,\\0"
+void removeEventQueue() {
+  bigcat::CircularQueue::remove(Config::eventQueueName());
+}
+
+void emptyEventQueue() {
+  while (1) {
+    auto result = details::eventQueue().tryConsume();
+    if (result.first == bigcat::CircularQueue::Status::EMPTY) {
+      return;
+    }
   };
 }
 
-}  // namespace
-
-bigcat::CircularQueue& eventQueue() {
-  static bigcat::CircularQueue queue =
-      bigcat::CircularQueue::open(Config::eventQueueName(), queueConfig());
-  return queue;
-}
-
-}  // namespace details
+}  // namespace testing
 }  // namespace inspector

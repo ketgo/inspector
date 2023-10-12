@@ -43,8 +43,6 @@ std::string eventQueueName() { return queueName(); }
 
 void setEventQueueName(const std::string& name) { queueName() = name; }
 
-void removeEventQueue() { bigcat::CircularQueue::remove(eventQueueName()); }
-
 bool isTraceDisable() { return !traceFlag(); }
 
 void disableTrace() { traceFlag() = false; }

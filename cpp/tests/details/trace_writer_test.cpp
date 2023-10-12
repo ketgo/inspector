@@ -23,6 +23,8 @@
 #include <inspector/details/trace_writer.hpp>
 #include <inspector/trace_event.hpp>
 
+#include "cpp/tests/testing.hpp"
+
 using namespace inspector;
 
 namespace {
@@ -32,17 +34,15 @@ static constexpr auto kEventQueueName = "inspector-trace_writer-test";
 class TraceWriterTestFixture : public ::testing::Test {
  protected:
   static void SetUpTestSuite() { Config::setEventQueueName(kEventQueueName); }
+  static void TearDownTestSuite() { inspector::testing::removeEventQueue(); }
+  void SetUp() override {}
+  void TearDown() override { inspector::testing::emptyEventQueue(); }
 
+  // Method to consume a trace event from the event queue.
   static TraceEvent Consume() {
     std::vector<uint8_t> event;
     details::eventQueue().consume(event);
     return TraceEvent(std::move(event));
-  }
-
-  void SetUp() override {}
-  void TearDown() override {
-    // BUG: This will result in seg fault when testing multiple test-cases
-    Config::removeEventQueue();
   }
 };
 

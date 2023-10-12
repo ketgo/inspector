@@ -38,16 +38,6 @@ std::string eventQueueName();
 void setEventQueueName(const std::string& name);
 
 /**
- * @brief The method marks the process shared event queue for removal by the OS.
- * Note that the queue gets removed by the OS only when all processes using the
- * inspector lib terminate.
- *
- * @warning USE THIS METHOD VERY CAREFULLY! Writing trace events after removing
- * the queue will result in segmentation faults.
- */
-void removeEventQueue();
-
-/**
  * @brief Check if tracing is disabled.
  *
  * @returns `true` if disabled else `false`.

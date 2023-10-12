@@ -30,6 +30,7 @@ cc_test(
     ],
     deps = [
         "//cpp:inspector",
+        "//cpp/tests:testing",
         "@gtest//:gtest_main",
     ],
 )

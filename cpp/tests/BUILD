@@ -12,6 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+cc_library(
+    name = "testing",
+    srcs = [
+        "testing.cpp",
+    ],
+    hdrs = [
+        "testing.hpp",
+    ],
+    visibility = [":__subpackages__"],
+    deps = [
+        "//cpp:inspector",
+    ],
+)
+
 cc_test(
     name = "config_test",
     srcs = [

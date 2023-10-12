@@ -22,6 +22,18 @@
 
 namespace inspector {
 
+enum class EventType {
+  kSyncBeginTag = 0,
+  kSyncEndTag,
+  kAsyncBeginTag,
+  kAsyncInstanceTag,
+  kAsyncEndTag,
+  kFlowBeginTag,
+  kFlowInstanceTag,
+  kFlowEndTag,
+  kCounterTag,
+};
+
 /**
  * @brief Tags to determine the type of trace event.
  *
