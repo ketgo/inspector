@@ -14,23 +14,15 @@
  * limitations under the License.
  */
 
-#pragma once
-
-#include <cstdint>
-#include <cstddef>
+#include <inspector/trace.hpp>
 
 namespace inspector {
 
-/**
- * @brief Type of trace event data type.
- *
- */
-using event_type_t = uint8_t;
+void syncEnd(const char* name) {
+  details::writeTraceEvent(static_cast<event_type_t>(EventType::kSyncEndTag),
+                           name);
+}
 
-/**
- * @brief Timestamp data type.
- *
- */
-using timestamp_t = int64_t;
+SyncScope::~SyncScope() { syncEnd(name_); }
 
 }  // namespace inspector

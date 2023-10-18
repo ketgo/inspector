@@ -40,13 +40,6 @@ class TraceEvent {
   event_type_t type() const;
 
   /**
-   * @brief Get the category of trace event.
-   *
-   * @returns Category of trace event.
-   */
-  event_category_t category() const;
-
-  /**
    * @brief Get the trace event counter.
    *
    * @returns Counter value of trace event.

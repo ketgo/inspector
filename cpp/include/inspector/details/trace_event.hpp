@@ -65,13 +65,6 @@ class MutableTraceEvent {
   void setType(const event_type_t type);
 
   /**
-   * @brief Set the category of trace event.
-   *
-   * @param category Category of trace event.
-   */
-  void setCategory(const event_category_t category);
-
-  /**
    * @brief Set the trace event counter.
    *
    * @param counter Counter value to set.

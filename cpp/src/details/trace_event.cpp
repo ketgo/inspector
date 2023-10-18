@@ -41,10 +41,6 @@ void MutableTraceEvent::setType(const event_type_t type) {
   static_cast<TraceEventHeader*>(address_)->type = type;
 }
 
-void MutableTraceEvent::setCategory(const event_category_t category) {
-  static_cast<TraceEventHeader*>(address_)->category = category;
-}
-
 void MutableTraceEvent::setCounter(const uint64_t counter) {
   static_cast<TraceEventHeader*>(address_)->counter = counter;
 }

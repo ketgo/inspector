@@ -52,10 +52,6 @@ TraceEvent::TraceEvent(std::vector<uint8_t>&& buffer)
 
 event_type_t TraceEvent::type() const { return header(buffer_)->type; }
 
-event_category_t TraceEvent::category() const {
-  return header(buffer_)->category;
-}
-
 uint64_t TraceEvent::counter() const { return header(buffer_)->counter; }
 
 timestamp_t TraceEvent::timestampNs() const {

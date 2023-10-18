@@ -33,10 +33,9 @@ namespace details {
 struct PACKED TraceEventHeader {
   event_type_t type;  //<- Type of event. This field is used to distinguish the
                       // different events.
-  event_category_t category;  //<- Category of event.
-  uint64_t counter;           //<- Counter used to track for lost events.
-  timestamp_t timestamp;      //<- Timestamp in nano seconds when the
-                              // event occurred.
+  uint64_t counter;   //<- Counter used to track for lost events.
+  timestamp_t timestamp;  //<- Timestamp in nano seconds when the
+                          // event occurred.
   int32_t pid;  //<- Identifier of the process in which the event occurred or
                 // is observed.
   int32_t tid;  //<- Identifier of the thread in which the event occurred or

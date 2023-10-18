@@ -42,13 +42,12 @@ size_t& threadLocalCounter();
  *
  * @tparam Args Type of debug arguments.
  * @param type Type of trace event.
- * @param category Category of trace event.
  * @param name Name of the trace event.
  * @param args Debug arguments.
  */
 template <class... Args>
-void writeTraceEvent(const uint8_t type, const uint8_t category,
-                     const char* name, const Args&... args) {
+void writeTraceEvent(const uint8_t type, const char* name,
+                     const Args&... args) {
   if (Config::isTraceDisable()) {
     return;
   }
@@ -58,7 +57,6 @@ void writeTraceEvent(const uint8_t type, const uint8_t category,
   }
   auto event = MutableTraceEvent(result.second.data());
   event.setType(type);
-  event.setCategory(category);
   event.setCounter(++threadLocalCounter());
   event.setTimestampNs(
       std::chrono::system_clock::now().time_since_epoch().count());

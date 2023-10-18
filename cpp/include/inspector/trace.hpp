@@ -16,12 +16,19 @@
 
 #pragma once
 
-#include <ostream>
+#include <string>
+#include <type_traits>
 
 #include <inspector/details/trace_writer.hpp>
 
 namespace inspector {
 
+/**
+ * @brief Enumerated set of event types. The types are taken from the catapult
+ * types in
+ * https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU
+ *
+ */
 enum class EventType {
   kSyncBeginTag = 0,
   kSyncEndTag,
@@ -33,71 +40,6 @@ enum class EventType {
   kFlowEndTag,
   kCounterTag,
 };
-
-/**
- * @brief Tags to determine the type of trace event.
- *
- * These tags will be present in the published trace event. A reader can use
- * these values to determine the type of event. The tag values are chosen to be
- * consistent with catapult traceview:
- *
- * https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU
- *
- */
-constexpr auto kSyncBeginTag = 'B';
-constexpr auto kSyncEndTag = 'E';
-constexpr auto kAsyncBeginTag = 'b';
-constexpr auto kAsyncInstanceTag = 'n';
-constexpr auto kAsyncEndTag = 'e';
-constexpr auto kFlowBeginTag = 's';
-constexpr auto kFlowInstanceTag = 't';
-constexpr auto kFlowEndTag = 'f';
-constexpr auto kCounterTag = 'C';
-
-/**
- * @brief The class `Kwarg` represents a keyword argument.
- *
- * @tparam T The type of argument.
- */
-template <class T>
-class Kwarg {
- public:
-  /**
-   * @brief Construct a new keyword argument.
-   *
-   * @param name Name of the argument.
-   * @param value Constant reference to the argument value.
-   */
-  Kwarg(const char* name, const T& value) : name_(name), value_(value) {}
-
-  /**
-   * @brief Write keyword argument to output stream.
-   *
-   * @param out Reference to the output stream.
-   * @param arg Constant reference to the keyword argument.
-   */
-  friend std::ostream& operator<<(std::ostream& out, const Kwarg& arg) {
-    out << arg.name_ << "=" << arg.value_;
-    return out;
-  }
-
- private:
-  const char* name_;
-  const T& value_;
-};
-
-/**
- * @brief Utility method to create a keyword argument.
- *
- * @tparam T The type of argument.
- * @param name Name of the argument.
- * @param value Constant reference to the argument value.
- * @returns Keyword argument object.
- */
-template <class T>
-Kwarg<T> MakeKwarg(const char* name, const T& value) {
-  return {name, value};
-}
 
 // ------------------------------------
 // Synchronous Scope Trace Events
@@ -113,12 +55,13 @@ Kwarg<T> MakeKwarg(const char* name, const T& value) {
  * additional arguments to the event.
  *
  * @tparam Args Additional argument types.
- * @param name Constant reference to the scope name.
+ * @param name Scope name in c-string format.
  * @param args Constant reference to additional arguments.
  */
 template <class... Args>
-void SyncBegin(const std::string& name, const Args&... args) {
-  details::WriteTraceEvent(kSyncBeginTag, name, args...);
+void syncBegin(const char* name, const Args&... args) {
+  details::writeTraceEvent(static_cast<event_type_t>(EventType::kSyncBeginTag),
+                           name, args...);
 }
 
 /**
@@ -126,35 +69,34 @@ void SyncBegin(const std::string& name, const Args&... args) {
  *
  * The method publishes a synchronous end trace event.
  *
- * @param name Constant reference to the scope name.
+ * @param name Scope name in c-string format.
  */
-inline void SyncEnd(const std::string& name) {
-  details::WriteTraceEvent(kSyncEndTag, name);
-}
+void syncEnd(const char* name);
 
 /**
  * @brief Utility class to publish a begin and end synchronous trace event
  * during the CTOR and DTOR respectively. An object of the class can be used to
- * trace a scope.
+ * trace a scope. Note that the class is designed primarily for string literals.
+ * When using std::string, the c_str() method can be used to pass a null
+ * terminated string. However, the string must remain valid until the end of the
+ * scope.
  *
  */
 class SyncScope {
  public:
   template <class... Args>
-  SyncScope(const std::string& name, const Args&... args);
+  SyncScope(const char* name, const Args&... args);
+
   ~SyncScope();
 
  private:
-  std::string name_;
+  const char* name_;
 };
 
 template <class... Args>
-inline SyncScope::SyncScope(const std::string& name, const Args&... args)
-    : name_(name) {
-  SyncBegin(name, args...);
+SyncScope::SyncScope(const char* name, const Args&... args) : name_(name) {
+  syncBegin(name_, args...);
 }
-
-inline SyncScope::~SyncScope() { SyncEnd(name_); }
 
 // ------------------------------------
 // Asynchronous Scope Trace Events
@@ -167,12 +109,13 @@ inline SyncScope::~SyncScope() { SyncEnd(name_); }
  * additional arguments to the event.
  *
  * @tparam Args Additional argument types.
- * @param name Constant reference to the scope name.
+ * @param name Scope name in c-string format.
  * @param args Constant reference to additional arguments.
  */
 template <class... Args>
-void AsyncBegin(const std::string& name, const Args&... args) {
-  details::WriteTraceEvent(kAsyncBeginTag, name, args...);
+void asyncBegin(const char* name, const Args&... args) {
+  details::writeTraceEvent(static_cast<event_type_t>(EventType::kAsyncBeginTag),
+                           name, args...);
 }
 
 /**
@@ -182,12 +125,13 @@ void AsyncBegin(const std::string& name, const Args&... args) {
  * provided additional arguments to the event.
  *
  * @tparam Args Additional argument types.
- * @param name Constant reference to the scope name.
+ * @param name Scope name in c-string format.
  * @param args Constant reference to additional arguments.
  */
 template <class... Args>
-void AsyncInstance(const std::string& name, const Args&... args) {
-  details::WriteTraceEvent(kAsyncInstanceTag, name, args...);
+void asyncInstance(const char* name, const Args&... args) {
+  details::writeTraceEvent(
+      static_cast<event_type_t>(EventType::kAsyncInstanceTag), name, args...);
 }
 
 /**
@@ -197,12 +141,13 @@ void AsyncInstance(const std::string& name, const Args&... args) {
  * additional arguments to the event.
  *
  * @tparam Args Additional argument types.
- * @param name Constant reference to the scope name.
+ * @param name Scope name in c-string format.
  * @param args Constant reference to additional arguments.
  */
 template <class... Args>
-void AsyncEnd(const std::string& name, const Args&... args) {
-  details::WriteTraceEvent(kAsyncEndTag, name, args...);
+void asyncEnd(const char* name, const Args&... args) {
+  details::writeTraceEvent(static_cast<event_type_t>(EventType::kAsyncEndTag),
+                           name, args...);
 }
 
 // ------------------------------------
@@ -216,12 +161,13 @@ void AsyncEnd(const std::string& name, const Args&... args) {
  * additional arguments to the event.
  *
  * @tparam Args Additional argument types.
- * @param name Constant reference to the scope name.
+ * @param name Scope name in c-string format.
  * @param args Constant reference to additional arguments.
  */
 template <class... Args>
-void FlowBegin(const std::string& name, const Args&... args) {
-  details::WriteTraceEvent(kFlowBeginTag, name, args...);
+void flowBegin(const char* name, const Args&... args) {
+  details::writeTraceEvent(static_cast<event_type_t>(EventType::kFlowBeginTag),
+                           name, args...);
 }
 
 /**
@@ -231,12 +177,13 @@ void FlowBegin(const std::string& name, const Args&... args) {
  * additional arguments to the event.
  *
  * @tparam Args Additional argument types.
- * @param name Constant reference to the scope name.
+ * @param name Scope name in c-string format.
  * @param args Constant reference to additional arguments.
  */
 template <class... Args>
-void FlowInstance(const std::string& name, const Args&... args) {
-  details::WriteTraceEvent(kFlowInstanceTag, name, args...);
+void flowInstance(const char* name, const Args&... args) {
+  details::writeTraceEvent(
+      static_cast<event_type_t>(EventType::kFlowInstanceTag), name, args...);
 }
 
 /**
@@ -246,22 +193,30 @@ void FlowInstance(const std::string& name, const Args&... args) {
  * additional arguments to the event.
  *
  * @tparam Args Additional argument types.
- * @param name Constant reference to the scope name.
+ * @param name Scope name in c-string format.
  * @param args Constant reference to additional arguments.
  */
 template <class... Args>
-void FlowEnd(const std::string& name, const Args&... args) {
-  details::WriteTraceEvent(kFlowEndTag, name, args...);
+void flowEnd(const char* name, const Args&... args) {
+  details::writeTraceEvent(static_cast<event_type_t>(EventType::kFlowEndTag),
+                           name, args...);
 }
 
 // ------------------------------------
 // Counter Event
 // ====================================
 
-// TODO: Should be variadic keyword arguments having integer values
-template <class... Args>
-void Counters(const std::string& name, const Args&... args) {
-  details::WriteTraceEvent(kCounterTag, name, args...);
+/**
+ * @brief Create a counter metric event.
+ *
+ * @tparam T Type of counter value.
+ * @param name Name of counter in c-string format.
+ * @param arg Value of counter.
+ */
+template <class T>
+void counter(const char* name, const T& arg) {
+  details::writeTraceEvent(static_cast<event_type_t>(EventType::kCounterTag),
+                           name, arg);
 }
 
 // ------------------------------------
@@ -280,29 +235,33 @@ void Counters(const std::string& name, const Args&... args) {
  * @brief Synchronous trace events.
  *
  */
-#define TRACE() inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(__func__)
-#define TRACE_SCOPE(name) inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(name)
+#define TRACE(...) \
+  inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(__func__, __VA_ARGS__)
+#define TRACE_SCOPE(name, ...) \
+  inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(name, __VA_ARGS__)
 
 /**
  * @brief Asynchronous trace events.
  *
  */
-#define TRACE_ASYNC_BEGIN(name) inspector::AsyncBegin(name)
-#define TRACE_ASYNC_INSTANCE(name) inspector::AsyncInstance(name)
-#define TRACE_ASYNC_END(name) inspector::AsyncEnd(name)
+#define TRACE_ASYNC_BEGIN(name, ...) inspector::asyncBegin(name, __VA_ARGS__)
+#define TRACE_ASYNC_INSTANCE(name, ...) \
+  inspector::asyncInstance(name, __VA_ARGS__)
+#define TRACE_ASYNC_END(name, ...) inspector::asyncEnd(name, __VA_ARGS__)
 
 /**
  * @brief Flow trace events
  *
  */
-#define TRACE_FLOW_BEGIN(name) inspector::FlowBegin(name)
-#define TRACE_FLOW_INSTANCE(name) inspector::FlowInstance(name)
-#define TRACE_FLOW_END(name) inspector::FlowEnd(name)
+#define TRACE_FLOW_BEGIN(name, ...) inspector::flowBegin(name, __VA_ARGS__)
+#define TRACE_FLOW_INSTANCE(name, ...) \
+  inspector::flowInstance(name, __VA_ARGS__)
+#define TRACE_FLOW_END(name, ...) inspector::flowEnd(name, __VA_ARGS__)
 
 /**
  * @brief Counter trace events
  *
  */
-#define TRACE_COUNTER(name, ...) inspector::Counters(name, __VA_ARGS__)
+#define TRACE_COUNTER(name, value) inspector::counter(name, value)
 
 // ------------------------------------
