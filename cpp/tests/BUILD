@@ -49,13 +49,47 @@ cc_test(
 )
 
 cc_test(
+    name = "system_test",
+    srcs = [
+        "system_test.cpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+        "@gtest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "trace_event_test",
+    srcs = [
+        "trace_event_test.cpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+        "@gtest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "trace_reader_writer_test",
+    srcs = [
+        "trace_reader_writer_test.cpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+        "//cpp/tests:testing",
+        "@gtest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "trace_test",
     srcs = [
         "trace_test.cpp",
     ],
     deps = [
         "//cpp:inspector",
-        "//utils:strings",
+        "//cpp/tests:testing",
         "@gtest//:gtest_main",
     ],
 )

@@ -114,12 +114,18 @@ class MutableTraceEvent {
   template <class T>
   size_t addDebugArgAt(const size_t offset, const T& arg);
 
+  template <std::size_t N>
+  size_t addDebugArgAt(const size_t offset, const char (&arg)[N]) {
+    return addDebugArgAt<const char*>(offset, arg);
+  }
+
   // Dummy method to facilitate template parameter expansion
   void addDebugArgsAt(const size_t offset) {}
 
   template <class T, class... Args>
   void addDebugArgsAt(const size_t offset, const T& arg, const Args&... args) {
-    addDebugArgsAt(offset + addDebugArgAt(offset, arg), args...);
+    const auto delta = addDebugArgAt(offset, arg);
+    addDebugArgsAt(offset + delta, args...);
   }
 
   void* address_;

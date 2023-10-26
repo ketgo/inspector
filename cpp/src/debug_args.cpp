@@ -17,6 +17,7 @@
 #include <inspector/debug_args.hpp>
 
 #include <cstring>
+#include <stdexcept>
 #include <string>
 
 #include <inspector/details/debug_args.hpp>
@@ -56,7 +57,7 @@ template float DebugArg::value<float>() const;
 template double DebugArg::value<double>() const;
 template char DebugArg::value<char>() const;
 
-// Template specialization for string literal
+// Template specialization for c-string
 template <>
 const char* DebugArg::value<const char*>() const {
   if (type() != details::TypeId<const char*>::value) {
@@ -127,14 +128,10 @@ size_t storageSize(const DebugArg& debug_arg) {
 
 }  // namespace
 
-DebugArgs::Iterator::Iterator()
-    : debug_args_(nullptr), debug_arg_(nullptr), count_(0) {}
+DebugArgs::Iterator::Iterator() : debug_arg_(nullptr), count_(0) {}
 
-DebugArgs::Iterator::Iterator(const DebugArgs& debug_args,
-                              const void* const address, const size_t count)
-    : debug_args_(std::addressof(debug_args)),
-      debug_arg_(address),
-      count_(count) {}
+DebugArgs::Iterator::Iterator(const void* const address, const size_t count)
+    : debug_arg_(address), count_(count) {}
 
 const DebugArg& DebugArgs::Iterator::operator*() const { return debug_arg_; }
 
@@ -154,7 +151,8 @@ DebugArgs::Iterator& DebugArgs::Iterator::operator++() {
 }
 
 bool DebugArgs::Iterator::operator==(const Iterator& other) const {
-  return debug_args_ == other.debug_args_ && count_ == other.count_;
+  return debug_arg_.address() == other.debug_arg_.address() &&
+         count_ == other.count_;
 }
 
 bool DebugArgs::Iterator::operator!=(const Iterator& other) const {
@@ -165,19 +163,22 @@ bool DebugArgs::Iterator::operator!=(const Iterator& other) const {
 // `DebugArgs` Implementation
 // ---
 
-DebugArgs::DebugArgs() : address_(nullptr), count_(0) {}
+DebugArgs::DebugArgs() : address_(nullptr), storage_size_(0), count_(0) {}
 
-DebugArgs::DebugArgs(const void* const address, const size_t count)
-    : address_(address), count_(count) {}
+DebugArgs::DebugArgs(const void* const address, const size_t storage_size,
+                     const size_t count)
+    : address_(address), storage_size_(storage_size), count_(count) {}
 
 size_t DebugArgs::size() const { return count_; }
 
 DebugArgs::Iterator DebugArgs::begin() const {
-  return Iterator(*this, address_, count_);
+  return Iterator(address_, count_);
 }
 
 DebugArgs::Iterator DebugArgs::end() const {
-  return Iterator(*this, address_, 0);
+  return Iterator(static_cast<const void*>(
+                      static_cast<const uint8_t*>(address_) + storage_size_),
+                  0);
 }
 
 }  // namespace inspector

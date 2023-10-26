@@ -17,6 +17,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
 namespace inspector {
 namespace details {
@@ -30,6 +31,19 @@ namespace details {
  */
 template <class T>
 size_t debugArgStorageSize(const T& arg);
+
+/**
+ * @brief Get the storage size in bytes required to store given string literal
+ * debug argument.
+ *
+ * @tparam N Number of characters in the string literal.
+ * @param arg Constant reference to argument.
+ * @returns Size in bytes.
+ */
+template <std::size_t N>
+size_t debugArgStorageSize(const char (&arg)[N]) {
+  return sizeof(uint8_t) + sizeof(arg);
+}
 
 /**
  * @brief Get the size in bytes required to store no debug arguments. Pretty

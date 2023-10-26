@@ -26,6 +26,8 @@ namespace inspector {
  *
  */
 class DebugArg {
+  friend class DebugArgs;
+
  public:
   /**
    * @brief Enumerated set of different debug argument types.
@@ -44,13 +46,6 @@ class DebugArg {
     TYPE_CHAR,
     TYPE_STRING,
   };
-
-  /**
-   * @brief Construct a new DebugArg object.
-   *
-   * @param address Memory location where the argument is stored.
-   */
-  explicit DebugArg(const void* const address);
 
   /**
    * @brief Get the type of the debug argument.
@@ -76,6 +71,13 @@ class DebugArg {
   const void* address() const;
 
  private:
+  /**
+   * @brief Construct a new DebugArg object.
+   *
+   * @param address Memory location where the argument is stored.
+   */
+  explicit DebugArg(const void* const address);
+
   const void* address_;
 };
 
@@ -84,6 +86,8 @@ class DebugArg {
  *
  */
 class DebugArgs {
+  friend class TraceEvent;
+
  public:
   /**
    * @brief Iterator for reading arguments in a trace event.
@@ -102,10 +106,8 @@ class DebugArgs {
     bool operator!=(const Iterator& other) const;
 
    private:
-    Iterator(const DebugArgs& debug_args, const void* const address,
-             const size_t count);
+    Iterator(const void* const address, const size_t count);
 
-    const DebugArgs* debug_args_;
     DebugArg debug_arg_;
     size_t count_;
   };
@@ -115,14 +117,6 @@ class DebugArgs {
    *
    */
   DebugArgs();
-
-  /**
-   * @brief Construct a new DebugArgs object
-   *
-   * @param address Starting address of the arguments.
-   * @param count Number of arguments.
-   */
-  DebugArgs(const void* const address, const size_t count);
 
   /**
    * @brief Get the number of debug arguments.
@@ -146,7 +140,18 @@ class DebugArgs {
   Iterator end() const;
 
  private:
+  /**
+   * @brief Construct a new DebugArgs object
+   *
+   * @param address Starting address of the arguments.
+   * @param storage_size Number of bytes used to store the arguments.
+   * @param count Number of arguments.
+   */
+  DebugArgs(const void* const address, const size_t storage_size,
+            const size_t count);
+
   const void* address_;
+  size_t storage_size_;
   size_t count_;
 };
 

@@ -33,18 +33,6 @@ const details::TraceEventHeader* header(const std::vector<uint8_t>& buffer) {
       static_cast<const void*>(buffer.data()));
 }
 
-/**
- * @brief Make `DebugArgs` from memory buffer containing the trace event.
- *
- * @param header Constant reference to the buffer.
- * @returns An object ot type `DebugArgs`.
- */
-DebugArgs makeDebugArgs(const std::vector<uint8_t>& buffer) {
-  return DebugArgs(static_cast<const void*>(buffer.data() +
-                                            sizeof(details::TraceEventHeader)),
-                   header(buffer)->args_count);
-}
-
 }  // namespace
 
 TraceEvent::TraceEvent(std::vector<uint8_t>&& buffer)
@@ -63,7 +51,12 @@ int32_t TraceEvent::pid() const { return header(buffer_)->pid; }
 int32_t TraceEvent::tid() const { return header(buffer_)->tid; }
 
 const char* TraceEvent::name() const {
-  auto debug_args = makeDebugArgs(buffer_);
+  const void* address = static_cast<const void*>(
+      buffer_.data() + sizeof(details::TraceEventHeader));
+  const size_t storage_size =
+      buffer_.size() - sizeof(details::TraceEventHeader);
+  auto debug_args =
+      DebugArgs(address, storage_size, header(buffer_)->args_count);
   auto it = debug_args.begin();
   if (it == debug_args.end()) {
     return nullptr;
@@ -72,13 +65,23 @@ const char* TraceEvent::name() const {
 }
 
 DebugArgs TraceEvent::debugArgs() const {
-  auto debug_args = makeDebugArgs(buffer_);
+  const void* address = static_cast<const void*>(
+      buffer_.data() + sizeof(details::TraceEventHeader));
+  const size_t storage_size =
+      buffer_.size() - sizeof(details::TraceEventHeader);
+  auto debug_args =
+      DebugArgs(address, storage_size, header(buffer_)->args_count);
   auto it = debug_args.begin();
   if (it == debug_args.end()) {
     return DebugArgs{};
   }
   ++it;
-  return DebugArgs(it->address(), header(buffer_)->args_count - 1);
+  const size_t new_storage_size =
+      buffer_.size() -
+      static_cast<size_t>(static_cast<const uint8_t*>(it->address()) -
+                          buffer_.data());
+  return DebugArgs(it->address(), new_storage_size,
+                   header(buffer_)->args_count - 1);
 }
 
 }  // namespace inspector

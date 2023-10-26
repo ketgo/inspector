@@ -41,7 +41,7 @@ template size_t debugArgStorageSize<float>(const float&);
 template size_t debugArgStorageSize<double>(const double&);
 template size_t debugArgStorageSize<char>(const char&);
 
-// Template specialization for string literal
+// Template specialization for c-string
 template <>
 size_t debugArgStorageSize<const char*>(const char* const& obj) {
   // The size includes first 8 bits for type, followed by size for storing the

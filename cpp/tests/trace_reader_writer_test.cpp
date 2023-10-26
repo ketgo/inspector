@@ -22,13 +22,14 @@
 #include <inspector/details/queue.hpp>
 #include <inspector/details/trace_writer.hpp>
 #include <inspector/trace_event.hpp>
+#include <inspector/trace_reader.hpp>
 
 #include "cpp/tests/testing.hpp"
 
 using namespace inspector;
 
 namespace {
-static constexpr auto kEventQueueName = "inspector-trace_writer-test";
+static constexpr auto kEventQueueName = "inspector-trace-rw-test";
 }  // namespace
 
 class TraceWriterTestFixture : public ::testing::Test {
@@ -37,23 +38,13 @@ class TraceWriterTestFixture : public ::testing::Test {
   static void TearDownTestSuite() { inspector::testing::removeEventQueue(); }
   void SetUp() override {}
   void TearDown() override { inspector::testing::emptyEventQueue(); }
-
-  // Method to consume a trace event from the event queue.
-  static TraceEvent Consume() {
-    std::vector<uint8_t> event;
-    details::eventQueue().consume(event);
-    return TraceEvent(std::move(event));
-  }
 };
 
 TEST_F(TraceWriterTestFixture, TestWriteTraceEvent) {
   std::string test_event = "testing";
-  details::writeTraceEvent(1, 1, test_event.c_str());
-
-  // Testing for written event
-  auto event = Consume();
+  details::writeTraceEvent(1, test_event.c_str());
+  auto event = readTraceEvent();
   ASSERT_EQ(event.type(), 1);
-  ASSERT_EQ(event.category(), 1);
   ASSERT_TRUE(event.name());
   ASSERT_EQ(std::string{event.name()}, test_event);
   ASSERT_EQ(event.debugArgs().size(), 0);
