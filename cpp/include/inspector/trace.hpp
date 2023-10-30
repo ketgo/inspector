@@ -29,7 +29,7 @@ namespace inspector {
  * https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU
  *
  */
-enum class EventType {
+enum class EventType : event_type_t {
   kSyncBeginTag = 0,
   kSyncEndTag,
   kAsyncBeginTag,

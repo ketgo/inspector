@@ -26,6 +26,7 @@
 #include <inspector/details/queue.hpp>
 #include <inspector/details/system.hpp>
 #include <inspector/details/trace_event.hpp>
+#include <inspector/types.hpp>
 
 namespace inspector {
 namespace details {
@@ -46,23 +47,23 @@ size_t& threadLocalCounter();
  * @param args Debug arguments.
  */
 template <class... Args>
-void writeTraceEvent(const uint8_t type, const char* name,
+void writeTraceEvent(const event_type_t type, const char* name,
                      const Args&... args) {
-  if (Config::isTraceDisable()) {
+  if (Config::isTraceDisabled()) {
     return;
   }
   auto result = eventQueue().tryPublish(traceEventStorageSize(name, args...));
   if (result.first != bigcat::CircularQueue::Status::OK) {
     return;
   }
-  auto event = MutableTraceEvent(result.second.data());
+  auto event = MutableTraceEvent(result.second.data(), result.second.size());
   event.setType(type);
   event.setCounter(++threadLocalCounter());
   event.setTimestampNs(
       std::chrono::system_clock::now().time_since_epoch().count());
   event.setPid(getPID());
   event.setTid(getTID());
-  event.addDebugArgs(name, args...);
+  event.appendDebugArgs(name, args...);
 }
 
 }  // namespace details

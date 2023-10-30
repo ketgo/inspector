@@ -42,7 +42,7 @@ void setEventQueueName(const std::string& name);
  *
  * @returns `true` if disabled else `false`.
  */
-bool isTraceDisable();
+bool isTraceDisabled();
 
 /**
  * @brief Disable capturing of all trace events.

@@ -24,11 +24,12 @@ pybind_library(
         "src/logging.cpp",
         "src/testing.cpp",
         "src/trace.cpp",
+        "src/trace_event.cpp",
     ],
     imports = ["."],
-    soname = "py_inspector",
+    soname = "inspector",
     deps = [
         "//cpp:inspector",
-        "//utils:strings",
+        "//cpp/tests:testing",
     ],
 )

@@ -17,7 +17,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include <inspector/details/config.hpp>
+#include <inspector/config.hpp>
 
 namespace py = pybind11;
 
@@ -26,19 +26,25 @@ namespace py = pybind11;
  *
  * @param m Reference to the python module.
  */
-void BindConfig(py::module& m) {
-  using ConfigPtr = std::unique_ptr<inspector::details::Config, py::nodelete>;
-  py::class_<inspector::details::Config, ConfigPtr>(m, "Config")
-      .def(py::init(
-          []() { return ConfigPtr(&inspector::details::Config::Get()); }))
-      .def_readwrite("EVENT_QUEUE_NAME",
-                     &inspector::details::Config::queue_system_unique_name)
-      .def_readwrite("REMOVE_EVENT_QUEUE_ON_EXIT",
-                     &inspector::details::Config::queue_remove_on_exit)
-      .def_readwrite("MAX_WRITE_ATTEMPT",
-                     &inspector::details::Config::max_write_attempt)
-      .def_readwrite("MAX_READ_ATTEMPT",
-                     &inspector::details::Config::max_read_attempt)
-      .def_readwrite("DISABLE_TRACING",
-                     &inspector::details::Config::disable_tracing);
+void bindConfig(py::module& m) {
+  py::module config_m = m.def_submodule(
+      "Config", "Configuration module for the inspector library.");
+
+  config_m.def("event_queue_name", &inspector::Config::eventQueueName,
+               "Get the name of the process shared event queue used by the "
+               "inspector "
+               "library to publish trace events for consumption by the trace "
+               "reader.");
+  config_m.def(
+      "set_event_queue_name", &inspector::Config::setEventQueueName,
+      "Set the name of the process shared event queue used by the "
+      "inspector library to publish trace events for consumption by the "
+      "trace reader.",
+      py::arg("name"));
+  config_m.def("is_trace_disabled", &inspector::Config::isTraceDisabled,
+               "Check if tracing is disabled.");
+  config_m.def("disable_trace", &inspector::Config::disableTrace,
+               "Disable capturing of all trace events.");
+  config_m.def("enable_trace", &inspector::Config::enableTrace,
+               "Enable capturing of all trace events.");
 }

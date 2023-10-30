@@ -54,8 +54,9 @@ class MutableTraceEvent {
    * @brief Construct a new MutableEventView object.
    *
    * @param address Pointer to starting address of memory buffer.
+   * @param size Size of the memory buffer.
    */
-  explicit MutableTraceEvent(void* const address);
+  MutableTraceEvent(void* const address, const size_t size);
 
   /**
    * @brief Set the type of trace event.
@@ -93,42 +94,45 @@ class MutableTraceEvent {
   void setTid(const int32_t tid);
 
   /**
-   * @brief Get the number of debug arguments stored in the trace event.
+   * @brief Append the given debug argument to the event.
    *
-   * @returns Number of debug arguments
+   * @tparam T Type of debug argument.
+   * @param arg Constant reference to the debug argument.
    */
-  uint8_t debugArgsCount() const;
+  template <class T>
+  void appendDebugArg(const T& arg);
 
   /**
-   * @brief Add the given arguments to the event.
+   * @brief Append the given string literal debug argument.
    *
-   * @tparam Args Argument types to store as part of the event.
-   * @param args Constant reference to the arguments.
+   * @tparam N Length of string literal.
    */
-  template <class... Args>
-  void addDebugArgs(const Args&... args) {
-    addDebugArgsAt(0, args...);
+  template <std::size_t N>
+  void appendDebugArg(const char (&arg)[N]) {
+    appendDebugArg<const char*>(arg);
+  }
+
+  /**
+   * @brief Append the given multiple debug arguments to the trace event.
+   *
+   * @tparam T Type of first debug argument.
+   * @tparam Args Type of other debug arguments.
+   * @param arg Constant reference to the first debug argument.
+   * @param args Constant reference to rest of the debug arguments.
+   */
+  template <class T, class... Args>
+  void appendDebugArgs(const T& arg, const Args&... args) {
+    appendDebugArg(arg);
+    appendDebugArgs(args...);
   }
 
  private:
-  template <class T>
-  size_t addDebugArgAt(const size_t offset, const T& arg);
-
-  template <std::size_t N>
-  size_t addDebugArgAt(const size_t offset, const char (&arg)[N]) {
-    return addDebugArgAt<const char*>(offset, arg);
-  }
-
   // Dummy method to facilitate template parameter expansion
-  void addDebugArgsAt(const size_t offset) {}
-
-  template <class T, class... Args>
-  void addDebugArgsAt(const size_t offset, const T& arg, const Args&... args) {
-    const auto delta = addDebugArgAt(offset, arg);
-    addDebugArgsAt(offset + delta, args...);
-  }
+  void appendDebugArgs() {}
 
   void* address_;
+  const size_t size_;
+  void* debug_args_head_;
 };
 
 }  // namespace details

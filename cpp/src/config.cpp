@@ -43,7 +43,7 @@ std::string eventQueueName() { return queueName(); }
 
 void setEventQueueName(const std::string& name) { queueName() = name; }
 
-bool isTraceDisable() { return !traceFlag(); }
+bool isTraceDisabled() { return !traceFlag(); }
 
 void disableTrace() { traceFlag() = false; }
 

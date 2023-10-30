@@ -25,9 +25,9 @@ TEST(ConfigTestFixture, TestConstantEventQueueName) {
 }
 
 TEST(ConfigTestFixture, TestTraceEnableDisable) {
-  ASSERT_FALSE(Config::isTraceDisable());  // By default tracing is enabled
+  ASSERT_FALSE(Config::isTraceDisabled());  // By default tracing is enabled
   Config::disableTrace();
-  ASSERT_TRUE(Config::isTraceDisable());
+  ASSERT_TRUE(Config::isTraceDisabled());
   Config::enableTrace();
-  ASSERT_FALSE(Config::isTraceDisable());
+  ASSERT_FALSE(Config::isTraceDisabled());
 }

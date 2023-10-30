@@ -35,7 +35,11 @@ size_t traceEventStorageSize() { return sizeof(TraceEventHeader); }
 // `MutableTraceEvent` Implementation
 // ---
 
-MutableTraceEvent::MutableTraceEvent(void* const address) : address_(address) {}
+MutableTraceEvent::MutableTraceEvent(void* const address, const size_t size)
+    : address_(address),
+      size_(size),
+      debug_args_head_(static_cast<void*>(static_cast<uint8_t*>(address_) +
+                                          sizeof(TraceEventHeader))) {}
 
 void MutableTraceEvent::setType(const event_type_t type) {
   static_cast<TraceEventHeader*>(address_)->type = type;
@@ -58,61 +62,57 @@ void MutableTraceEvent::setTid(const int32_t tid) {
 }
 
 template <class T>
-size_t MutableTraceEvent::addDebugArgAt(const size_t offset, const T& arg) {
-  void* const args_end = static_cast<void*>(static_cast<uint8_t*>(address_) +
-                                            sizeof(TraceEventHeader) + offset);
-  *static_cast<uint8_t*>(args_end) = static_cast<uint8_t>(TypeId<T>::value);
-  std::memcpy(static_cast<void*>(static_cast<uint8_t*>(args_end) + 1),
+void MutableTraceEvent::appendDebugArg(const T& arg) {
+  // Skip appending argument if the buffer is full.
+  if (static_cast<void*>(static_cast<uint8_t*>(address_) + size_) <=
+      debug_args_head_) {
+    return;
+  }
+
+  *static_cast<uint8_t*>(debug_args_head_) =
+      static_cast<uint8_t>(TypeId<T>::value);
+  std::memcpy(static_cast<void*>(static_cast<uint8_t*>(debug_args_head_) + 1),
               static_cast<const void*>(&arg), sizeof(arg));
   static_cast<TraceEventHeader*>(address_)->args_count += 1;
-
-  return debugArgStorageSize(arg);
+  debug_args_head_ = static_cast<void*>(
+      static_cast<uint8_t*>(debug_args_head_) + debugArgsStorageSize(arg));
 }
 
 // Instantiating for different supported data types
-template size_t MutableTraceEvent::addDebugArgAt<int16_t>(const size_t,
-                                                          const int16_t&);
-template size_t MutableTraceEvent::addDebugArgAt<int32_t>(const size_t,
-                                                          const int32_t&);
-template size_t MutableTraceEvent::addDebugArgAt<int64_t>(const size_t,
-                                                          const int64_t&);
-template size_t MutableTraceEvent::addDebugArgAt<uint8_t>(const size_t,
-                                                          const uint8_t&);
-template size_t MutableTraceEvent::addDebugArgAt<uint16_t>(const size_t,
-                                                           const uint16_t&);
-template size_t MutableTraceEvent::addDebugArgAt<uint32_t>(const size_t,
-                                                           const uint32_t&);
-template size_t MutableTraceEvent::addDebugArgAt<uint64_t>(const size_t,
-                                                           const uint64_t&);
-template size_t MutableTraceEvent::addDebugArgAt<float>(const size_t,
-                                                        const float&);
-template size_t MutableTraceEvent::addDebugArgAt<double>(const size_t,
-                                                         const double&);
-template size_t MutableTraceEvent::addDebugArgAt<char>(const size_t,
-                                                       const char&);
+template void MutableTraceEvent::appendDebugArg<int16_t>(const int16_t&);
+template void MutableTraceEvent::appendDebugArg<int32_t>(const int32_t&);
+template void MutableTraceEvent::appendDebugArg<int64_t>(const int64_t&);
+template void MutableTraceEvent::appendDebugArg<uint8_t>(const uint8_t&);
+template void MutableTraceEvent::appendDebugArg<uint16_t>(const uint16_t&);
+template void MutableTraceEvent::appendDebugArg<uint32_t>(const uint32_t&);
+template void MutableTraceEvent::appendDebugArg<uint64_t>(const uint64_t&);
+template void MutableTraceEvent::appendDebugArg<float>(const float&);
+template void MutableTraceEvent::appendDebugArg<double>(const double&);
+template void MutableTraceEvent::appendDebugArg<char>(const char&);
 
 // Template specialization for c-string
 template <>
-size_t MutableTraceEvent::addDebugArgAt<const char*>(const size_t offset,
-                                                     const char* const& arg) {
-  void* const args_end = static_cast<void*>(static_cast<uint8_t*>(address_) +
-                                            sizeof(TraceEventHeader) + offset);
-  *static_cast<uint8_t*>(args_end) =
-      static_cast<uint8_t>(TypeId<const char*>::value);
-  void* const str_start =
-      static_cast<void*>(static_cast<uint8_t*>(args_end) + 1);
-  const size_t str_size = std::strlen(arg) * sizeof(char) + sizeof(char);
-  std::memcpy(str_start, static_cast<const void*>(arg), str_size);
-  static_cast<TraceEventHeader*>(address_)->args_count += 1;
+void MutableTraceEvent::appendDebugArg<const char*>(const char* const& arg) {
+  // Skip appending argument if the buffer is full.
+  if (static_cast<void*>(static_cast<uint8_t*>(address_) + size_) <=
+      debug_args_head_) {
+    return;
+  }
 
-  return str_size + sizeof(uint8_t);
+  *static_cast<uint8_t*>(debug_args_head_) =
+      static_cast<uint8_t>(TypeId<const char*>::value);
+  const size_t str_size = std::strlen(arg) * sizeof(char) + sizeof(char);
+  std::memcpy(static_cast<void*>(static_cast<uint8_t*>(debug_args_head_) + 1),
+              static_cast<const void*>(arg), str_size);
+  static_cast<TraceEventHeader*>(address_)->args_count += 1;
+  debug_args_head_ = static_cast<void*>(
+      static_cast<uint8_t*>(debug_args_head_) + str_size + sizeof(uint8_t));
 }
 
 // Template specialization for string
 template <>
-size_t MutableTraceEvent::addDebugArgAt<std::string>(const size_t offset,
-                                                     const std::string& arg) {
-  return addDebugArgAt(offset, arg.c_str());
+void MutableTraceEvent::appendDebugArg<std::string>(const std::string& arg) {
+  return appendDebugArg(arg.c_str());
 }
 
 }  // namespace details

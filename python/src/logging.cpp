@@ -53,15 +53,15 @@ void PythonLogger::operator<<(const std::string& message) {
  *
  * @param m Reference to the python module.
  */
-void BindLogging(py::module& m) {
+void bindLogging(py::module& m) {
   auto logging = py::module::import("logging");
   auto py_logger = logging.attr("getLogger")(m.attr("__name__"));
 
-  inspector::RegisterLogger(inspector::LogLevel::INFO,
+  inspector::registerLogger(inspector::LogLevel::INFO,
                             std::make_shared<PythonLogger>("info", py_logger));
-  inspector::RegisterLogger(inspector::LogLevel::WARN,
+  inspector::registerLogger(inspector::LogLevel::WARN,
                             std::make_shared<PythonLogger>("warn", py_logger));
-  inspector::RegisterLogger(inspector::LogLevel::ERROR,
+  inspector::registerLogger(inspector::LogLevel::ERROR,
                             std::make_shared<PythonLogger>("error", py_logger));
 
   // Unregister python logger before interpreter exits. This is required since
@@ -69,5 +69,5 @@ void BindLogging(py::module& m) {
   // and any logging done in these objects will cause segfault once the
   // interpreter terminates.
   auto atexit = py::module_::import("atexit");
-  atexit.attr("register")(py::cpp_function(&inspector::UnregsiterAllLoggers));
+  atexit.attr("register")(py::cpp_function(&inspector::unregisterAllLoggers));
 }

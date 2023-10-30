@@ -14,7 +14,7 @@
  limitations under the License.
 """
 
-import py_inspector as inspector
+import inspector
 
 
 def setup_module():

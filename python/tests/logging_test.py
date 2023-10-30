@@ -16,7 +16,7 @@
 
 import logging
 
-from py_inspector import testing
+from inspector import testing
 
 
 def test_logging(caplog):

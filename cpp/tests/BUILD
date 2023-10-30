@@ -20,7 +20,10 @@ cc_library(
     hdrs = [
         "testing.hpp",
     ],
-    visibility = [":__subpackages__"],
+    visibility = [
+        ":__subpackages__",
+        "//python:__subpackages__",
+    ],
     deps = [
         "//cpp:inspector",
     ],

@@ -47,14 +47,15 @@ TYPED_TEST_P(TraceEventTestFixture, TestMutableAndNonMutableTraceEvent) {
   this->buffer_.resize(details::traceEventStorageSize(
       kEventName, TraceEventTestFixture<TypeParam>::value_));
 
-  details::MutableTraceEvent mutable_event(this->buffer_.data());
+  details::MutableTraceEvent mutable_event(this->buffer_.data(),
+                                           this->buffer_.size());
   mutable_event.setType(kType);
   mutable_event.setCounter(kCounter);
   mutable_event.setPid(kPid);
   mutable_event.setTid(kTid);
   mutable_event.setTimestampNs(kTimestampNs);
-  mutable_event.addDebugArgs(kEventName,
-                             TraceEventTestFixture<TypeParam>::value_);
+  mutable_event.appendDebugArgs(kEventName,
+                                TraceEventTestFixture<TypeParam>::value_);
 
   TraceEvent event(std::move(this->buffer_));
   ASSERT_EQ(event.type(), kType);
@@ -148,13 +149,13 @@ TEST(TraceEventTestFixture,
   std::vector<uint8_t> buffer(
       details::traceEventStorageSize(kEventName, kValue));
 
-  details::MutableTraceEvent mutable_event(buffer.data());
+  details::MutableTraceEvent mutable_event(buffer.data(), buffer.size());
   mutable_event.setType(kType);
   mutable_event.setCounter(kCounter);
   mutable_event.setPid(kPid);
   mutable_event.setTid(kTid);
   mutable_event.setTimestampNs(kTimestampNs);
-  mutable_event.addDebugArgs(kEventName, kValue);
+  mutable_event.appendDebugArgs(kEventName, kValue);
 
   TraceEvent event(std::move(buffer));
   ASSERT_EQ(event.type(), kType);
