@@ -117,7 +117,7 @@ def setup_function():
         ),
     ],
 )
-def test_trace(func, type, name, debug_args, invalid_debug_args):
+def test_core(func, type, name, debug_args, invalid_debug_args):
     func(name, *debug_args)
 
     event = inspector.read_trace_event()
@@ -127,3 +127,32 @@ def test_trace(func, type, name, debug_args, invalid_debug_args):
 
     with pytest.raises((RuntimeError, TypeError)):
         func(name, *invalid_debug_args)
+
+
+def test_trace_decorator():
+    @inspector.trace(scope_name="test-scope")
+    def add(a: int, b: int) -> int:
+        return a + b
+
+    assert add(1, 2) == 3
+
+    event = inspector.read_trace_event()
+    assert event.type() == inspector.EventType.kSyncBeginTag.value
+    assert event.name() == "test-scope"
+
+    event = inspector.read_trace_event()
+    assert event.type() == inspector.EventType.kSyncEndTag.value
+    assert event.name() == "test-scope"
+
+
+def test_scope():
+    with inspector.scope("test-scope"):
+        pass
+
+    event = inspector.read_trace_event()
+    assert event.type() == inspector.EventType.kSyncBeginTag.value
+    assert event.name() == "test-scope"
+
+    event = inspector.read_trace_event()
+    assert event.type() == inspector.EventType.kSyncEndTag.value
+    assert event.name() == "test-scope"
