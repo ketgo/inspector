@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_python//python:defs.bzl", "py_test")
 load("@deps_python//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_test")
 
 def pytest_test(
         name,

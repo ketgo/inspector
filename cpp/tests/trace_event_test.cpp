@@ -16,6 +16,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstring>
 #include <vector>
 
 #include <inspector/trace_event.hpp>

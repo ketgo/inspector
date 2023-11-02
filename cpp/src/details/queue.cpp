@@ -30,13 +30,13 @@ namespace {
  *
  */
 bigcat::CircularQueue::Config queueConfig() {
-  return bigcat::CircularQueue::Config{
-      .buffer_size = 8 * 1024 * 1024,  // 8MB
-      .max_producers = 1024,
-      .max_consumers = 1024,
-      .timeout_ns = 30000000000,  // 30s
-      .start_marker = 811347036,  // "\\,\\0"
-  };
+  bigcat::CircularQueue::Config config;
+  config.buffer_size = 8 * 1024 * 1024;  // 8MB
+  config.max_producers = 1024;
+  config.max_consumers = 1024;
+  config.timeout_ns = 30000000000;  // 30s
+  config.start_marker = 811347036;  // "\\,\\0"
+  return config;
 }
 
 }  // namespace

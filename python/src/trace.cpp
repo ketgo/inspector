@@ -37,17 +37,24 @@ void pythonTraceEventWithArgs(const std::string& name, const py::args& args) {
     return;
   }
 
-  size_t storage_size = inspector::details::traceEventStorageSize();
+  size_t storage_size = inspector::details::traceEventStorageSize() +
+                        inspector::details::debugArgsStorageSize(name);
   for (auto& arg : args) {
     if (py::isinstance<py::str>(arg)) {
       storage_size +=
-          inspector::details::debugArgStorageSize(std::string(py::str(arg)));
-    } else if (py::isinstance<py::str>(arg)) {
+          inspector::details::debugArgStorageSize(py::cast<std::string>(arg));
+    } else if (py::isinstance<py::int_>(arg)) {
+      storage_size +=
+          inspector::details::debugArgStorageSize(py::cast<int64_t>(arg));
+    } else if (py::isinstace<py::float_>(arg)) {
+      storage_size +=
+          inspector::details::debugArgStorageSize(py::cast<double>(arg));
+    } else {
+      throw std::exception("Argument type not supported as debug argument.");
     }
   }
 
-  auto result =
-      inspector::eventQueue().tryPublish(traceEventStorageSize(name, args...));
+  auto result = inspector::eventQueue().tryPublish(storage_size);
   if (result.first != bigcat::CircularQueue::Status::OK) {
     return;
   }
@@ -60,7 +67,15 @@ void pythonTraceEventWithArgs(const std::string& name, const py::args& args) {
   event.setTid(getTID());
   event.appendDebugArg(name);
   for (auto& arg : args) {
-    event.appendDebugArg(py::str(arg));
+    if (py::isinstance<py::str>(arg)) {
+      event.appendDebugArg(py::cast<std::string>(arg));
+    } else if (py::isinstance<py::int_>(arg)) {
+      event.appendDebugArg(py::cast<int64_t>(arg));
+    } else if (py::isinstace<py::float_>(arg)) {
+      event.appendDebugArg(py::cast<double>(arg));
+    } else {
+      throw std::exception("Argument type not supported as debug argument.");
+    }
   }
 }
 

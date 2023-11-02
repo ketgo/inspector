@@ -14,8 +14,8 @@
 
 workspace(name = "inspector")
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # --------------------------------------
 # Python Rules
@@ -23,17 +23,34 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 http_archive(
     name = "rules_python",
-    sha256 = "a3a6e99f497be089f81ec082882e40246bfd435f52f4e82f37e89449b04573f6",
-    strip_prefix = "rules_python-0.10.2",
-    url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.10.2.tar.gz",
+    sha256 = "9d04041ac92a0985e344235f5d946f71ac543f1b1565f2cdbc9a2aaee8adf55b",
+    strip_prefix = "rules_python-0.26.0",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.26.0/rules_python-0.26.0.tar.gz",
 )
 
-load("@rules_python//python:pip.bzl", "pip_install")
+load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
 
-pip_install(
+python_register_toolchains(
+    name = "python_3_11",
+    # Available versions are listed in @rules_python//python:versions.bzl.
+    # We recommend using the same version your team is already standardized on.
+    python_version = "3.11",
+)
+
+py_repositories()
+
+load("@python_3_11//:defs.bzl", "interpreter")
+load("@rules_python//python:pip.bzl", "pip_parse")
+
+pip_parse(
     name = "deps_python",
-    requirements = "//third_party/python:requirements.txt",
+    python_interpreter_target = interpreter,
+    requirements = "//third_party/python:requirements_lock.txt",
 )
+
+load("@deps_python//:requirements.bzl", "install_deps")
+
+install_deps()
 
 # --------------------------------------
 # PyBind11
@@ -58,7 +75,7 @@ load("@pybind11_bazel//:python_configure.bzl", "python_configure")
 
 python_configure(
     name = "local_config_python",
-    python_version = "3",
+    python_interpreter_target = interpreter,
 )
 
 # --------------------------------------
@@ -74,9 +91,9 @@ http_archive(
 
 http_archive(
     name = "gtest",
-    sha256 = "5cf189eb6847b4f8fc603a3ffff3b0771c08eec7dd4bd961bfd45477dd13eb73",
-    strip_prefix = "googletest-609281088cfefc76f9d0ce82e1ff6c30cc3591e5",
-    urls = ["https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip"],
+    sha256 = "ab78fa3f912d44d38b785ec011a25f26512aaedc5291f51f3807c592b506d33a",
+    strip_prefix = "googletest-58d77fa8070e8cec2dc1ed015d66b454c8d78850",
+    urls = ["https://github.com/google/googletest/archive/58d77fa8070e8cec2dc1ed015d66b454c8d78850.zip"],
 )
 
 # ---------------------------------------
