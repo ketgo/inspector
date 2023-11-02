@@ -23,27 +23,27 @@ namespace inspector {
 namespace details {
 
 template <class T>
-size_t debugArgStorageSize(const T& arg) {
+size_t debugArgStorageSize(const T &arg) {
   // The first 8 bits store the type of data while the rest store the actual
   // data.
   return sizeof(uint8_t) + sizeof(arg);
 }
 
 // Instantiating for different supported data types
-template size_t debugArgStorageSize<int16_t>(const int16_t&);
-template size_t debugArgStorageSize<int32_t>(const int32_t&);
-template size_t debugArgStorageSize<int64_t>(const int64_t&);
-template size_t debugArgStorageSize<uint8_t>(const uint8_t&);
-template size_t debugArgStorageSize<uint16_t>(const uint16_t&);
-template size_t debugArgStorageSize<uint32_t>(const uint32_t&);
-template size_t debugArgStorageSize<uint64_t>(const uint64_t&);
-template size_t debugArgStorageSize<float>(const float&);
-template size_t debugArgStorageSize<double>(const double&);
-template size_t debugArgStorageSize<char>(const char&);
+template size_t debugArgStorageSize<int16_t>(const int16_t &);
+template size_t debugArgStorageSize<int32_t>(const int32_t &);
+template size_t debugArgStorageSize<int64_t>(const int64_t &);
+template size_t debugArgStorageSize<uint8_t>(const uint8_t &);
+template size_t debugArgStorageSize<uint16_t>(const uint16_t &);
+template size_t debugArgStorageSize<uint32_t>(const uint32_t &);
+template size_t debugArgStorageSize<uint64_t>(const uint64_t &);
+template size_t debugArgStorageSize<float>(const float &);
+template size_t debugArgStorageSize<double>(const double &);
+template size_t debugArgStorageSize<char>(const char &);
 
 // Template specialization for c-string
 template <>
-size_t debugArgStorageSize<const char*>(const char* const& obj) {
+size_t debugArgStorageSize<const char *>(const char *const &obj) {
   // The size includes first 8 bits for type, followed by size for storing the
   // chars in the string including the null terminator.
   return sizeof(uint8_t) + std::strlen(obj) * sizeof(char) + sizeof(char);
@@ -51,7 +51,7 @@ size_t debugArgStorageSize<const char*>(const char* const& obj) {
 
 // Template specialization for std::string
 template <>
-size_t debugArgStorageSize<std::string>(const std::string& obj) {
+size_t debugArgStorageSize<std::string>(const std::string &obj) {
   return debugArgStorageSize(obj.c_str());
 }
 

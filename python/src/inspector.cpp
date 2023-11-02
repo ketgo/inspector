@@ -19,11 +19,11 @@
 
 namespace py = pybind11;
 
-void bindConfig(py::module& m);
-void bindLogging(py::module& m);
-void bindTraceEvent(py::module& m);
-void bindTrace(py::module& m);
-void bindTesting(py::module& m);
+void bindConfig(py::module &m);
+void bindLogging(py::module &m);
+void bindTraceEvent(py::module &m);
+void bindTrace(py::module &m);
+void bindTesting(py::module &m);
 
 PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
   m.doc() = "Tool set to capture real time application traces for inspection.";

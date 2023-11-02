@@ -41,7 +41,7 @@ bigcat::CircularQueue::Config queueConfig() {
 
 }  // namespace
 
-bigcat::CircularQueue& eventQueue() {
+bigcat::CircularQueue &eventQueue() {
   static bigcat::CircularQueue queue =
       bigcat::CircularQueue::open(Config::eventQueueName(), queueConfig());
   return queue;

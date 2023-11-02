@@ -82,7 +82,7 @@ struct TypeId<char> {
 };
 
 template <>
-struct TypeId<const char*> {
+struct TypeId<const char *> {
   static constexpr auto value = DebugArg::Type::TYPE_STRING;
 };
 

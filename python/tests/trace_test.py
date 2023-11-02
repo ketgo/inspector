@@ -14,85 +14,116 @@
  limitations under the License.
 """
 
+from typing import List, Any
+
+import pytest
 import inspector
 
 
+def has_debug_args(event: inspector.TraceEvent, args: List[Any]) -> bool:
+    """
+    Utility method to check if the given trace event `event` has the debug
+    arguments specified in `args`.
+    """
+    debug_args = event.debug_args()
+    if len(args) != len(debug_args):
+        return False
+    idx = 0
+    for arg in debug_args:
+        if arg.value() != args[idx]:
+            return False
+        idx += 1
+
+    return True
+
+
 def setup_module():
-    inspector.Config().EVENT_QUEUE_NAME = "inspector-trace-test"
-    inspector.Config().REMOVE_EVENT_QUEUE_ON_EXIT = True
+    inspector.Config.set_event_queue_name("inspector-trace-test")
 
 
-def consume() -> inspector.testing.Event:
-    return inspector.testing.consume_test_event()
+def teardown_modlue():
+    inspector.testing.remove_event_queue()
 
 
-def test_sync_begin():
-    inspector.sync_begin("test_sync", 1, "one", arg=[])
-
-    event = consume()
-    assert event.phase == "B"
-    assert event.name == "test_sync"
-    assert event.args == "1|one|arg=[]"
+def setup_function():
+    inspector.testing.empty_event_queue()
 
 
-def test_sync_end():
-    inspector.sync_end("test_sync")
+@pytest.mark.parametrize(
+    "func,type,name,debug_args,invalid_debug_args",
+    [
+        (
+            inspector.sync_begin,
+            inspector.EventType.kSyncBeginTag,
+            "test_sync",
+            [1, "one"],
+            [1, "one", []],
+        ),
+        (
+            inspector.sync_end,
+            inspector.EventType.kSyncEndTag,
+            "test_sync",
+            [],
+            [1],
+        ),
+        (
+            inspector.async_begin,
+            inspector.EventType.kAsyncBeginTag,
+            "test_async",
+            [1, "one"],
+            [1, "one", []],
+        ),
+        (
+            inspector.async_instance,
+            inspector.EventType.kAsyncInstanceTag,
+            "test_async",
+            [1, "one"],
+            [1, "one", []],
+        ),
+        (
+            inspector.async_end,
+            inspector.EventType.kAsyncEndTag,
+            "test_async",
+            [1, "one"],
+            [1, "one", []],
+        ),
+        (
+            inspector.flow_begin,
+            inspector.EventType.kFlowBeginTag,
+            "test_flow",
+            [1, "one"],
+            [1, "one", []],
+        ),
+        (
+            inspector.flow_instance,
+            inspector.EventType.kFlowInstanceTag,
+            "test_flow",
+            [1, "one"],
+            [1, "one", []],
+        ),
+        (
+            inspector.flow_end,
+            inspector.EventType.kFlowEndTag,
+            "test_flow",
+            [1, "one"],
+            [1, "one", []],
+        ),
+        (
+            inspector.counter,
+            inspector.EventType.kCounterTag,
+            "test_flow",
+            [1],
+            ["one"],
+        ),
+    ],
+)
+def test_trace(func, type, name, debug_args, invalid_debug_args):
+    func(name, *debug_args)
 
-    event = consume()
-    assert event.phase == "E"
-    assert event.name == "test_sync"
-    assert event.args == ""
+    event = inspector.read_trace_event()
+    assert event.type() == type.value
+    assert event.name() == name
+    assert has_debug_args(event, debug_args)
 
-
-def test_async_begin():
-    inspector.async_begin("test_async", 1, "one", arg=[])
-
-    event = consume()
-    assert event.phase == "b"
-    assert event.name == "test_async"
-    assert event.args == "1|one|arg=[]"
-
-
-def test_async_instance():
-    inspector.async_instance("test_async", 1, "one", arg=[])
-
-    event = consume()
-    assert event.phase == "n"
-    assert event.name == "test_async"
-    assert event.args == "1|one|arg=[]"
-
-
-def test_async_end():
-    inspector.async_end("test_async", 1, "one", arg=[])
-
-    event = consume()
-    assert event.phase == "e"
-    assert event.name == "test_async"
-    assert event.args == "1|one|arg=[]"
-
-
-def test_flow_begin():
-    inspector.flow_begin("test_flow", 1, "one", arg=[])
-
-    event = consume()
-    assert event.phase == "s"
-    assert event.name == "test_flow"
-    assert event.args == "1|one|arg=[]"
-
-
-def test_flow_instance():
-    inspector.flow_instance("test_flow", 1, "one", arg=[])
-
-    event = consume()
-    assert event.phase == "t"
-    assert event.name == "test_flow"
-    assert event.args == "1|one|arg=[]"
-
-
-def test_flow_end():
-    inspector.flow_end("test_flow", 1, "one", arg=[])
-
-    event = consume()
-    assert event.phase == "f"
-    assert event.name == "test_flow"
-    assert event.args == "1|one|arg=[]"
+    with pytest.raises((RuntimeError, TypeError)):
+        func(name, *invalid_debug_args)

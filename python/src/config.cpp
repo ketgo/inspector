@@ -26,7 +26,7 @@ namespace py = pybind11;
  *
  * @param m Reference to the python module.
  */
-void bindConfig(py::module& m) {
+void bindConfig(py::module &m) {
   py::module config_m = m.def_submodule(
       "Config", "Configuration module for the inspector library.");
 

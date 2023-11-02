@@ -26,20 +26,14 @@ namespace py = pybind11;
 // -------------------------------
 
 template <inspector::EventType T>
-void pythonTraceEventWithoutArgs(const std::string& name) {
-  inspector::details::writeTraceEvent(static_cast<inspector::event_type_t>(T),
-                                      name.c_str());
-}
-
-template <inspector::EventType T>
-void pythonTraceEventWithArgs(const std::string& name, const py::args& args) {
+void pythonTraceEvent(const std::string &name, const py::args &args) {
   if (inspector::Config::isTraceDisabled()) {
     return;
   }
 
   size_t storage_size = inspector::details::traceEventStorageSize() +
                         inspector::details::debugArgsStorageSize(name);
-  for (auto& arg : args) {
+  for (auto &arg : args) {
     if (py::isinstance<py::str>(arg)) {
       storage_size +=
           inspector::details::debugArgStorageSize(py::cast<std::string>(arg));
@@ -50,7 +44,8 @@ void pythonTraceEventWithArgs(const std::string& name, const py::args& args) {
       storage_size +=
           inspector::details::debugArgStorageSize(py::cast<double>(arg));
     } else {
-      throw std::runtime_error("Argument type not supported as debug argument.");
+      throw std::runtime_error(
+          "Argument type not supported as debug argument.");
     }
   }
 
@@ -58,7 +53,8 @@ void pythonTraceEventWithArgs(const std::string& name, const py::args& args) {
   if (result.first != bigcat::CircularQueue::Status::OK) {
     return;
   }
-  auto event = inspector::details::MutableTraceEvent(result.second.data(), result.second.size());
+  auto event = inspector::details::MutableTraceEvent(result.second.data(),
+                                                     result.second.size());
   event.setType(static_cast<const inspector::event_type_t>(T));
   event.setCounter(++inspector::details::threadLocalCounter());
   event.setTimestampNs(
@@ -66,7 +62,7 @@ void pythonTraceEventWithArgs(const std::string& name, const py::args& args) {
   event.setPid(inspector::details::getPID());
   event.setTid(inspector::details::getTID());
   event.appendDebugArg(name);
-  for (auto& arg : args) {
+  for (auto &arg : args) {
     if (py::isinstance<py::str>(arg)) {
       event.appendDebugArg(py::cast<std::string>(arg));
     } else if (py::isinstance<py::int_>(arg)) {
@@ -74,28 +70,49 @@ void pythonTraceEventWithArgs(const std::string& name, const py::args& args) {
     } else if (py::isinstance<py::float_>(arg)) {
       event.appendDebugArg(py::cast<double>(arg));
     } else {
-      throw std::runtime_error("Argument type not supported as debug argument.");
+      // This block will never be called as the below error is already raised
+      // above when the storage size is computed. It is still however left for
+      // readability.
+      throw std::runtime_error(
+          "Argument type not supported as debug argument.");
     }
+  }
+}
+
+void pythonCounterEvent(const std::string &name, const py::object &arg) {
+  if (py::isinstance<py::int_>(arg)) {
+    inspector::counter(name.c_str(), py::cast<int64_t>(arg));
+  } else if (py::isinstance<py::float_>(arg)) {
+    inspector::counter(name.c_str(), py::cast<double>(arg));
+  } else {
+    throw std::runtime_error("Argument type not supported as debug argument.");
   }
 }
 
 // -------------------------------
 
-void bindTrace(py::module& m) {
-  m.def("sync_begin",
-        &pythonTraceEventWithoutArgs<inspector::EventType::kSyncBeginTag>);
+void bindTrace(py::module &m) {
+  py::enum_<inspector::EventType>(m, "EventType")
+      .value("kSyncBeginTag", inspector::EventType::kSyncBeginTag)
+      .value("kSyncEndTag", inspector::EventType::kSyncEndTag)
+      .value("kAsyncBeginTag", inspector::EventType::kAsyncBeginTag)
+      .value("kAsyncInstanceTag", inspector::EventType::kAsyncInstanceTag)
+      .value("kAsyncEndTag", inspector::EventType::kAsyncEndTag)
+      .value("kFlowBeginTag", inspector::EventType::kFlowBeginTag)
+      .value("kFlowInstanceTag", inspector::EventType::kFlowInstanceTag)
+      .value("kFlowEndTag", inspector::EventType::kFlowEndTag)
+      .value("kCounterTag", inspector::EventType::kCounterTag);
+
+  m.def("sync_begin", &pythonTraceEvent<inspector::EventType::kSyncBeginTag>);
   m.def("sync_end",
-        &pythonTraceEventWithoutArgs<inspector::EventType::kSyncEndTag>);
-  m.def("async_begin",
-        &pythonTraceEventWithoutArgs<inspector::EventType::kAsyncBeginTag>);
+        [](const std::string &name) { inspector::syncEnd(name.c_str()); });
+  m.def("async_begin", &pythonTraceEvent<inspector::EventType::kAsyncBeginTag>);
   m.def("async_instance",
-        &pythonTraceEventWithoutArgs<inspector::EventType::kAsyncInstanceTag>);
-  m.def("async_end",
-        &pythonTraceEventWithoutArgs<inspector::EventType::kAsyncEndTag>);
-  m.def("flow_begin",
-        &pythonTraceEventWithoutArgs<inspector::EventType::kFlowBeginTag>);
+        &pythonTraceEvent<inspector::EventType::kAsyncInstanceTag>);
+  m.def("async_end", &pythonTraceEvent<inspector::EventType::kAsyncEndTag>);
+  m.def("flow_begin", &pythonTraceEvent<inspector::EventType::kFlowBeginTag>);
   m.def("flow_instance",
-        &pythonTraceEventWithoutArgs<inspector::EventType::kFlowInstanceTag>);
-  m.def("flow_end",
-        &pythonTraceEventWithoutArgs<inspector::EventType::kFlowEndTag>);
+        &pythonTraceEvent<inspector::EventType::kFlowInstanceTag>);
+  m.def("flow_end", &pythonTraceEvent<inspector::EventType::kFlowEndTag>);
+  m.def("counter", &pythonCounterEvent);
 }

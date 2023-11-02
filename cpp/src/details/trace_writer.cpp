@@ -19,7 +19,7 @@
 namespace inspector {
 namespace details {
 
-size_t& threadLocalCounter() {
+size_t &threadLocalCounter() {
   thread_local size_t counter = 0;
   return counter;
 }

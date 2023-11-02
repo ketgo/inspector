@@ -38,7 +38,7 @@ class NullLogger final : public Logger {
    *
    * @param message Constant reference to log message.
    */
-  void operator<<(const std::string& message) override {}  // NOP
+  void operator<<(const std::string &message) override {}  // NOP
 };
 
 /**
@@ -53,7 +53,7 @@ class LoggerMap {
    * @param level Log level.
    * @returns Reference to the logger for the level.
    */
-  Logger& get(LogLevel level) { return *loggers_[static_cast<int>(level)]; }
+  Logger &get(LogLevel level) { return *loggers_[static_cast<int>(level)]; }
 
   /**
    * @brief Set the given logger for the given log level.
@@ -79,7 +79,7 @@ class LoggerMap {
    *
    * @returns Reference to the map.
    */
-  static LoggerMap& instance() {
+  static LoggerMap &instance() {
     static LoggerMap map;
     return map;
   }

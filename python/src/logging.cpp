@@ -27,8 +27,8 @@ namespace py = pybind11;
  */
 class PythonLogger : public inspector::Logger {
  public:
-  PythonLogger(const std::string& level, py::object& logger);
-  void operator<<(const std::string& message) override;
+  PythonLogger(const std::string &level, py::object &logger);
+  void operator<<(const std::string &message) override;
 
  private:
   const std::string level_;
@@ -39,10 +39,10 @@ class PythonLogger : public inspector::Logger {
 // PythonLogger Implementation
 // ---------------------------------
 
-PythonLogger::PythonLogger(const std::string& level, py::object& logger)
+PythonLogger::PythonLogger(const std::string &level, py::object &logger)
     : level_(level), logger_(logger) {}
 
-void PythonLogger::operator<<(const std::string& message) {
+void PythonLogger::operator<<(const std::string &message) {
   logger_.attr(level_.c_str())(message);
 }
 
@@ -53,7 +53,7 @@ void PythonLogger::operator<<(const std::string& message) {
  *
  * @param m Reference to the python module.
  */
-void bindLogging(py::module& m) {
+void bindLogging(py::module &m) {
   auto logging = py::module::import("logging");
   auto py_logger = logging.attr("getLogger")(m.attr("__name__"));
 

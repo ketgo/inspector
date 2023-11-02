@@ -16,8 +16,8 @@
 
 #include <gtest/gtest.h>
 
-#include <inspector/logging.hpp>
 #include <inspector/details/logging.hpp>
+#include <inspector/logging.hpp>
 
 using namespace inspector;
 
@@ -26,8 +26,8 @@ namespace {
 class FakeLogger : public Logger {
  public:
   FakeLogger() {}
-  void operator<<(const std::string& log) override { message_ = log; }
-  const std::string& message() const { return message_; }
+  void operator<<(const std::string &log) override { message_ = log; }
+  const std::string &message() const { return message_; }
 
  private:
   std::string message_;

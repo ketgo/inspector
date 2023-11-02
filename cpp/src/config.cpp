@@ -27,12 +27,12 @@ namespace {
  *
  * @returns Reference to the flag.
  */
-bool& traceFlag() {
+bool &traceFlag() {
   static bool value = true;
   return value;
 }
 
-std::string& queueName() {
+std::string &queueName() {
   static std::string name = "/inspector-56027e94-events";
   return name;
 }
@@ -41,7 +41,7 @@ std::string& queueName() {
 
 std::string eventQueueName() { return queueName(); }
 
-void setEventQueueName(const std::string& name) { queueName() = name; }
+void setEventQueueName(const std::string &name) { queueName() = name; }
 
 bool isTraceDisabled() { return !traceFlag(); }
 

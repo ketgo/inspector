@@ -19,8 +19,8 @@
 #include <cstring>
 #include <vector>
 
-#include <inspector/trace_event.hpp>
 #include <inspector/details/trace_event.hpp>
+#include <inspector/trace_event.hpp>
 
 using namespace inspector;
 
@@ -38,7 +38,7 @@ class TraceEventTestFixture : public ::testing::Test {
 TYPED_TEST_SUITE_P(TraceEventTestFixture);
 
 TYPED_TEST_P(TraceEventTestFixture, TestMutableAndNonMutableTraceEvent) {
-  constexpr const char* kEventName = "test-event";
+  constexpr const char *kEventName = "test-event";
   constexpr auto kType = 1;
   constexpr auto kCounter = 2;
   constexpr auto kPid = 1;
@@ -69,7 +69,7 @@ TYPED_TEST_P(TraceEventTestFixture, TestMutableAndNonMutableTraceEvent) {
   auto it = event.debugArgs().begin();
   ASSERT_EQ(it->type(), TraceEventTestFixture<TypeParam>::type_);
   ASSERT_EQ(it->value<TypeParam>(), TraceEventTestFixture<TypeParam>::value_);
-  ASSERT_THROW(it->value<const char*>(), std::runtime_error);
+  ASSERT_THROW(it->value<const char *>(), std::runtime_error);
 }
 
 REGISTER_TYPED_TEST_SUITE_P(TraceEventTestFixture,
@@ -139,7 +139,7 @@ DebugArg::Type TraceEventTestFixture<char>::type_ = DebugArg::Type::TYPE_CHAR;
 
 TEST(TraceEventTestFixture,
      TestMutableAndNonMutableTraceEventWithStringDebugArg) {
-  constexpr const char* kEventName = "test-event";
+  constexpr const char *kEventName = "test-event";
   constexpr auto kType = 1;
   constexpr auto kCounter = 2;
   constexpr auto kPid = 1;

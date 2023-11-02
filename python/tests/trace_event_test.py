@@ -16,9 +16,27 @@
 
 import logging
 
+from inspector import DebugArg
 from inspector import testing
 
 
 def test_trace_event():
     event = testing.get_test_trace_event()
-    print(event)
+    assert event.type() == 1
+    assert event.counter() == 2
+    assert event.pid() == 1
+    assert event.tid() == 1
+    assert event.timestamp_ns() == 1000
+    assert event.name() == "test-event"
+    debug_args = event.debug_args()
+    expected = [
+        (DebugArg.TYPE_DOUBLE, 3.5),
+        (DebugArg.TYPE_INT64, -1),
+        (DebugArg.TYPE_STRING, "test-data"),
+    ]
+    assert debug_args.size() == len(expected)
+    idx = 0
+    for arg in debug_args:
+        assert arg.type() == expected[idx][0]
+        assert arg.value() == expected[idx][1]
+        idx += 1

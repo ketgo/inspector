@@ -27,7 +27,7 @@ namespace py = pybind11;
  *
  * @param m Reference to the python module.
  */
-void bindTraceEvent(py::module& m) {
+void bindTraceEvent(py::module &m) {
   py::class_<inspector::DebugArg> debug_arg(m, "DebugArg");
 
   py::enum_<inspector::DebugArg::Type>(debug_arg, "Type")
@@ -41,14 +41,15 @@ void bindTraceEvent(py::module& m) {
       .value("TYPE_FLOAT", inspector::DebugArg::Type::TYPE_FLOAT)
       .value("TYPE_DOUBLE", inspector::DebugArg::Type::TYPE_DOUBLE)
       .value("TYPE_CHAR", inspector::DebugArg::Type::TYPE_CHAR)
-      .value("TYPE_STRING", inspector::DebugArg::Type::TYPE_STRING);
+      .value("TYPE_STRING", inspector::DebugArg::Type::TYPE_STRING)
+      .export_values();
 
   debug_arg
       .def("type", &inspector::DebugArg::type,
            "Get the type of the debug argument.")
       .def(
           "value",
-          [](const inspector::DebugArg& self) {
+          [](const inspector::DebugArg &self) {
             switch (self.type()) {
               case inspector::DebugArg::Type::TYPE_INT16: {
                 return py::cast(self.value<int16_t>());
@@ -95,7 +96,7 @@ void bindTraceEvent(py::module& m) {
       .def("__len__", &inspector::DebugArgs::size)
       .def(
           "__iter__",
-          [](const inspector::DebugArgs& self) {
+          [](const inspector::DebugArgs &self) {
             return py::make_iterator(self.begin(), self.end());
           },
           py::keep_alive<0, 1>());
@@ -110,7 +111,7 @@ void bindTraceEvent(py::module& m) {
       .def("tid", &inspector::TraceEvent::tid, "Get the thread identifier.")
       .def(
           "name",
-          [](const inspector::TraceEvent& self) {
+          [](const inspector::TraceEvent &self) {
             return std::string(self.name());
           },
           "Get the name of trace event.")

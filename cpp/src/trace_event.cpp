@@ -28,14 +28,14 @@ namespace {
  * @param buffer Constant reference to the buffer.
  * @returns Pointer to constant trace event header.
  */
-const details::TraceEventHeader* header(const std::vector<uint8_t>& buffer) {
-  return static_cast<const details::TraceEventHeader*>(
-      static_cast<const void*>(buffer.data()));
+const details::TraceEventHeader *header(const std::vector<uint8_t> &buffer) {
+  return static_cast<const details::TraceEventHeader *>(
+      static_cast<const void *>(buffer.data()));
 }
 
 }  // namespace
 
-TraceEvent::TraceEvent(std::vector<uint8_t>&& buffer)
+TraceEvent::TraceEvent(std::vector<uint8_t> &&buffer)
     : buffer_(std::move(buffer)) {}
 
 event_type_t TraceEvent::type() const { return header(buffer_)->type; }
@@ -50,8 +50,8 @@ int32_t TraceEvent::pid() const { return header(buffer_)->pid; }
 
 int32_t TraceEvent::tid() const { return header(buffer_)->tid; }
 
-const char* TraceEvent::name() const {
-  const void* address = static_cast<const void*>(
+const char *TraceEvent::name() const {
+  const void *address = static_cast<const void *>(
       buffer_.data() + sizeof(details::TraceEventHeader));
   const size_t storage_size =
       buffer_.size() - sizeof(details::TraceEventHeader);
@@ -61,11 +61,11 @@ const char* TraceEvent::name() const {
   if (it == debug_args.end()) {
     return nullptr;
   }
-  return it->value<const char*>();
+  return it->value<const char *>();
 }
 
 DebugArgs TraceEvent::debugArgs() const {
-  const void* address = static_cast<const void*>(
+  const void *address = static_cast<const void *>(
       buffer_.data() + sizeof(details::TraceEventHeader));
   const size_t storage_size =
       buffer_.size() - sizeof(details::TraceEventHeader);
@@ -78,7 +78,7 @@ DebugArgs TraceEvent::debugArgs() const {
   ++it;
   const size_t new_storage_size =
       buffer_.size() -
-      static_cast<size_t>(static_cast<const uint8_t*>(it->address()) -
+      static_cast<size_t>(static_cast<const uint8_t *>(it->address()) -
                           buffer_.data());
   return DebugArgs(it->address(), new_storage_size,
                    header(buffer_)->args_count - 1);

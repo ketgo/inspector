@@ -18,7 +18,7 @@
 
 namespace inspector {
 
-void syncEnd(const char* name) {
+void syncEnd(const char *name) {
   details::writeTraceEvent(static_cast<event_type_t>(EventType::kSyncEndTag),
                            name);
 }

@@ -36,7 +36,7 @@ void writeTestLog() { LOG_ERROR << "Test Log Message"; }
  *
  */
 inspector::TraceEvent getTestTraceEvent() {
-  constexpr const char* kEventName = "test-event";
+  constexpr const char *kEventName = "test-event";
   constexpr auto kType = 1;
   constexpr auto kCounter = 2;
   constexpr auto kPid = 1;
@@ -44,13 +44,14 @@ inspector::TraceEvent getTestTraceEvent() {
   constexpr auto kTimestampNs = 1000;
   constexpr double kDebugArg1 = 3.5;
   constexpr int64_t kDebugArg2 = -1;
-  constexpr const char* kDebugArg3 = "test-data";
+  constexpr const char *kDebugArg3 = "test-data";
 
   const size_t storage_size = inspector::details::traceEventStorageSize(
       kEventName, kDebugArg1, kDebugArg2, kDebugArg3);
   std::vector<uint8_t> buffer(storage_size);
 
-  inspector::details::MutableTraceEvent mutable_event(buffer.data(), buffer.size());
+  inspector::details::MutableTraceEvent mutable_event(buffer.data(),
+                                                      buffer.size());
   mutable_event.setType(kType);
   mutable_event.setCounter(kCounter);
   mutable_event.setPid(kPid);
@@ -61,7 +62,7 @@ inspector::TraceEvent getTestTraceEvent() {
   return inspector::TraceEvent(std::move(buffer));
 }
 
-void bindTesting(py::module& m) {
+void bindTesting(py::module &m) {
   py::module testing_m =
       m.def_submodule("testing", "Utility methods for testing.");
 
