@@ -31,15 +31,13 @@ http_archive(
 load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
 
 python_register_toolchains(
-    name = "python_3_11",
-    # Available versions are listed in @rules_python//python:versions.bzl.
-    # We recommend using the same version your team is already standardized on.
-    python_version = "3.11",
+    name = "python_interpreter",
+    python_version = "3.8",
 )
 
 py_repositories()
 
-load("@python_3_11//:defs.bzl", "interpreter")
+load("@python_interpreter//:defs.bzl", "interpreter")
 load("@rules_python//python:pip.bzl", "pip_parse")
 
 pip_parse(

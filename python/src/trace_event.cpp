@@ -84,6 +84,8 @@ void bindTraceEvent(py::module& m) {
                 return py::cast(self.value<std::string>());
               }
             }
+
+            throw std::runtime_error("Invalid debug argument type observed.");
           },
           "Get the value of the debug argument.");
 

@@ -21,3 +21,4 @@ from inspector import testing
 
 def test_trace_event():
     event = testing.get_test_trace_event()
+    print(event)

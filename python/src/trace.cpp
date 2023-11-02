@@ -46,35 +46,35 @@ void pythonTraceEventWithArgs(const std::string& name, const py::args& args) {
     } else if (py::isinstance<py::int_>(arg)) {
       storage_size +=
           inspector::details::debugArgStorageSize(py::cast<int64_t>(arg));
-    } else if (py::isinstace<py::float_>(arg)) {
+    } else if (py::isinstance<py::float_>(arg)) {
       storage_size +=
           inspector::details::debugArgStorageSize(py::cast<double>(arg));
     } else {
-      throw std::exception("Argument type not supported as debug argument.");
+      throw std::runtime_error("Argument type not supported as debug argument.");
     }
   }
 
-  auto result = inspector::eventQueue().tryPublish(storage_size);
+  auto result = inspector::details::eventQueue().tryPublish(storage_size);
   if (result.first != bigcat::CircularQueue::Status::OK) {
     return;
   }
-  auto event = MutableTraceEvent(result.second.data(), result.second.size());
-  event.setType(type);
-  event.setCounter(++threadLocalCounter());
+  auto event = inspector::details::MutableTraceEvent(result.second.data(), result.second.size());
+  event.setType(static_cast<const inspector::event_type_t>(T));
+  event.setCounter(++inspector::details::threadLocalCounter());
   event.setTimestampNs(
       std::chrono::system_clock::now().time_since_epoch().count());
-  event.setPid(getPID());
-  event.setTid(getTID());
+  event.setPid(inspector::details::getPID());
+  event.setTid(inspector::details::getTID());
   event.appendDebugArg(name);
   for (auto& arg : args) {
     if (py::isinstance<py::str>(arg)) {
       event.appendDebugArg(py::cast<std::string>(arg));
     } else if (py::isinstance<py::int_>(arg)) {
       event.appendDebugArg(py::cast<int64_t>(arg));
-    } else if (py::isinstace<py::float_>(arg)) {
+    } else if (py::isinstance<py::float_>(arg)) {
       event.appendDebugArg(py::cast<double>(arg));
     } else {
-      throw std::exception("Argument type not supported as debug argument.");
+      throw std::runtime_error("Argument type not supported as debug argument.");
     }
   }
 }

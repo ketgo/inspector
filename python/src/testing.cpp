@@ -50,7 +50,7 @@ inspector::TraceEvent getTestTraceEvent() {
       kEventName, kDebugArg1, kDebugArg2, kDebugArg3);
   std::vector<uint8_t> buffer(storage_size);
 
-  details::MutableTraceEvent mutable_event(buffer.data(), buffer.size());
+  inspector::details::MutableTraceEvent mutable_event(buffer.data(), buffer.size());
   mutable_event.setType(kType);
   mutable_event.setCounter(kCounter);
   mutable_event.setPid(kPid);
@@ -58,7 +58,7 @@ inspector::TraceEvent getTestTraceEvent() {
   mutable_event.setTimestampNs(kTimestampNs);
   mutable_event.appendDebugArgs(kEventName, kDebugArg1, kDebugArg2, kDebugArg3);
 
-  return TraceEvent(std::move(buffer));
+  return inspector::TraceEvent(std::move(buffer));
 }
 
 void bindTesting(py::module& m) {
