@@ -32,7 +32,7 @@ namespace {
 static constexpr auto kEventQueueName = "inspector-trace-rw-test";
 }  // namespace
 
-class TraceWriterTestFixture : public ::testing::Test {
+class TraceReaderWriterTestFixture : public ::testing::Test {
  protected:
   static void SetUpTestSuite() { Config::setEventQueueName(kEventQueueName); }
   static void TearDownTestSuite() { inspector::testing::removeEventQueue(); }
@@ -40,7 +40,7 @@ class TraceWriterTestFixture : public ::testing::Test {
   void TearDown() override { inspector::testing::emptyEventQueue(); }
 };
 
-TEST_F(TraceWriterTestFixture, TestWriteTraceEvent) {
+TEST_F(TraceReaderWriterTestFixture, TestWriteAndReadTraceEvent) {
   std::string test_event = "testing";
   details::writeTraceEvent(1, test_event.c_str());
   auto event = readTraceEvent();

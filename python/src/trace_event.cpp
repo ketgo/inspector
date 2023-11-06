@@ -118,6 +118,13 @@ void bindTraceEvent(py::module &m) {
       .def("debug_args", &inspector::TraceEvent::debugArgs,
            "Get the debug arguments which are part of the trace event.");
 
-  m.def("read_trace_event", &inspector::readTraceEvent,
-        "Read a stored trace event from the process shared queue.");
+  m.def(
+      "read_trace_event", []() { return inspector::readTraceEvent(); },
+      "Read a stored trace event from the process shared queue.");
+  m.def(
+      "read_trace_event",
+      [](const std::chrono::microseconds timeout) {
+        return inspector::readTraceEvent(timeout);
+      },
+      "Read a stored trace event from the process shared queue.");
 }

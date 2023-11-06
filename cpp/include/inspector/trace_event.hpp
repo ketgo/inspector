@@ -28,14 +28,30 @@ class TraceEvent {
   /**
    * @brief Construct a new TraceEvent object.
    *
+   * Default CTOR creating an empty trace event.
+   *
+   */
+  TraceEvent() = default;
+
+  /**
+   * @brief Construct a new TraceEvent object.
+   *
    * @param buffer Rvalue reference to the buffer containing the trace event.
    */
   explicit TraceEvent(std::vector<uint8_t>&& buffer);
 
   /**
+   * @brief Check if the trace event is empty.
+   *
+   * @returns `true` if empty else `false`.
+   */
+  bool isEmpty() const;
+
+  /**
    * @brief Get the type of trace event.
    *
    * @returns Trace event type.
+   * @throws `std::runtime_error` if the event is empty.
    */
   event_type_t type() const;
 
@@ -43,6 +59,7 @@ class TraceEvent {
    * @brief Get the trace event counter.
    *
    * @returns Counter value of trace event.
+   * @throws `std::runtime_error` if the event is empty.
    */
   uint64_t counter() const;
 
@@ -50,6 +67,7 @@ class TraceEvent {
    * @brief Get the timestamp in nanoseconds of the trace event.
    *
    * @returns Timestamp in nanoseconds.
+   * @throws `std::runtime_error` if the event is empty.
    */
   timestamp_t timestampNs() const;
 
@@ -57,6 +75,7 @@ class TraceEvent {
    * @brief Get the process identifier.
    *
    * @returns Process identifier.
+   * @throws `std::runtime_error` if the event is empty.
    */
   int32_t pid() const;
 
@@ -64,6 +83,7 @@ class TraceEvent {
    * @brief Get the thread identifier.
    *
    * @returns Thread identifier.
+   * @throws `std::runtime_error` if the event is empty.
    */
   int32_t tid() const;
 
@@ -71,6 +91,7 @@ class TraceEvent {
    * @brief Get the name of trace event.
    *
    * @returns Name of trace event as a c-string.
+   * @throws `std::runtime_error` if the event is empty.
    */
   const char* name() const;
 
@@ -78,6 +99,7 @@ class TraceEvent {
    * @brief Get the debug arguments which are part of the trace event.
    *
    * @returns Object of type `DebugArgs`.
+   * @throws `std::runtime_error` if the event is empty.
    */
   DebugArgs debugArgs() const;
 

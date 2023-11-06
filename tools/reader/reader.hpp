@@ -17,14 +17,13 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <thread>
 #include <vector>
 
-#include <inspector/details/config.hpp>
-#include <inspector/details/event_queue.hpp>
+#include <inspector/trace_event.hpp>
 
-#include "tools/reader/event.hpp"
-#include "tools/reader/priority_queue.h"
+#include "tools/reader/priority_queue.hpp"
 
 namespace inspector {
 
@@ -39,18 +38,16 @@ namespace inspector {
  * basic reader consumes events from the shared queue and forwards them onto an
  * internal chronologically ordered priority queue. The iterator interface in
  * turn pops events from this priority queue.
- *
  */
 class Reader {
-  // Buffer to store trace events in chronological order
-  using Buffer = SlidingWindowPriorityQueue<Event>;
+  using event_queue_t = details::SlidingWindowPriorityQueue<TraceEvent>;
 
  public:
   /**
-   * @brief Iterator to iterate over events in the event queue.
+   * @brief Iterator to iterate over trace events in the event queue.
    *
-   * The Iterator class is a forward-only direction iterator. It consumes events
-   * from the priority queue while iterating.
+   * The Iterator class is a forward-only direction iterator. It consumes trace
+   * events from the priority queue while iterating.
    *
    */
   class Iterator {
@@ -62,100 +59,66 @@ class Reader {
 
     // Standard forward iterator interface
 
-    Event* operator->();
-    Event& operator*();
+    TraceEvent* operator->();
+    TraceEvent& operator*();
     Iterator& operator++();
     Iterator operator++(int);
     bool operator==(const Iterator& other) const;
     bool operator!=(const Iterator& other) const;
 
    private:
-    Iterator(Buffer& buffer, const std::chrono::microseconds& timeout_ms);
-    Iterator(Buffer& buffer, bool timeout);
-    void Next();
+    Iterator(event_queue_t& queue, const bool closed);
+    void next();
 
-    std::pair<int64_t, Event> event_;
-    Buffer* buffer_;
-    std::chrono::microseconds timeout_ms_;
-    bool timeout_;
+    event_queue_t::value_type value_;
+    event_queue_t* queue_;
+    bool closed_;
   };
 
   /**
-   * @brief Get the default number of workers used by the reader.
+   * @brief Default number of consumers.
    *
    */
-  static constexpr std::size_t DefaultWorkerCount() {
-    return 4;  // 4 workers
-  }
+  static constexpr size_t defaultConsumerCount() { return 4; }
 
-  static constexpr std::chrono::microseconds DefaultPollingInterval() {
-    return std::chrono::microseconds{1000};  // 1ms
+  /**
+   * @brief Defult min slidding window size.
+   *
+   */
+  static constexpr duration_t defaultMinWindowSize() {
+    return 10000000;  // 1ms
   }
 
   /**
-   * @brief Get the default buffer window size.
+   * @brief Defult min slidding window size.
    *
    */
-  static constexpr int64_t DefaultBufferWindowSize() {
-    return 2000000000;  // 2s
+  static constexpr duration_t defaultMaxWindowSize() {
+    return 1000000000;  // 1s
   }
 
   /**
-   * @brief Construct a new Reader object.
+   * @brief Default read timeout in microseconds.
    *
-   * The reader expects the event queue to already exist during construction. If
-   * it does not exist then the CTOR will throw an exception. Furthermore, this
-   * version of the CTOR creates a blocking reader. A blocking reader will block
-   * until a new event is observed when using the iterator interface.
-   *
-   * @param queue_name Constant reference to the queue name containing trace
-   * events. Note that the name used should be unique across the operating
-   * system.
-   * @param max_read_attempt Maximum number of attempts to make when reading an
-   * event from the queue.
-   * @param polling_interval_ms Event queue consumer polling interval in
-   * microseconds.
-   * @param worker_count Number of background workers reading trace events.
-   * @param buffer_window_size Window size used by the internal event buffer.
    */
-  Reader(const std::string& queue_name =
-             details::Config::Get().queue_system_unique_name,
-         const std::size_t max_read_attempt =
-             details::Config::Get().max_read_attempt,
-         const std::chrono::microseconds& polling_interval_ms =
-             DefaultPollingInterval(),
-         const std::size_t worker_count = DefaultWorkerCount(),
-         const int64_t buffer_window_size = DefaultBufferWindowSize());
+  static constexpr std::chrono::microseconds defaultTimeout() {
+    return std::chrono::microseconds{1000000};  // 1s
+  }
 
   /**
    * @brief Construct a new Reader object.
    *
-   * The reader expects the event queue to already exist during construction. If
-   * it does not exist then the CTOR will throw an exception. Furthermore, this
-   * version of the CTOR creates a non-blocking reader. A non-blocking reader
-   * will block until a new event is observed or timeout is reached when using
-   * the iterator interface.
-   *
-   * @param timeout_ms Constant reference to read timeout in microseconds.
-   * @param queue_name Constant reference to the queue name containing trace
-   * events. Note that the name used should be unique across the operating
-   * system.
-   * @param max_read_attempt Maximum number of attempts to make when reading an
-   * event from the queue.
-   * @param polling_interval_ms Event queue consumer polling interval in
-   * microseconds.
-   * @param worker_count Number of background workers reading trace events.
-   * @param buffer_window_size Window size used by the internal event buffer.
+   * @param timeout Read timeout in microseconds when waiting for trace events.
+   * @param num_consumers Number of concurrent consumers used be the reader.
+   * @param min_window_size Minimum slidding window size of the priority queue
+   * used as buffer to store events.
+   * @param max_window_size Maximum slidding window size of the priority queue
+   * used as buffer to store events.
    */
-  Reader(const std::chrono::microseconds& timeout_ms,
-         const std::string& queue_name =
-             details::Config::Get().queue_system_unique_name,
-         const std::size_t max_read_attempt =
-             details::Config::Get().max_read_attempt,
-         const std::chrono::microseconds& polling_interval_ms =
-             DefaultPollingInterval(),
-         const std::size_t worker_count = DefaultWorkerCount(),
-         const int64_t buffer_window_size = DefaultBufferWindowSize());
+  Reader(const std::chrono::microseconds timeout = defaultTimeout(),
+         const size_t num_consumers = defaultConsumerCount(),
+         const duration_t min_window_size = defaultMinWindowSize(),
+         const duration_t max_window_size = defaultMaxWindowSize());
 
   /**
    * @brief Destroy the Reader object.
@@ -163,35 +126,14 @@ class Reader {
    */
   ~Reader();
 
-  // NOTE: We break our naming convention for the methods `begin` and `end` in
-  // order to support the standard `for` loop expressions, i.e. `for(auto& x:
-  // reader)`.
-
-  Iterator begin() const;
-  Iterator end() const;
+  Iterator begin();
+  Iterator end();
 
  private:
-  /**
-   * @brief Starts all the background tasks.
-   *
-   */
-  void Start();
-
-  /**
-   * @brief Stops all the running background tasks.
-   *
-   */
-  void Stop();
-
-  details::EventQueue* queue_;
-  const std::size_t max_read_attempt_;
-  const std::chrono::microseconds polling_interval_ms_;
-  std::vector<std::thread> workers_;
-  mutable Buffer buffer_;
-  mutable std::atomic_bool stop_;
-  const std::chrono::microseconds timeout_ms_;
+  std::chrono::microseconds timeout_;
+  std::vector<std::thread> consumers_;
+  event_queue_t queue_;
+  std::atomic_bool stop_;
 };
-
-// ---------------------------------
 
 }  // namespace inspector

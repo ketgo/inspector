@@ -23,6 +23,7 @@ cc_library(
     visibility = [
         ":__subpackages__",
         "//python:__subpackages__",
+        "//tools/reader:__subpackages__",
     ],
     deps = [
         "//cpp:inspector",

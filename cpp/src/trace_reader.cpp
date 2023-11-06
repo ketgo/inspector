@@ -28,4 +28,10 @@ TraceEvent readTraceEvent() {
   return TraceEvent(std::move(event));
 }
 
+TraceEvent readTraceEvent(const std::chrono::microseconds timeout) {
+  std::vector<uint8_t> event;
+  details::eventQueue().tryConsumeFor(event, timeout);
+  return TraceEvent(std::move(event));
+}
+
 }  // namespace inspector

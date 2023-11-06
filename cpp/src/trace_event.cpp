@@ -16,7 +16,12 @@
 
 #include <inspector/trace_event.hpp>
 
+#include <stdexcept>
+
 #include "cpp/src/details/trace_event_header.hpp"
+
+#define THROW_IF_EMPTY(buffer) \
+  if (buffer.empty()) throw std::runtime_error("Empty trace event.");
 
 namespace inspector {
 namespace {
@@ -38,19 +43,35 @@ const details::TraceEventHeader *header(const std::vector<uint8_t> &buffer) {
 TraceEvent::TraceEvent(std::vector<uint8_t> &&buffer)
     : buffer_(std::move(buffer)) {}
 
-event_type_t TraceEvent::type() const { return header(buffer_)->type; }
+bool TraceEvent::isEmpty() const { return buffer_.empty(); }
 
-uint64_t TraceEvent::counter() const { return header(buffer_)->counter; }
+event_type_t TraceEvent::type() const {
+  THROW_IF_EMPTY(buffer_);
+  return header(buffer_)->type;
+}
+
+uint64_t TraceEvent::counter() const {
+  THROW_IF_EMPTY(buffer_);
+  return header(buffer_)->counter;
+}
 
 timestamp_t TraceEvent::timestampNs() const {
+  THROW_IF_EMPTY(buffer_);
   return header(buffer_)->timestamp;
 }
 
-int32_t TraceEvent::pid() const { return header(buffer_)->pid; }
+int32_t TraceEvent::pid() const {
+  THROW_IF_EMPTY(buffer_);
+  return header(buffer_)->pid;
+}
 
-int32_t TraceEvent::tid() const { return header(buffer_)->tid; }
+int32_t TraceEvent::tid() const {
+  THROW_IF_EMPTY(buffer_);
+  return header(buffer_)->tid;
+}
 
 const char *TraceEvent::name() const {
+  THROW_IF_EMPTY(buffer_);
   const void *address = static_cast<const void *>(
       buffer_.data() + sizeof(details::TraceEventHeader));
   const size_t storage_size =
@@ -65,6 +86,7 @@ const char *TraceEvent::name() const {
 }
 
 DebugArgs TraceEvent::debugArgs() const {
+  THROW_IF_EMPTY(buffer_);
   const void *address = static_cast<const void *>(
       buffer_.data() + sizeof(details::TraceEventHeader));
   const size_t storage_size =
@@ -85,3 +107,5 @@ DebugArgs TraceEvent::debugArgs() const {
 }
 
 }  // namespace inspector
+
+#undef THROW_IF_EMPTY

@@ -16,9 +16,11 @@
 
 #include "tools/reader/reader.hpp"
 
-#include <inspector/details/system.hpp>
+#include <iostream>
 
-#include "tools/reader/basic_reader.hpp"
+#include <inspector/trace_reader.hpp>
+
+// TODO: Signal handler
 
 namespace inspector {
 
@@ -26,49 +28,43 @@ namespace inspector {
 // Reader::Iterator Implementation
 // ---------------------------------
 
-Reader::Iterator::Iterator(Buffer& buffer,
-                           const std::chrono::microseconds& timeout_ms)
-    : event_(0, {}),
-      buffer_(std::addressof(buffer)),
-      timeout_ms_(timeout_ms),
-      timeout_(false) {}
+Reader::Iterator::Iterator() : value_(), queue_(nullptr), closed_(true) {}
 
-Reader::Iterator::Iterator(Buffer& buffer, bool timeout)
-    : event_(0, {}),
-      buffer_(std::addressof(buffer)),
-      timeout_ms_(0),
-      timeout_(timeout) {}
-
-void Reader::Iterator::Next() {
-  if (timeout_ms_.count()) {
-    timeout_ = !(buffer_->Pop(event_, timeout_ms_));
-  } else {
-    buffer_->Pop(event_);
-  }
+Reader::Iterator::Iterator(event_queue_t& queue, const bool closed)
+    : value_(), queue_(std::addressof(queue)), closed_(closed) {
+  next();
 }
 
-// ---------- public --------------
+void Reader::Iterator::next() {
+  if (closed_ || queue_ == nullptr) {
+    return;
+  }
 
-Reader::Iterator::Iterator()
-    : event_(0, {}), buffer_(nullptr), timeout_ms_(0), timeout_(false) {}
+  auto result = queue_->pop();
+  if (result.first == event_queue_t::Result::kClosed) {
+    closed_ = true;
+    return;
+  }
+  value_ = std::move(result.second);
+}
 
-Event* Reader::Iterator::operator->() { return &event_.second; }
+TraceEvent* Reader::Iterator::operator->() { return &value_.second; }
 
-Event& Reader::Iterator::operator*() { return event_.second; }
+TraceEvent& Reader::Iterator::operator*() { return value_.second; }
 
 Reader::Iterator& Reader::Iterator::operator++() {
-  Next();
+  next();
   return *this;
 }
 
 Reader::Iterator Reader::Iterator::operator++(int) {
   Iterator rvalue = *this;
-  Next();
+  next();
   return rvalue;
 }
 
 bool Reader::Iterator::operator==(const Iterator& other) const {
-  return buffer_ == other.buffer_ && timeout_ == other.timeout_;
+  return queue_ == other.queue_ && closed_ == other.closed_;
 }
 
 bool Reader::Iterator::operator!=(const Iterator& other) const {
@@ -79,73 +75,39 @@ bool Reader::Iterator::operator!=(const Iterator& other) const {
 // Reader Implementation
 // ---------------------------------
 
-void Reader::Start() {
-  // Starting all worker threads
-  for (auto& worker : workers_) {
-    worker = std::thread([&]() {
+Reader::Reader(std::chrono::microseconds timeout, const size_t num_consumers,
+               const duration_t min_window_size,
+               const duration_t max_window_size)
+    : timeout_(timeout),
+      consumers_(num_consumers),
+      queue_(min_window_size, max_window_size),
+      stop_(false) {
+  for (auto& consumer : consumers_) {
+    consumer = std::thread([&]() {
       while (!stop_.load()) {
-        BasicReader reader(*queue_, max_read_attempt_);
-        for (auto&& event : reader) {
-          // Push the event to the priority queue buffer
-          buffer_.Push({event.Timestamp(), std::move(event)});
+        auto event = readTraceEvent(timeout_);
+        if (event.isEmpty()) {
+          stop_.store(true);
+          queue_.close();
+        } else {
+          queue_.push({event.timestampNs(), std::move(event)});
         }
-        std::this_thread::sleep_for(polling_interval_ms_);
       }
     });
   }
-  // Starting signal handler thread
 }
 
-void Reader::Stop() {
+Reader::~Reader() {
   stop_.store(true);
-  // Waiting for all the worker threads to terminate.
-  for (auto& worker : workers_) {
-    if (worker.joinable()) {
-      worker.join();
+  for (auto& consumer : consumers_) {
+    if (consumer.joinable()) {
+      consumer.join();
     }
   }
 }
 
-// ----------- public --------------
+Reader::Iterator Reader::begin() { return Iterator(queue_, false); }
 
-Reader::Reader(const std::string& queue_name,
-               const std::size_t max_read_attempt,
-               const std::chrono::microseconds& polling_interval_ms,
-               const std::size_t worker_count,
-
-               const int64_t buffer_window_size)
-    : queue_(details::system::GetSharedObject<details::EventQueue>(queue_name)),
-      max_read_attempt_(max_read_attempt),
-      polling_interval_ms_(polling_interval_ms),
-      workers_(worker_count),
-      buffer_(buffer_window_size),
-      stop_(false),
-      timeout_ms_(0) {
-  Start();
-}
-
-Reader::Reader(const std::chrono::microseconds& timeout_ms,
-               const std::string& queue_name,
-               const std::size_t max_read_attempt,
-               const std::chrono::microseconds& polling_interval_ms,
-               const std::size_t worker_count, const int64_t buffer_window_size)
-    : queue_(details::system::GetSharedObject<details::EventQueue>(queue_name)),
-      max_read_attempt_(max_read_attempt),
-      polling_interval_ms_(polling_interval_ms),
-      workers_(worker_count),
-      buffer_(buffer_window_size),
-      stop_(false),
-      timeout_ms_(timeout_ms) {
-  Start();
-}
-
-Reader::~Reader() { Stop(); }
-
-Reader::Iterator Reader::begin() const {
-  Iterator it(buffer_, timeout_ms_);
-  return ++it;
-}
-
-Reader::Iterator Reader::end() const { return {buffer_, true}; }
+Reader::Iterator Reader::end() { return Iterator(queue_, true); }
 
 }  // namespace inspector
