@@ -26,18 +26,10 @@ namespace inspector {
  * @brief Read a stored trace event from the process shared queue. The method
  * blocks until a trace event is read.
  *
+ * @param max_attempt Number of attempts to make for reading a trace event.
+ * Default set to 32.
  * @returns An object of type `TraceEvent`.
  */
-TraceEvent readTraceEvent();
-
-/**
- * @brief Read a stored trace event from the process shared queue. If not event
- * is found within the given timeout then an empty trace event is returned.
- *
- * @param timeout Timeout in microseconds when waiting for reading a trace
- * event.
- * @returns An object of type `TraceEvent`.
- */
-TraceEvent readTraceEvent(const std::chrono::microseconds timeout);
+TraceEvent readTraceEvent(const size_t max_attempt = 32);
 
 }  // namespace inspector

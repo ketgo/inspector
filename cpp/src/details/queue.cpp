@@ -29,8 +29,8 @@ namespace {
  * @brief Get the circular queue configuration.
  *
  */
-bigcat::CircularQueue::Config queueConfig() {
-  bigcat::CircularQueue::Config config;
+bigcat::CircularQueueA::Config queueConfig() {
+  bigcat::CircularQueueA::Config config;
   config.buffer_size = 8 * 1024 * 1024;  // 8MB
   config.max_producers = 1024;
   config.max_consumers = 1024;
@@ -41,9 +41,9 @@ bigcat::CircularQueue::Config queueConfig() {
 
 }  // namespace
 
-bigcat::CircularQueue &eventQueue() {
-  static bigcat::CircularQueue queue =
-      bigcat::CircularQueue::open(Config::eventQueueName(), queueConfig());
+bigcat::CircularQueueA &eventQueue() {
+  static bigcat::CircularQueueA queue =
+      bigcat::CircularQueueA::open(Config::eventQueueName(), queueConfig());
   return queue;
 }
 

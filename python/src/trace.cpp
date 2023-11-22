@@ -49,8 +49,8 @@ void pythonTraceEvent(const std::string &name, const py::args &args) {
     }
   }
 
-  auto result = inspector::details::eventQueue().tryPublish(storage_size);
-  if (result.first != bigcat::CircularQueue::Status::OK) {
+  auto result = inspector::details::eventQueue().publish(storage_size);
+  if (result.first != bigcat::CircularQueueA::Status::OK) {
     return;
   }
   auto event = inspector::details::MutableTraceEvent(result.second.data(),

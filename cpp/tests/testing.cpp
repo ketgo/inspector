@@ -16,7 +16,7 @@
 
 #include "cpp/tests/testing.hpp"
 
-#include <bigcat/circular_queue.hpp>
+#include <bigcat/circular_queue_a.hpp>
 #include <inspector/config.hpp>
 #include <inspector/details/queue.hpp>
 
@@ -24,13 +24,13 @@ namespace inspector {
 namespace testing {
 
 void removeEventQueue() {
-  bigcat::CircularQueue::remove(Config::eventQueueName());
+  bigcat::CircularQueueA::remove(Config::eventQueueName());
 }
 
 void emptyEventQueue() {
   while (1) {
-    auto result = details::eventQueue().tryConsume();
-    if (result.first == bigcat::CircularQueue::Status::EMPTY) {
+    auto result = details::eventQueue().consume(1024);
+    if (result.first == bigcat::CircularQueueA::Status::EMPTY) {
       return;
     }
   };

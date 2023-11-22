@@ -85,7 +85,7 @@ Reader::Reader(std::chrono::microseconds timeout, const size_t num_consumers,
   for (auto& consumer : consumers_) {
     consumer = std::thread([&]() {
       while (!stop_.load()) {
-        auto event = readTraceEvent(timeout_);
+        auto event = readTraceEvent();
         if (event.isEmpty()) {
           stop_.store(true);
           queue_.close();

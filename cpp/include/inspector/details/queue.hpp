@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <bigcat/circular_queue.hpp>
+#include <bigcat/circular_queue_a.hpp>
 
 namespace inspector {
 namespace details {
@@ -26,7 +26,7 @@ namespace details {
  *
  * @returns Reference to the event queue.
  */
-bigcat::CircularQueue& eventQueue();
+bigcat::CircularQueueA& eventQueue();
 
 }  // namespace details
 }  // namespace inspector

@@ -20,7 +20,7 @@
 #include <cstddef>
 #include <chrono>
 
-#include <bigcat/circular_queue.hpp>
+#include <bigcat/circular_queue_a.hpp>
 
 #include <inspector/config.hpp>
 #include <inspector/details/queue.hpp>
@@ -52,8 +52,8 @@ void writeTraceEvent(const event_type_t type, const char* name,
   if (Config::isTraceDisabled()) {
     return;
   }
-  auto result = eventQueue().tryPublish(traceEventStorageSize(name, args...));
-  if (result.first != bigcat::CircularQueue::Status::OK) {
+  auto result = eventQueue().publish(traceEventStorageSize(name, args...));
+  if (result.first != bigcat::CircularQueueA::Status::OK) {
     return;
   }
   auto event = MutableTraceEvent(result.second.data(), result.second.size());

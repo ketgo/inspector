@@ -16,7 +16,7 @@
 
 #include <inspector/config.hpp>
 
-#include <bigcat/circular_queue.hpp>
+#include <bigcat/circular_queue_a.hpp>
 
 namespace inspector {
 namespace Config {

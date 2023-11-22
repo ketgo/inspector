@@ -22,15 +22,9 @@
 
 namespace inspector {
 
-TraceEvent readTraceEvent() {
+TraceEvent readTraceEvent(const size_t max_attempt) {
   std::vector<uint8_t> event;
-  details::eventQueue().consume(event);
-  return TraceEvent(std::move(event));
-}
-
-TraceEvent readTraceEvent(const std::chrono::microseconds timeout) {
-  std::vector<uint8_t> event;
-  details::eventQueue().tryConsumeFor(event, timeout);
+  details::eventQueue().consume(event, max_attempt);
   return TraceEvent(std::move(event));
 }
 
