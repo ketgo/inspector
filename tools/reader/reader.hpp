@@ -106,16 +106,29 @@ class Reader {
   }
 
   /**
+   * @brief Default polling interval in microseconds.
+   *
+   */
+  static constexpr std::chrono::microseconds defaultPollingInterval() {
+    return std::chrono::microseconds{10000};  // 1ms
+  }
+
+  /**
    * @brief Construct a new Reader object.
    *
-   * @param timeout Read timeout in microseconds when waiting for trace events.
+   * @param timeout_us Read timeout in microseconds when waiting for trace
+   * events.
+   * @param polling_interval_us Event queue consumer polling interval in
+   * microseconds.
    * @param num_consumers Number of concurrent consumers used be the reader.
-   * @param min_window_size Minimum slidding window size of the priority queue
+   * @param min_window_size Minimum sliding window size of the priority queue
    * used as buffer to store events.
-   * @param max_window_size Maximum slidding window size of the priority queue
+   * @param max_window_size Maximum sliding window size of the priority queue
    * used as buffer to store events.
    */
-  Reader(const std::chrono::microseconds timeout = defaultTimeout(),
+  Reader(const std::chrono::microseconds timeout_us = defaultTimeout(),
+         const std::chrono::microseconds polling_interval_us =
+             defaultPollingInterval(),
          const size_t num_consumers = defaultConsumerCount(),
          const duration_t min_window_size = defaultMinWindowSize(),
          const duration_t max_window_size = defaultMaxWindowSize());
@@ -126,13 +139,15 @@ class Reader {
    */
   ~Reader();
 
-  Iterator begin();
-  Iterator end();
+  Iterator begin() const;
+  Iterator end() const;
 
  private:
-  std::chrono::microseconds timeout_;
+  std::chrono::microseconds timeout_us_;
+  std::chrono::microseconds polling_interval_us_;
   std::vector<std::thread> consumers_;
-  event_queue_t queue_;
+  mutable event_queue_t queue_;
+  std::atomic_size_t count_;
   std::atomic_bool stop_;
 };
 

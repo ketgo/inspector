@@ -36,12 +36,12 @@ namespace {
  * @param handler Rvalue reference to the completion handler.
  */
 template <class AsyncWaitable, class CompletionHandler>
-void AsyncWait(AsyncWaitable& waitable, CompletionHandler&& handler) {
-  AsyncBegin("boost::async_wait");
+void asyncWait(AsyncWaitable& waitable, CompletionHandler&& handler) {
+  TRACE_ASYNC_BEGIN("boost::async_wait");
   auto completion_handler =
       [=](const boost::system::error_code& error_code) -> void {
     handler();
-    AsyncEnd("boost::async_wait");
+    TRACE_ASYNC_END("boost::async_wait");
   };
   waitable.async_wait(completion_handler);
 }
@@ -63,10 +63,10 @@ PeriodicTask::PeriodicTask(const uint64_t interval_ns, Task&& task)
   signals_.async_wait(boost::bind(&PeriodicTask::Stop, this));
 
   // Add task to work queue
-  AsyncWait(timer_, boost::bind(&PeriodicTask::Tick, this));
+  asyncWait(timer_, boost::bind(&PeriodicTask::Tick, this));
 }
 
-void PeriodicTask::Run(const size_t thread_pool_size) {
+void PeriodicTask::run(const size_t thread_pool_size) {
   LOG(INFO) << "Starting periodic task...";
 
   std::vector<std::thread> threads(thread_pool_size);
@@ -78,17 +78,17 @@ void PeriodicTask::Run(const size_t thread_pool_size) {
   }
 }
 
-void PeriodicTask::Tick() {
-  SyncScope __tick("PeriodicTask::Tick");
+void PeriodicTask::tick() {
+  TRACE_SCOPE("PeriodicTask::tick");
 
   task_();
 
   timer_.expires_at(timer_.expiry() + interval_ns_);
-  AsyncWait(timer_, boost::bind(&PeriodicTask::Tick, this));
+  asyncWait(timer_, boost::bind(&PeriodicTask::Tick, this));
 }
 
-void PeriodicTask::Stop() {
-  SyncScope __stop("PeriodicTask::Stop");
+void PeriodicTask::stop() {
+  TRACE_SCOPE("PeriodicTask::stop");
 
   io_.stop();
 }

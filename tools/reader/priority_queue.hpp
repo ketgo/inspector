@@ -145,7 +145,18 @@ class SlidingWindowPriorityQueue {
   Result push(const value_type& value);
 
   /**
-   * @brief  Pop the oldest timestamped value form the queue.
+   * @brief Try to push a given timestamped value into the queue.
+   *
+   * The method tries to push a given timestamped value into the priority queue.
+   * It is a non-blocking call.
+   *
+   * @param value Constant reference to the timestamped value.
+   * @returns Result of operation.
+   */
+  Result tryPush(const value_type& value);
+
+  /**
+   * @brief Pop the oldest timestamped value form the queue.
    *
    * The method pops the oldest timestamped value from the queue. If the queue
    * has a window size less then min size, it blocks until a value can be
@@ -155,6 +166,17 @@ class SlidingWindowPriorityQueue {
    * second being the popped value.
    */
   std::pair<Result, value_type> pop();
+
+  /**
+   * @brief Try to pop the oldest timestamped value form the queue.
+   *
+   * The method tries to pop the oldest timestamped value from the queue. It is
+   * a non-blocking call.
+   *
+   * @return Pair with the first element being result of the operation and the
+   * second being the popped value.
+   */
+  std::pair<Result, value_type> tryPop();
 
  private:
   bool canPush(const timestamp_t timestamp) const;
@@ -181,14 +203,14 @@ template <class T>
 bool SlidingWindowPriorityQueue<T>::canPush(const timestamp_t timestamp) const {
   duration_t window_size =
       (upper_ >= timestamp) ? upper_ - lower_ : timestamp - lower_;
-  return !closed_ && (queue_.empty() || (window_size <= max_window_size_));
+  return (queue_.empty() || (window_size <= max_window_size_));
 }
 
 template <class T>
 typename SlidingWindowPriorityQueue<T>::Result
 SlidingWindowPriorityQueue<T>::waitTillCanPush(
     std::unique_lock<std::mutex>& lock, const timestamp_t timestamp) const {
-  cv_can_push_.wait(lock, [&]() { return canPush(timestamp); });
+  cv_can_push_.wait(lock, [&]() { return !closed_ && canPush(timestamp); });
 
   if (closed_) {
     return Result::kClosed;
@@ -204,17 +226,17 @@ SlidingWindowPriorityQueue<T>::waitTillCanPush(
 template <class T>
 bool SlidingWindowPriorityQueue<T>::canPop() const {
   duration_t window_size = upper_ - lower_;
-  return closed_ || (window_size >= min_window_size_);
+  return window_size >= min_window_size_;
 }
 
 template <class T>
 typename SlidingWindowPriorityQueue<T>::Result
 SlidingWindowPriorityQueue<T>::waitTillCanPop(
     std::unique_lock<std::mutex>& lock) const {
-  cv_can_pop_.wait(lock, [&]() { return canPop(); });
+  cv_can_pop_.wait(lock, [&]() { return closed_ || canPop(); });
 
-  if (queue_.empty()) {
-    return Result::kEmpty;
+  if (closed_ && queue_.empty()) {
+    return Result::kClosed;
   }
 
   return Result::kSuccess;
@@ -265,9 +287,50 @@ SlidingWindowPriorityQueue<T>::push(const value_type& value) {
   {
     std::unique_lock<std::mutex> lock(mutex_);
 
+    // The `if` clause only occurs for the very first element pushed into the
+    // queue.
+    if (lower_ == 0) {
+      upper_ = value.first;
+      lower_ = value.first;
+    }
+
     auto result = waitTillCanPush(lock, value.first);
     if (result != Result::kSuccess) {
       return result;
+    }
+
+    queue_.push(value);
+    upper_ = value.first > upper_ ? value.first : upper_;
+  }
+
+  cv_can_pop_.notify_all();
+
+  return Result::kSuccess;
+}
+
+template <class T>
+typename SlidingWindowPriorityQueue<T>::Result
+SlidingWindowPriorityQueue<T>::tryPush(const value_type& value) {
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
+
+    // The `if` clause only occurs for the very first element pushed into the
+    // queue.
+    if (lower_ == 0) {
+      upper_ = value.first;
+      lower_ = value.first;
+    }
+
+    if (closed_) {
+      return Result::kClosed;
+    }
+
+    if (value.first < lower_) {
+      return Result::kOutOfOrder;
+    }
+
+    if (!canPush(value.first)) {
+      return Result::kFull;
     }
 
     queue_.push(value);
@@ -289,6 +352,34 @@ SlidingWindowPriorityQueue<T>::pop() {
 
   result.first = waitTillCanPop(lock);
   if (result.first != Result::kSuccess) {
+    return result;
+  }
+
+  result.second = std::move(const_cast<value_type&>(queue_.top()));
+  queue_.pop();
+  lower_ = result.second.first;
+  lock.unlock();
+
+  cv_can_push_.notify_all();
+
+  return result;
+}
+
+template <class T>
+std::pair<typename SlidingWindowPriorityQueue<T>::Result,
+          typename SlidingWindowPriorityQueue<T>::value_type>
+SlidingWindowPriorityQueue<T>::tryPop() {
+  std::unique_lock<std::mutex> lock(mutex_);
+
+  std::pair<Result, value_type> result;
+
+  if (closed_ && queue_.empty()) {
+    result.first = Result::kClosed;
+    return result;
+  }
+
+  if (!canPop()) {
+    result.first = Result::kEmpty;
     return result;
   }
 

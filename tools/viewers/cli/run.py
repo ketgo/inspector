@@ -17,6 +17,7 @@
 import argparse
 import logging
 
+from inspector import TraceEvent
 from tools.reader.reader_py import Reader
 
 LOG = logging.getLogger(__name__)
@@ -28,22 +29,16 @@ def parse_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(prog="monitor", description="Trace monitor CLI.")
     parser.add_argument(
-        "--max_attempt",
-        type=int,
-        help="Maximum number of attempts to make when reading an event from the queue.",
-        default=32,
-    )
-    parser.add_argument(
-        "--polling_interval",
-        type=float,
-        help="Event queue consumer polling interval in seconds.",
-        default=0.01,
-    )
-    parser.add_argument(
         "--timeout",
         type=float,
         help="Timeout in seconds when waiting for new events to consume.",
         default=30.0,
+    )
+    parser.add_argument(
+        "--polling_interval_us",
+        type=float,
+        help="Event queue consumer polling interval in seconds.",
+        default=0.01,
     )
     return parser.parse_args()
 
@@ -55,9 +50,8 @@ def main():
     LOG.info("Starting trace consumer...")
 
     reader = Reader(
-        timeout=args.timeout,
-        max_read_attempt=args.max_attempt,
-        polling_interval=args.polling_interval,
+        # timeout=args.timeout,
+        # polling_interval=args.polling_interval,
     )
     LOG.debug("Consuming trace events...")
     for trace in reader:

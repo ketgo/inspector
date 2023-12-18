@@ -75,23 +75,34 @@ bool Reader::Iterator::operator!=(const Iterator& other) const {
 // Reader Implementation
 // ---------------------------------
 
-Reader::Reader(std::chrono::microseconds timeout, const size_t num_consumers,
-               const duration_t min_window_size,
+Reader::Reader(const std::chrono::microseconds timeout_us,
+               const std::chrono::microseconds polling_interval_us,
+               const size_t num_consumers, const duration_t min_window_size,
                const duration_t max_window_size)
-    : timeout_(timeout),
+    : timeout_us_(timeout_us),
+      polling_interval_us_(polling_interval_us),
       consumers_(num_consumers),
       queue_(min_window_size, max_window_size),
+      count_(0),
       stop_(false) {
   for (auto& consumer : consumers_) {
     consumer = std::thread([&]() {
-      while (!stop_.load()) {
-        auto event = readTraceEvent();
-        if (event.isEmpty()) {
-          stop_.store(true);
-          queue_.close();
-        } else {
-          queue_.push({event.timestampNs(), std::move(event)});
+      auto pause_duration = std::chrono::microseconds{0};
+      while (!stop_.load() && pause_duration <= timeout_us_) {
+        bool pause = false;
+        while (!pause) {
+          auto event = readTraceEvent();
+          if (event.isEmpty()) {
+            pause = true;
+          } else {
+            queue_.push({event.timestampNs(), std::move(event)});
+          }
         }
+        std::this_thread::sleep_for(polling_interval_us_);
+        pause_duration += polling_interval_us_;
+      }
+      if (++count_ == consumers_.size()) {
+        queue_.close();
       }
     });
   }
@@ -106,8 +117,8 @@ Reader::~Reader() {
   }
 }
 
-Reader::Iterator Reader::begin() { return Iterator(queue_, false); }
+Reader::Iterator Reader::begin() const { return Iterator(queue_, false); }
 
-Reader::Iterator Reader::end() { return Iterator(queue_, true); }
+Reader::Iterator Reader::end() const { return Iterator(queue_, true); }
 
 }  // namespace inspector
