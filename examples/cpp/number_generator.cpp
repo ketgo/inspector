@@ -46,7 +46,7 @@ static bool isPrime(int num) {
 PrimeNumberGenerator::PrimeNumberGenerator() : last_prime_(1) {}
 
 void PrimeNumberGenerator::operator()() {
-  inspector::SyncScope scope("PrimeNumberGenerator");
+  inspector::SyncScope scope("PrimeNumberGenerator", last_prime_);
 
   while (!isPrime(++last_prime_))
     ;

@@ -116,7 +116,9 @@ void bindTraceEvent(py::module &m) {
           },
           "Get the name of trace event.")
       .def("debug_args", &inspector::TraceEvent::debugArgs,
-           "Get the debug arguments which are part of the trace event.");
+           "Get the debug arguments which are part of the trace event.")
+      .def("to_json", &inspector::TraceEvent::toJson,
+           "Get JSON representation of the trace event.");
 
   m.def(
       "read_trace_event",

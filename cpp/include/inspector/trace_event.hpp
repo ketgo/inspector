@@ -17,6 +17,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 #include <inspector/debug_args.hpp>
 #include <inspector/types.hpp>
@@ -102,6 +103,13 @@ class TraceEvent {
    * @throws `std::runtime_error` if the event is empty.
    */
   DebugArgs debugArgs() const;
+
+  /**
+   * @brief Get JSON string representation of the trace event.
+   *
+   * @returns JSON string representation.
+   */
+  std::string toJson() const;
 
  private:
   std::vector<uint8_t> buffer_;

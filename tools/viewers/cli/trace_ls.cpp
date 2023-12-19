@@ -24,10 +24,10 @@
 #include <gflags/gflags.h>
 
 #include <iostream>
-#include <string>
 
 #include <inspector/trace.hpp>
 #include <inspector/trace_event.hpp>
+
 #include "tools/reader/reader.hpp"
 
 DEFINE_int64(timeout, inspector::Reader::defaultTimeout().count(),
@@ -43,42 +43,6 @@ DEFINE_uint64(buffer_max_window_size, inspector::Reader::defaultMaxWindowSize(),
 
 namespace inspector {
 
-std::string eventTypeToString(inspector::event_type_t type) {
-  switch (static_cast<EventType>(type)) {
-    case EventType::kSyncBeginTag:
-      return "SyncBegin";
-    case EventType::kSyncEndTag:
-      return "AyncEnd";
-    case EventType::kAsyncBeginTag:
-      return "AsyncBegin";
-    case EventType::kAsyncInstanceTag:
-      return "AsyncInstance";
-    case EventType::kAsyncEndTag:
-      return "AsyncEnd";
-    case EventType::kFlowBeginTag:
-      return "FlowBegin";
-    case EventType::kFlowInstanceTag:
-      return "FlowInstance";
-    case EventType::kFlowEndTag:
-      return "FlowEnd";
-    case EventType::kCounterTag:
-      return "Counter";
-    default:
-      break;
-  }
-
-  return "UNKNOWN";
-}
-
-std::ostream& operator<<(std::ostream& out, const TraceEvent& event) {
-  out << "{\"timestamp\":" << event.timestampNs() << ",\"pid\":" << event.pid()
-      << ",\"tid\":" << event.tid() << ",\"type\":\""
-      << eventTypeToString(event.type()) << "\",\"name\":\"" << event.name()
-      << "\"}";
-
-  return out;
-}
-
 int main(int argc, char* argv[]) {
   LOG(INFO) << "Loading trace events...";
 
@@ -87,7 +51,7 @@ int main(int argc, char* argv[]) {
                 Reader::defaultConsumerCount(), FLAGS_buffer_min_window_size,
                 FLAGS_buffer_max_window_size);
   for (auto& event : reader) {
-    std::cout << event << "\n";
+    std::cout << event.toJson() << "\n";
   }
 
   LOG(INFO) << "Timout.";
