@@ -16,45 +16,31 @@
 
 #include <gtest/gtest.h>
 
-#include <memory>
+#include <inspector/config.hpp>
+#include <inspector/trace.hpp>
 
-#include <inspector/details/system.hpp>
-#include <inspector/details/trace_event.hpp>
-
+#include "cpp/tests/testing.hpp"
 #include "tools/reader/reader.hpp"
 
 using namespace inspector;
 
 namespace {
 constexpr auto kEventQueueName = "inspector-reader-test";
-constexpr auto kReadTimeout = std::chrono::microseconds{100};
 }  // namespace
 
 class ReaderTestFixture : public ::testing::Test {
  protected:
-  static details::EventQueue* queue_;
-  std::shared_ptr<Reader> reader_;
+  static void SetUpTestSuite() { Config::setEventQueueName(kEventQueueName); }
+  static void TearDownTestSuite() { inspector::testing::removeEventQueue(); }
+  void SetUp() override {}
+  void TearDown() override { inspector::testing::emptyEventQueue(); }
 
-  static void SetUpTestSuite() {
-    queue_ = details::system::CreateSharedObject<details::EventQueue>(
-        kEventQueueName);
-  }
-
-  static void TearDownTestSuite() {
-    details::system::RemoveSharedObject(kEventQueueName);
-  }
-
-  void SetUp() override {
-    reader_ = std::make_shared<Reader>(kReadTimeout, kEventQueueName);
-  }
-  void TearDown() override {}
+  Reader reader_;
 };
 
-details::EventQueue* ReaderTestFixture::queue_;
-
 TEST_F(ReaderTestFixture, IterateEmptyQueue) {
-  std::vector<Event> events;
-  for (auto&& event : *reader_) {
+  std::vector<TraceEvent> events;
+  for (auto&& event : reader_) {
     events.push_back(std::move(event));
   }
 
@@ -63,27 +49,39 @@ TEST_F(ReaderTestFixture, IterateEmptyQueue) {
 
 TEST_F(ReaderTestFixture, IterateNonEmptyQueue) {
   // Preparing queue by publishing a test event for testing.
-  details::TraceEvent test_event_1('T', "TestTraceEvent1");
-  ASSERT_EQ(queue_->Publish(test_event_1.String()),
-            details::EventQueue::Status::OK);
-  details::TraceEvent test_event_2('T', "TestTraceEvent2");
-  ASSERT_EQ(queue_->Publish(test_event_2.String()),
-            details::EventQueue::Status::OK);
+  syncBegin("test-event-1", 1);
+  syncEnd("test-event-1");
+  syncBegin("test-event-2", 2);
+  syncEnd("test-event-2");
 
-  std::vector<Event> events;
-  for (auto&& event : *reader_) {
+  std::vector<TraceEvent> events;
+  for (auto&& event : reader_) {
     events.push_back(std::move(event));
   }
 
-  ASSERT_EQ(events.size(), 2);
-  ASSERT_EQ(events[0].Type(), 0);
-  ASSERT_NE(events[0].Timestamp(), 0);
-  ASSERT_EQ(events[0].Pid(), details::system::GetProcessId());
-  ASSERT_EQ(events[0].Tid(), details::system::GetThreadId());
-  ASSERT_EQ(events[0].Payload(), "T|TestTraceEvent1");
-  ASSERT_EQ(events[1].Type(), 0);
-  ASSERT_NE(events[1].Timestamp(), 0);
-  ASSERT_EQ(events[1].Pid(), details::system::GetProcessId());
-  ASSERT_EQ(events[1].Tid(), details::system::GetThreadId());
-  ASSERT_EQ(events[1].Payload(), "T|TestTraceEvent2");
+  ASSERT_EQ(events.size(), 4);
+  ASSERT_EQ(events[0].type(),
+            static_cast<event_type_t>(EventType::kSyncBeginTag));
+  ASSERT_NE(events[0].timestampNs(), 0);
+  ASSERT_EQ(events[0].pid(), details::getPID());
+  ASSERT_EQ(events[0].tid(), details::getTID());
+  ASSERT_EQ(std::string(events[0].name()), "test-event-1");
+  ASSERT_EQ(events[1].type(),
+            static_cast<event_type_t>(EventType::kSyncEndTag));
+  ASSERT_NE(events[1].timestampNs(), 0);
+  ASSERT_EQ(events[1].pid(), details::getPID());
+  ASSERT_EQ(events[1].tid(), details::getTID());
+  ASSERT_EQ(std::string(events[1].name()), "test-event-1");
+  ASSERT_EQ(events[2].type(),
+            static_cast<event_type_t>(EventType::kSyncBeginTag));
+  ASSERT_NE(events[2].timestampNs(), 0);
+  ASSERT_EQ(events[2].pid(), details::getPID());
+  ASSERT_EQ(events[2].tid(), details::getTID());
+  ASSERT_EQ(std::string(events[2].name()), "test-event-2");
+  ASSERT_EQ(events[3].type(),
+            static_cast<event_type_t>(EventType::kSyncEndTag));
+  ASSERT_NE(events[3].timestampNs(), 0);
+  ASSERT_EQ(events[3].pid(), details::getPID());
+  ASSERT_EQ(events[3].tid(), details::getTID());
+  ASSERT_EQ(std::string(events[3].name()), "test-event-2");
 }

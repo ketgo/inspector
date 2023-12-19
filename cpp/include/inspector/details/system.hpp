@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 Ketan Goyal
+ * Copyright 2023 Ketan Goyal
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,24 @@
  * limitations under the License.
  */
 
-/**
- * @brief The header file exposes all APIs which interact with the OS.
- * Currently only POSIX complient OS are supported.
- *
- */
-
 #pragma once
 
-#include <inspector/details/system/process.hpp>
-#include <inspector/details/system/shared_object.hpp>
+#include <cstdint>
+
+namespace inspector {
+namespace details {
+
+/**
+ * @brief Get the OS unique identifier of the process calling the method.
+ *
+ */
+int32_t getPID();
+
+/**
+ * @brief Get the OS unique identifier of the thread calling the method.
+ *
+ */
+int32_t getTID();
+
+}  // namespace details
+}  // namespace inspector

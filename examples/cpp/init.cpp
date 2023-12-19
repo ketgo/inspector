@@ -30,15 +30,15 @@ namespace {
 // Code section to add glog as the logger for inspector library.
 // -------------------------------------------------------------
 
-class InfoLogger : public Logger {
+class InfoLogger : public inspector::Logger {
   void operator<<(const std::string& message) { LOG(INFO) << message; }
 };
 
-class WarnLogger : public Logger {
+class WarnLogger : public inspector::Logger {
   void operator<<(const std::string& message) { LOG(WARNING) << message; }
 };
 
-class ErrorLogger : public Logger {
+class ErrorLogger : public inspector::Logger {
   void operator<<(const std::string& message) { LOG(ERROR) << message; }
 };
 
@@ -46,30 +46,22 @@ class ErrorLogger : public Logger {
  * @brief Register Glog with inspector for logging.
  *
  */
-void RegisterGlog() {
-  static InfoLogger info;
-  static WarnLogger warn;
-  static ErrorLogger error;
-  RegisterLogger(LogLevel::INFO, info);
-  RegisterLogger(LogLevel::WARN, warn);
-  RegisterLogger(LogLevel::ERROR, error);
+void registerGlog() {
+  inspector::registerLogger(inspector::LogLevel::INFO,
+                            std::make_shared<InfoLogger>());
+  inspector::registerLogger(inspector::LogLevel::WARN,
+                            std::make_shared<WarnLogger>());
+  inspector::registerLogger(inspector::LogLevel::ERROR,
+                            std::make_shared<ErrorLogger>());
 }
 
 }  // namespace
 
-/**
- * @brief Register glog library with the inspector library to enable logging.
- *
- */
-void InitInspector() {
-  // Remove event queue on exit
-  SetRemoveEventQueueOnExit(true);
-
-  // Register Glog
-  RegisterGlog();
+void init(int argc, char* argv[]) {
+  Config::enableTrace();
+  google::InitGoogleLogging(argv[0]);
+  registerGlog();
 }
-
-// ----------------------------------------------------------------
 
 }  // namespace examples
 }  // namespace inspector

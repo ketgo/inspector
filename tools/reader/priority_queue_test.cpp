@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 Ketan Goyal
+ * Copyright 2023 Ketan Goyal
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,51 +16,55 @@
 
 #include <gtest/gtest.h>
 
-#include "tools/reader/priority_queue.h"
+#include "tools/reader/priority_queue.hpp"
 
 namespace {
-constexpr auto kTestWindowSize = 50;
-constexpr auto kWaitTimeout = std::chrono::microseconds{100};
+
+constexpr auto kTestMinWindowSize = 10;
+constexpr auto kTestMaxWindowSize = 50;
+
 }  // namespace
 
-TEST(SlidingWindowPriorityQueueTestFixture, TestEmptyQueue) {
-  inspector::SlidingWindowPriorityQueue<int> queue(kTestWindowSize);
+using Queue = inspector::details::SlidingWindowPriorityQueue<int>;
 
-  std::pair<int64_t, int> value;
-  ASSERT_FALSE(queue.TryPop(value));
+TEST(SlidingWindowPriorityQueueTestFixture, TestEmptyQueue) {
+  Queue queue(kTestMinWindowSize, kTestMaxWindowSize);
+
+  ASSERT_EQ(queue.tryPop().first, Queue::Result::kEmpty);
 }
 
 TEST(SlidingWindowPriorityQueueTestFixture, TestFullQueue) {
-  inspector::SlidingWindowPriorityQueue<int> queue(kTestWindowSize);
+  Queue queue(kTestMinWindowSize, kTestMaxWindowSize);
 
-  queue.Push({10, 1});
-  queue.Push({20, 2});
-  queue.Push({59, 3});
-  ASSERT_FALSE(queue.Push({60, 4}, kWaitTimeout));
-  ASSERT_FALSE(queue.TryPush({60, 4}));
+  ASSERT_EQ(queue.push({10, 1}), Queue::Result::kSuccess);
+  ASSERT_EQ(queue.push({20, 2}), Queue::Result::kSuccess);
+  ASSERT_EQ(queue.push({60, 3}), Queue::Result::kSuccess);
+  ASSERT_EQ(queue.tryPush({70, 4}), Queue::Result::kFull);
 }
 
 TEST(SlidingWindowPriorityQueueTestFixture, TestForElementsWithinWindow) {
-  inspector::SlidingWindowPriorityQueue<int> queue(kTestWindowSize);
+  Queue queue(kTestMinWindowSize, kTestMaxWindowSize);
 
-  queue.Push({25, 1});
-  queue.Push({10, 2});
-  queue.Push({40, 3});
+  ASSERT_EQ(queue.push({1, 0}), Queue::Result::kSuccess);
+  ASSERT_EQ(queue.push({25, 1}), Queue::Result::kSuccess);
+  ASSERT_EQ(queue.push({10, 2}), Queue::Result::kSuccess);
+  ASSERT_EQ(queue.push({40, 3}), Queue::Result::kSuccess);
 
-  auto top = queue.Top();
-  ASSERT_EQ(top.first, 10);
-  ASSERT_EQ(top.second, 2);
-
-  std::pair<int64_t, int> value;
-  queue.Pop(value);
-  ASSERT_EQ(value.first, 10);
-  ASSERT_EQ(value.second, 2);
-  queue.Pop(value);
-  ASSERT_EQ(value.first, 25);
-  ASSERT_EQ(value.second, 1);
-  queue.Pop(value);
-  ASSERT_EQ(value.first, 40);
-  ASSERT_EQ(value.second, 3);
-  ASSERT_FALSE(queue.Pop(value, kWaitTimeout));
-  ASSERT_FALSE(queue.TryPop(value));
+  auto value = queue.pop();
+  ASSERT_EQ(value.first, Queue::Result::kSuccess);
+  ASSERT_EQ(value.second.first, 1);
+  ASSERT_EQ(value.second.second, 0);
+  value = queue.pop();
+  ASSERT_EQ(value.first, Queue::Result::kSuccess);
+  ASSERT_EQ(value.second.first, 10);
+  ASSERT_EQ(value.second.second, 2);
+  value = queue.pop();
+  ASSERT_EQ(value.first, Queue::Result::kSuccess);
+  ASSERT_EQ(value.second.first, 25);
+  ASSERT_EQ(value.second.second, 1);
+  value = queue.pop();
+  ASSERT_EQ(value.first, Queue::Result::kSuccess);
+  ASSERT_EQ(value.second.first, 40);
+  ASSERT_EQ(value.second.second, 3);
+  ASSERT_EQ(queue.tryPop().first, Queue::Result::kEmpty);
 }

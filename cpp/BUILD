@@ -16,10 +16,19 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "inspector",
-    hdrs = glob(["include/**"]),
+    srcs = glob([
+        "src/**/*.cpp",
+        "src/**/*.hpp",
+    ]),
+    hdrs = glob([
+        "include/**/*.hpp",
+    ]),
     includes = ["include"],
     linkopts = select({
         "@platforms//os:linux": ["-lrt"],
         "//conditions:default": [],
     }),
+    deps = [
+        "@bigcat_ipc//cpp:bigcat",
+    ],
 )

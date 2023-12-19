@@ -24,6 +24,7 @@ def pybind_library(
         name,
         soname = None,
         imports = [],
+        visibility = [],
         **kwargs):
     _soname = soname if soname else name
     pybind_extension(
@@ -38,4 +39,5 @@ def pybind_library(
             ":{}.so".format(_soname),
         ],
         imports = imports,
+        visibility = visibility,
     )

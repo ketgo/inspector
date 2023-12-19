@@ -20,10 +20,10 @@ namespace inspector {
 namespace examples {
 
 /**
- * @brief Initialize inspector library.
+ * @brief Initialize all third part library used by the example.
  *
  */
-void InitInspector();
+void init(int argc, char* argv[]);
 
 }  // namespace examples
 }  // namespace inspector

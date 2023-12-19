@@ -4,7 +4,9 @@
 # https://opensource.org/licenses/MIT
 
 # Build using C++11 standards
-build --action_env=BAZEL_CXXOPTS="-std=c++11"
+build --copt -std=c++11
+build --copt -pedantic
+build --copt -Wall
 
 # Address Sanitizer
 # To use it: bazel build --config asan //...

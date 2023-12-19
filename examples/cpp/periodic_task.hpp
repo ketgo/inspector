@@ -50,20 +50,20 @@ class PeriodicTask {
    *
    * @param thread_pool_size Size of the thread pool.
    */
-  void Run(const size_t thread_pool_size = 1);
+  void run(const size_t thread_pool_size = 1);
 
  private:
   /**
    * @brief Tick method is called to run the user provided task periodically.
    *
    */
-  void Tick();
+  void tick();
 
   /**
    * @brief Stop executing the periodic task.
    *
    */
-  void Stop();
+  void stop();
 
   boost::asio::io_context io_;
   boost::asio::strand<boost::asio::io_context::executor_type> strand_;

@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 Ketan Goyal
+ * Copyright 2023 Ketan Goyal
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,96 +16,124 @@
 
 #pragma once
 
-#include <chrono>
-#include <sstream>
-
-#include <inspector/details/event_header.hpp>
-#include <inspector/details/system.hpp>
+#include <inspector/details/debug_args.hpp>
+#include <inspector/types.hpp>
 
 namespace inspector {
 namespace details {
 
 /**
- * @brief The class `TraceEvent` is used to create user trace events in the
- * catapult format. See the following link for more details:
+ * @brief Get the storage size in bytes required to store a trace event with no
+ * debug arguments.
  *
- * https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU
+ * @returns Size in bytes.
+ */
+size_t traceEventStorageSize();
+
+/**
+ * @brief Get the size in bytes required to store a trace event with multiple
+ * debug arguments.
+ *
+ * @tparam Args Argument types to store as part of the event.
+ * @param args Constant reference to the arguments.
+ * @returns Size in bytes.
+ */
+template <class... Args>
+size_t traceEventStorageSize(const Args&... args) {
+  return traceEventStorageSize() + debugArgsStorageSize(args...);
+}
+
+/**
+ * @brief The class `MutableTraceEvent` casts a memory buffer as a mutable
+ * trace event in order to efficiently create trace events.
  *
  */
-class TraceEvent {
-  // Delimiter used to separate arguments which make up the trace event.
-  static constexpr auto delimiter_ = '|';
-
+class MutableTraceEvent {
  public:
   /**
-   * @brief Trace event identifier.
+   * @brief Construct a new MutableEventView object.
    *
+   * @param address Pointer to starting address of memory buffer.
+   * @param size Size of the memory buffer.
    */
-  static constexpr int Id = 0;
+  MutableTraceEvent(void* const address, const size_t size);
 
   /**
-   * @brief Construct a new TraceEvent object.
+   * @brief Set the type of trace event.
    *
-   * @param phase Phase of the event.
-   * @param name Constant reference to the event name.
+   * @param type Trace event type.
    */
-  TraceEvent(const char phase, const std::string& name);
+  void setType(const event_type_t type);
 
   /**
-   * @brief Get string representation of the trace event.
+   * @brief Set the trace event counter.
    *
+   * @param counter Counter value to set.
    */
-  std::string String() const;
+  void setCounter(const uint64_t counter);
 
   /**
-   * @brief Method used for recursive parameter pack expansion.
+   * @brief Set the timestamp in nanoseconds of the trace event.
    *
-   * @note No operation performed.
+   * @param timestamp_ns Timestamp in nanoseconds.
    */
-  void SetArgs();
+  void setTimestampNs(const timestamp_t timestamp_ns);
 
   /**
-   * @brief Set additional arguments in the trace event.
+   * @brief Set the process identifier.
    *
-   * @tparam T Type of first argument.
-   * @tparam Args Type of other arguments.
-   * @param arg Constant reference to the first argument.
-   * @param args Constant reference to the other arguments.
+   * @param pid Process identifier.
+   */
+  void setPid(const int32_t pid);
+
+  /**
+   * @brief Set the thread identifier.
+   *
+   * @param tid Thread identifier.
+   */
+  void setTid(const int32_t tid);
+
+  /**
+   * @brief Append the given debug argument to the event.
+   *
+   * @tparam T Type of debug argument.
+   * @param arg Constant reference to the debug argument.
+   */
+  template <class T>
+  void appendDebugArg(const T& arg);
+
+  /**
+   * @brief Append the given string literal debug argument.
+   *
+   * @tparam N Length of string literal.
+   */
+  template <std::size_t N>
+  void appendDebugArg(const char (&arg)[N]) {
+    appendDebugArg<const char*>(arg);
+  }
+
+  /**
+   * @brief Append the given multiple debug arguments to the trace event.
+   *
+   * @tparam T Type of first debug argument.
+   * @tparam Args Type of other debug arguments.
+   * @param arg Constant reference to the first debug argument.
+   * @param args Constant reference to rest of the debug arguments.
    */
   template <class T, class... Args>
-  void SetArgs(const T& arg, const Args&... args);
+  void appendDebugArgs(const T& arg, const Args&... args) {
+    appendDebugArg(arg);
+    appendDebugArgs(args...);
+  }
 
  private:
-  std::stringstream payload_;
+  // Dummy method to facilitate template parameter expansion
+  void appendDebugArgs() {}
+
+  void* address_;
+  const size_t size_;
+  void* debug_args_head_;
 };
-
-// -------------------------------------------
-// TraceEvent Implementation
-// -------------------------------------------
-
-inline TraceEvent::TraceEvent(const char phase, const std::string& name)
-    : payload_() {
-  EventHeader header;
-  header.type = Id;
-  header.timestamp =
-      std::chrono::system_clock::now().time_since_epoch().count();
-  header.pid = details::system::GetProcessId();
-  header.tid = details::system::GetThreadId();
-  payload_ << std::string(reinterpret_cast<char*>(&header), sizeof(EventHeader))
-           << phase << delimiter_ << name;
-}
-
-inline void TraceEvent::SetArgs() {}
-
-template <class T, class... Args>
-inline void TraceEvent::SetArgs(const T& arg, const Args&... args) {
-  payload_ << delimiter_ << arg;
-  SetArgs(args...);
-}
-
-inline std::string TraceEvent::String() const { return payload_.str(); }
-
-// -------------------------------------------
 
 }  // namespace details
 }  // namespace inspector

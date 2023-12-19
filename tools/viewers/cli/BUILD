@@ -12,16 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_python//python:defs.bzl", "py_binary")
-
-py_binary(
-    name = "run",
+cc_binary(
+    name = "trace_ls",
     srcs = [
-        "run.py",
+        "trace_ls.cpp",
     ],
-    main = "run.py",
     deps = [
-        "//python:inspector",
-        "//tools/reader:reader_py",
+        "//cpp:inspector",
+        "//tools/reader",
+        "@glog",
     ],
 )

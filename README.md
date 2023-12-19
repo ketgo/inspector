@@ -1,5 +1,5 @@
 # Inspector
 
-__Supported OS__: MacOS, Linux
+**Supported OS** POSIX compliant OS, e.g. MacOS, Linux, Windows, etc.
 
-Toolset to capture real time application traces for inspection. 
+Toolkit to capture real-time application traces for inspection.

@@ -16,177 +16,82 @@
 
 #pragma once
 
+#include <memory>
 #include <sstream>
 
+#include <inspector/logging.hpp>  // Needed for `LogLevel` and `Logger`
+
 namespace inspector {
-
-/**
- * @brief Enumerated set of logging levels.
- *
- */
-enum class LogLevel {
-  INFO = 0,
-  WARN = 1,
-  ERROR = 2,
-};
-
-/**
- * @brief Abstract logger class.
- *
- * A derived class must be registered by the user in order to enable logging in
- * the inspector lib. The class acts as an adapter to any native logging lib
- * used by the user.
- *
- */
-class Logger {
- public:
-  virtual ~Logger() = default;
-  virtual void operator<<(const std::string& message) {}  // NOP
-};
-
-/**
- * @brief Get null logger.
- *
- * Get the null logger which does not perform any logging operation. This is the
- * default logger used by the library.
- *
- * @return Reference to the null logger.
- */
-inline Logger& NullLogger() {
-  static Logger logger_;
-  return logger_;
-}
-
 namespace details {
 
 /**
- * @brief Handle to the logger passed by the user.
+ * @brief Register the given logger for the specified log level.
  *
+ * @param level Log level.
+ * @param logger Reference to the logger to use for logging.
  */
-class LoggerHandle {
- public:
-  /**
-   * @brief Construct a new LoggerHandle object.
-   *
-   */
-  LoggerHandle();
-
-  Logger* operator->() const;
-  Logger& operator*() const;
-  LoggerHandle& operator=(Logger* logger);
-
- private:
-  Logger* logger_;
-};
-
-// ----------------------------
-// LoggerHandle Implementation
-// ----------------------------
-
-inline LoggerHandle::LoggerHandle() : logger_(std::addressof(NullLogger())) {}
-
-inline Logger* LoggerHandle::operator->() const { return logger_; }
-
-inline Logger& LoggerHandle::operator*() const { return *logger_; }
-
-inline LoggerHandle& LoggerHandle::operator=(Logger* logger) {
-  logger_ = logger;
-  return *this;
-}
-
-// ----------------------------
+void registerLogger(LogLevel level, std::shared_ptr<Logger> logger);
 
 /**
- * @brief The class `Log` contains the different loggers registered by the user
- * and exposes interface used by the lib to write logs.
+ * @brief Unregister logger for the given log level.
+ *
+ * The method unregisters any registered logger for thw given log level. After
+ * this call any log messages at the given log level will be ignored.
+ *
+ * @param level Log level for which to unregister logger.
+ */
+void unregisterLogger(LogLevel level);
+
+/**
+ * @brief The class `LogWriter` is responsible for constructing a streamed log
+ * message during its life cycle and forwarding it to an appropriate `Logger`
+ * instance for further processing.
  *
  */
-class Log {
+class LogWriter {
  public:
   /**
-   * @brief Register the given logger for the specified log level.
-   *
-   * @param level Log level.
-   * @param logger Reference to the logger to use for logging.
-   */
-  static void RegisterLogger(LogLevel level, Logger& logger);
-
-  /**
-   * @brief Construct a new Log object.
+   * @brief Construct a new LogWriter object.
    *
    * @param level Log level.
    */
-  explicit Log(LogLevel level);
+  explicit LogWriter(LogLevel level);
 
   /**
-   * @brief Destroy the Log object.
+   * @brief Destroy the LogWriter object.
    *
    * The DTOR passes the streamed log to the user specified logger.
    *
    */
-  ~Log();
+  ~LogWriter();
 
   /**
-   * @brief Write the given log message.
+   * @brief Process the given log message.
    *
    * @tparam T Type of log message.
    * @param message Constant reference to the log message.
    * @returns Reference to the log object.
    */
   template <class T>
-  Log& operator<<(const T& message);
+  LogWriter& operator<<(const T& message) {
+    stream_ << message;
+    return *this;
+  }
 
  private:
-  /**
-   * @brief Get the LoggerHandle for given log level.
-   *
-   */
-  static LoggerHandle& LoggerHandleForLevel(LogLevel level);
-
   Logger& logger_;            // Logger in active use
   std::stringstream stream_;  // Object for streaming logs to string
 };
-
-// ------------------------------
-// Log Implementation
-// ------------------------------
-
-// static
-inline LoggerHandle& Log::LoggerHandleForLevel(LogLevel level) {
-  // Loggers for the different log levels
-  static LoggerHandle loggers_[3];
-  return loggers_[static_cast<int>(level)];
-}
-
-// --------- public -------------
-
-// static
-inline void Log::RegisterLogger(LogLevel level, Logger& logger) {
-  LoggerHandleForLevel(level) = std::addressof(logger);
-}
-
-inline Log::Log(LogLevel level)
-    : logger_(*LoggerHandleForLevel(level)), stream_() {}
-
-inline Log::~Log() { logger_ << stream_.str(); }
-
-template <class T>
-Log& Log::operator<<(const T& message) {
-  stream_ << message;
-  return *this;
-}
-
-// ------------------------------
 
 }  // namespace details
 }  // namespace inspector
 
 // -----------------------------------------------------
-// Convinence Macros for logging
+// Macros for logging
 // -----------------------------------------------------
 
-#define LOG_INFO inspector::details::Log(inspector::LogLevel::INFO)
+#define LOG_INFO inspector::details::LogWriter(inspector::LogLevel::INFO)
 
-#define LOG_WARN inspector::details::Log(inspector::LogLevel::WARN)
+#define LOG_WARN inspector::details::LogWriter(inspector::LogLevel::WARN)
 
-#define LOG_ERROR inspector::details::Log(inspector::LogLevel::ERROR)
+#define LOG_ERROR inspector::details::LogWriter(inspector::LogLevel::ERROR)

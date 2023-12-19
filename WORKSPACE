@@ -14,6 +14,7 @@
 
 workspace(name = "inspector")
 
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # --------------------------------------
@@ -22,17 +23,32 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "rules_python",
-    sha256 = "a3a6e99f497be089f81ec082882e40246bfd435f52f4e82f37e89449b04573f6",
-    strip_prefix = "rules_python-0.10.2",
-    url = "https://github.com/bazelbuild/rules_python/archive/refs/tags/0.10.2.tar.gz",
+    sha256 = "9d04041ac92a0985e344235f5d946f71ac543f1b1565f2cdbc9a2aaee8adf55b",
+    strip_prefix = "rules_python-0.26.0",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.26.0/rules_python-0.26.0.tar.gz",
 )
 
-load("@rules_python//python:pip.bzl", "pip_install")
+load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
 
-pip_install(
+python_register_toolchains(
+    name = "python_interpreter",
+    python_version = "3.8",
+)
+
+py_repositories()
+
+load("@python_interpreter//:defs.bzl", "interpreter")
+load("@rules_python//python:pip.bzl", "pip_parse")
+
+pip_parse(
     name = "deps_python",
-    requirements = "//third_party/python:requirements.txt",
+    python_interpreter_target = interpreter,
+    requirements = "//third_party/python:requirements_lock.txt",
 )
+
+load("@deps_python//:requirements.bzl", "install_deps")
+
+install_deps()
 
 # --------------------------------------
 # PyBind11
@@ -57,7 +73,7 @@ load("@pybind11_bazel//:python_configure.bzl", "python_configure")
 
 python_configure(
     name = "local_config_python",
-    python_version = "3",
+    python_interpreter_target = interpreter,
 )
 
 # --------------------------------------
@@ -73,9 +89,9 @@ http_archive(
 
 http_archive(
     name = "gtest",
-    sha256 = "5cf189eb6847b4f8fc603a3ffff3b0771c08eec7dd4bd961bfd45477dd13eb73",
-    strip_prefix = "googletest-609281088cfefc76f9d0ce82e1ff6c30cc3591e5",
-    urls = ["https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip"],
+    sha256 = "ab78fa3f912d44d38b785ec011a25f26512aaedc5291f51f3807c592b506d33a",
+    strip_prefix = "googletest-58d77fa8070e8cec2dc1ed015d66b454c8d78850",
+    urls = ["https://github.com/google/googletest/archive/58d77fa8070e8cec2dc1ed015d66b454c8d78850.zip"],
 )
 
 # ---------------------------------------
@@ -97,14 +113,24 @@ http_archive(
 )
 
 # ----------------------------------------
+# Bigcat IPC
+# ----------------------------------------
+
+git_repository(
+    name = "bigcat_ipc",
+    remote = "git@github.com:ketgo/bigcat_ipc.git",
+    tag = "v0.1.0-alpha",
+)
+
+# ----------------------------------------
 # Boost
 # ----------------------------------------
 
-_RULES_BOOST_COMMIT = "652b21e35e4eeed5579e696da0facbe8dba52b1f"
+_RULES_BOOST_COMMIT = "ce2b65fd6d1494aadb2d8c99ce26aa222ab72486"
 
 http_archive(
     name = "com_github_nelhage_rules_boost",
-    sha256 = "c1b8b2adc3b4201683cf94dda7eef3fc0f4f4c0ea5caa3ed3feffe07e1fb5b15",
+    sha256 = "f3038ed0e19f68920396fbe1a824cde8ab321e131c9fe59826f8ee510b958569",
     strip_prefix = "rules_boost-%s" % _RULES_BOOST_COMMIT,
     urls = [
         "https://github.com/nelhage/rules_boost/archive/%s.tar.gz" % _RULES_BOOST_COMMIT,

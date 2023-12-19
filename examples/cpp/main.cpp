@@ -22,17 +22,15 @@
 #include "examples/cpp/periodic_task.hpp"
 
 int main(int argc, char* argv[]) {
-  // Initializing glog logger
   FLAGS_logtostderr = 1;
-  google::InitGoogleLogging(argv[0]);
 
-  // Initialize inspector
-  inspector::examples::InitInspector();
+  // Initialize all third party libs
+  inspector::examples::init(argc, argv);
 
   LOG(INFO) << "Starting Trace Generator...";
   inspector::examples::PrimeNumberGenerator generator;
   inspector::examples::PeriodicTask task(1000000000UL, generator);
-  task.Run();
+  task.run();
 
   return 0;
 }

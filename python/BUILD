@@ -12,23 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_python//python:defs.bzl", "py_library")
 load("//third_party/pybind11:defs.bzl", "pybind_library")
 
-package(default_visibility = ["//visibility:public"])
-
 pybind_library(
-    name = "inspector",
+    name = "inspector_core",
     srcs = [
-        "config.cpp",
-        "inspector.cpp",
-        "logging.cpp",
-        "testing.cpp",
-        "trace.cpp",
+        "src/config.cpp",
+        "src/inspector.cpp",
+        "src/logging.cpp",
+        "src/testing.cpp",
+        "src/trace.cpp",
+        "src/trace_event.cpp",
     ],
     imports = ["."],
-    soname = "py_inspector",
+    soname = "inspector_core",
     deps = [
         "//cpp:inspector",
-        "//utils:strings",
+        "//cpp/tests:testing",
+    ],
+)
+
+py_library(
+    name = "inspector",
+    srcs = [
+        "inspector.py",
+    ],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":inspector_core",
     ],
 )
