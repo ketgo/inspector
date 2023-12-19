@@ -19,7 +19,9 @@ cc_library(
     hdrs = [
         "priority_queue.hpp",
     ],
-    deps = [],
+    deps = [
+        "@glog",
+    ],
 )
 
 cc_test(
@@ -45,6 +47,7 @@ cc_library(
     deps = [
         ":priority_queue",
         "//cpp:inspector",
+        "@glog",
     ],
 )
 

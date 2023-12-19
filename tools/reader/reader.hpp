@@ -86,7 +86,7 @@ class Reader {
    *
    */
   static constexpr duration_t defaultMinWindowSize() {
-    return 10000000;  // 1ms
+    return 1;  // 1ns
   }
 
   /**
@@ -94,7 +94,7 @@ class Reader {
    *
    */
   static constexpr duration_t defaultMaxWindowSize() {
-    return 1000000000;  // 1s
+    return 60000000000;  // 60s
   }
 
   /**
@@ -102,7 +102,7 @@ class Reader {
    *
    */
   static constexpr std::chrono::microseconds defaultTimeout() {
-    return std::chrono::microseconds{1000000};  // 1s
+    return std::chrono::microseconds{5000000};  // 5s
   }
 
   /**
@@ -110,7 +110,7 @@ class Reader {
    *
    */
   static constexpr std::chrono::microseconds defaultPollingInterval() {
-    return std::chrono::microseconds{10000};  // 1ms
+    return std::chrono::microseconds{1000};  // 1000us
   }
 
   /**

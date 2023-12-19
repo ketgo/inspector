@@ -27,7 +27,7 @@ namespace {
  * @brief Check if a given number is prime.
  *
  */
-static bool IsPrime(int num) {
+static bool isPrime(int num) {
   if (num == 1) {
     return false;
   }
@@ -46,9 +46,9 @@ static bool IsPrime(int num) {
 PrimeNumberGenerator::PrimeNumberGenerator() : last_prime_(1) {}
 
 void PrimeNumberGenerator::operator()() {
-  TRACE_SCOPE("PrimeNumberGenerator");
+  inspector::SyncScope scope("PrimeNumberGenerator");
 
-  while (!IsPrime(++last_prime_))
+  while (!isPrime(++last_prime_))
     ;
   LOG(INFO) << "Next Prime: " << last_prime_;
 }

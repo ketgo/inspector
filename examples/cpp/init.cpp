@@ -47,12 +47,12 @@ class ErrorLogger : public inspector::Logger {
  *
  */
 void registerGlog() {
-  static InfoLogger info;
-  static WarnLogger warn;
-  static ErrorLogger error;
-  inspector::registerLogger(inspector::LogLevel::INFO, info);
-  inspector::registerLogger(inspector::LogLevel::WARN, warn);
-  inspector::registerLogger(inspector::LogLevel::ERROR, error);
+  inspector::registerLogger(inspector::LogLevel::INFO,
+                            std::make_shared<InfoLogger>());
+  inspector::registerLogger(inspector::LogLevel::WARN,
+                            std::make_shared<WarnLogger>());
+  inspector::registerLogger(inspector::LogLevel::ERROR,
+                            std::make_shared<ErrorLogger>());
 }
 
 }  // namespace

@@ -96,6 +96,7 @@ Reader::Reader(const std::chrono::microseconds timeout_us,
             pause = true;
           } else {
             queue_.push({event.timestampNs(), std::move(event)});
+            pause_duration = std::chrono::microseconds{0};
           }
         }
         std::this_thread::sleep_for(polling_interval_us_);
