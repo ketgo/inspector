@@ -111,6 +111,13 @@ class TraceEvent {
    */
   std::string toJson() const;
 
+  /**
+   * @brief Get the raw binary data representing the event.
+   *
+   * @returns Reference to vector of bytes.
+   */
+  const std::vector<uint8_t>& raw() const;
+
  private:
   std::vector<uint8_t> buffer_;
 };

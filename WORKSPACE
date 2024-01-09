@@ -119,7 +119,7 @@ http_archive(
 git_repository(
     name = "bigcat_ipc",
     remote = "git@github.com:ketgo/bigcat_ipc.git",
-    tag = "v0.1.0-alpha",
+    tag = "v0.1.1-alpha",
 )
 
 # ----------------------------------------

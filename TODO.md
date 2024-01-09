@@ -26,6 +26,7 @@ terminate called after throwing an instance of 'std::runtime_error'
   what():  Invalid type specified for argument of type '0'.
 ```
 [ ] BUG: `tools/reader/reader_test` stuck
+[ ] Correct TRACE macros by creating a version with and without debug args
 
 ## Monitors
 

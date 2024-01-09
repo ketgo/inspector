@@ -50,8 +50,17 @@ int main(int argc, char* argv[]) {
                 Reader::defaultPollingInterval(),
                 Reader::defaultConsumerCount(), FLAGS_buffer_min_window_size,
                 FLAGS_buffer_max_window_size);
+
   for (auto& event : reader) {
-    std::cout << event.toJson() << "\n";
+    try {
+      std::cout << event.toJson() << "\n";
+    } catch (const std::runtime_error& err) {
+      for (int x : event.raw()) {
+        std::cout << x << ",";
+      }
+      std::cout << "\n";
+      throw;
+    }
   }
 
   LOG(INFO) << "Timout.";

@@ -199,6 +199,8 @@ std::string TraceEvent::toJson() const {
   return out.str();
 }
 
+const std::vector<uint8_t> &TraceEvent::raw() const { return buffer_; }
+
 }  // namespace inspector
 
 #undef THROW_IF_EMPTY
