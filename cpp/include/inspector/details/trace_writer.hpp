@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <chrono>
+#include <vector>
 
 #include <bigcat/circular_queue_a.hpp>
 
@@ -52,11 +53,9 @@ void writeTraceEvent(const event_type_t type, const char* name,
   if (Config::isTraceDisabled()) {
     return;
   }
-  auto result = eventQueue().publish(traceEventStorageSize(name, args...));
-  if (result.first != bigcat::CircularQueueA::Status::OK) {
-    return;
-  }
-  auto event = MutableTraceEvent(result.second.data(), result.second.size());
+
+  std::vector<uint8_t> buffer(traceEventStorageSize(name, args...));
+  auto event = MutableTraceEvent(buffer.data(), buffer.size());
   event.setType(type);
   event.setCounter(++threadLocalCounter());
   event.setTimestampNs(
@@ -64,6 +63,8 @@ void writeTraceEvent(const event_type_t type, const char* name,
   event.setPid(getPID());
   event.setTid(getTID());
   event.appendDebugArgs(name, args...);
+
+  eventQueue().publish(buffer);
 }
 
 }  // namespace details

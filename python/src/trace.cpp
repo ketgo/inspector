@@ -49,12 +49,9 @@ void pythonTraceEvent(const std::string &name, const py::args &args) {
     }
   }
 
-  auto result = inspector::details::eventQueue().publish(storage_size);
-  if (result.first != bigcat::CircularQueueA::Status::OK) {
-    return;
-  }
-  auto event = inspector::details::MutableTraceEvent(result.second.data(),
-                                                     result.second.size());
+  std::vector<uint8_t> buffer(storage_size);
+  auto event =
+      inspector::details::MutableTraceEvent(buffer.data(), buffer.size());
   event.setType(static_cast<const inspector::event_type_t>(T));
   event.setCounter(++inspector::details::threadLocalCounter());
   event.setTimestampNs(
@@ -77,6 +74,8 @@ void pythonTraceEvent(const std::string &name, const py::args &args) {
           "Argument type not supported as debug argument.");
     }
   }
+
+  inspector::details::eventQueue().publish(buffer);
 }
 
 void pythonCounterEvent(const std::string &name, const py::object &arg) {
