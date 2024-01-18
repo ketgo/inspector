@@ -181,9 +181,9 @@ DebugArgs TraceEvent::debugArgs() const {
 std::string TraceEvent::toJson() const {
   std::stringstream out;
 
-  out << "{\"timestamp\":" << timestampNs() << ",\"pid\":" << pid()
-      << ",\"tid\":" << tid() << ",\"type\":\"" << eventTypeToString(type())
-      << "\",\"name\":\"" << name() << "\"";
+  out << "{\"seq_num\":" << counter() << ",\"timestamp\":" << timestampNs()
+      << ",\"pid\":" << pid() << ",\"tid\":" << tid() << ",\"type\":\""
+      << eventTypeToString(type()) << "\",\"name\":\"" << name() << "\"";
   if (debugArgs().size()) {
     out << ",\"args\":[";
     auto debug_args = debugArgs();
