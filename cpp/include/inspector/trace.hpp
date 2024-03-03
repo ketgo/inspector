@@ -237,26 +237,24 @@ void counter(const char* name, const T& arg) {
  */
 #define TRACE(...) \
   inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(__func__, __VA_ARGS__)
-#define TRACE_SCOPE(name, ...) \
-  inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(name, __VA_ARGS__)
+#define TRACE_SCOPE(...) \
+  inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(__VA_ARGS__)
 
 /**
  * @brief Asynchronous trace events.
  *
  */
-#define TRACE_ASYNC_BEGIN(name, ...) inspector::asyncBegin(name, __VA_ARGS__)
-#define TRACE_ASYNC_INSTANCE(name, ...) \
-  inspector::asyncInstance(name, __VA_ARGS__)
-#define TRACE_ASYNC_END(name, ...) inspector::asyncEnd(name, __VA_ARGS__)
+#define TRACE_ASYNC_BEGIN(...) inspector::asyncBegin(__VA_ARGS__)
+#define TRACE_ASYNC_INSTANCE(...) inspector::asyncInstance(__VA_ARGS__)
+#define TRACE_ASYNC_END(...) inspector::asyncEnd(__VA_ARGS__)
 
 /**
  * @brief Flow trace events
  *
  */
-#define TRACE_FLOW_BEGIN(name, ...) inspector::flowBegin(name, __VA_ARGS__)
-#define TRACE_FLOW_INSTANCE(name, ...) \
-  inspector::flowInstance(name, __VA_ARGS__)
-#define TRACE_FLOW_END(name, ...) inspector::flowEnd(name, __VA_ARGS__)
+#define TRACE_FLOW_BEGIN(...) inspector::flowBegin(__VA_ARGS__)
+#define TRACE_FLOW_INSTANCE(...) inspector::flowInstance(__VA_ARGS__)
+#define TRACE_FLOW_END(...) inspector::flowEnd(__VA_ARGS__)
 
 /**
  * @brief Counter trace events

@@ -19,17 +19,17 @@ The file contains itemized tasks to be completed in the different parts of the r
 ## Core Lib
 
 [X] Extend trace event data struct in order to support implementing different types of events published from other tracers (CPU, GPU, kernel, etc).
-[ ] BUG: in DebugArg implementation causing the following error:
+[x] BUG: in DebugArg implementation causing the following error:
 ```
 {"timestamp":1703024038022413286,"pid":66486,"tid":66773,"type":"AsyncEnd","name":"boost::async_wait"}
 terminate called after throwing an instance of 'std::runtime_error'
   what():  Invalid type specified for argument of type '0'.
 ```
-[ ] BUG: `tools/reader/reader_test` stuck
+[x] BUG: `tools/reader/reader_test` stuck
 
 ## Monitors
 
-[-] CLI monitor to view the published trace events on console in realtime or store them in a file.
+[x] CLI monitor to view the published trace events on stdout in realtime or store them in a file.
 [ ] Web monitor to view the published trace events on browser in realtime.
 [ ] Perfetto generator to convert the published trace events to the format accepted by Perfetto UI.
 [ ] Add binding for javascript

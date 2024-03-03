@@ -17,6 +17,7 @@ cc_binary(
     srcs = [
         "trace_ls.cpp",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         "//cpp:inspector",
         "//tools/reader",

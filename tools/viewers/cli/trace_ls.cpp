@@ -24,6 +24,7 @@
 #include <gflags/gflags.h>
 
 #include <iostream>
+#include <fstream>
 
 #include <inspector/trace.hpp>
 #include <inspector/trace_event.hpp>
@@ -41,9 +42,28 @@ DEFINE_uint64(buffer_max_window_size, inspector::Reader::defaultMaxWindowSize(),
               "Maximum sliding window size of the priority queue used as "
               "buffer to store events");
 
+DEFINE_string(
+    out, "stdout",
+    "Path to the output file for storing captured events. When set to 'stdout' "
+    "then the events will be printed to standard output. Default set to "
+    "'stdout'.");
+
 namespace inspector {
 
 int main(int argc, char* argv[]) {
+  FLAGS_logtostderr = 1;
+  google::InitGoogleLogging(argv[0]);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
+  LOG_IF(FATAL, FLAGS_out.empty()) << "No output file provided.";
+
+  std::ofstream file;
+  if (FLAGS_out != "stdout") {
+    file.open(FLAGS_out);
+  }
+  std::ostream& out = FLAGS_out == "stdout" ? std::cout : file;
+  LOG_IF(FATAL, !out) << "Unable to open output stream";
+
   LOG(INFO) << "Loading trace events...";
 
   Reader reader(std::chrono::microseconds{FLAGS_timeout},
@@ -51,19 +71,14 @@ int main(int argc, char* argv[]) {
                 Reader::defaultConsumerCount(), FLAGS_buffer_min_window_size,
                 FLAGS_buffer_max_window_size);
   for (auto& event : reader) {
-    std::cout << event.toJson() << "\n";
+    out << event.toJson() << "\n";
   }
 
-  LOG(INFO) << "Timout.";
+  LOG(INFO) << "Timeout.";
 
   return 0;
 }
 
 }  // namespace inspector
 
-int main(int argc, char* argv[]) {
-  FLAGS_logtostderr = 1;
-  google::InitGoogleLogging(argv[0]);
-
-  return inspector::main(argc, argv);
-}
+int main(int argc, char* argv[]) { return inspector::main(argc, argv); }
