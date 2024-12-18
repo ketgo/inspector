@@ -166,3 +166,8 @@ http_archive(
     ],
     integrity = "sha256-jRxr9E8b2wmKtwzWDaPOa25zHk6yHdUrJSfL3PhdmE0="
 )
+
+local_repository(
+    name = "perfetto_cfg",
+    path = "third_party/perfetto/overrides",
+)

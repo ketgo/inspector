@@ -4,6 +4,6 @@ cc_binary(
         "test.cpp",
     ],
     deps = [
-        "@perfetto"
+        "@perfetto//:trace_cc_proto"
     ],
 )
