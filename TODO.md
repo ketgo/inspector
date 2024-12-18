@@ -26,12 +26,17 @@ terminate called after throwing an instance of 'std::runtime_error'
   what():  Invalid type specified for argument of type '0'.
 ```
 [x] BUG: `tools/reader/reader_test` stuck
+[ ] Debugging events desing and implementation. These events can be emitted by an application for debugging purposes. Thus we need to allow filtering based on different levels of info. 
+[ ] Config to add file name and line number in debug events.
 
 ## Monitors
 
 [x] CLI monitor to view the published trace events on stdout in realtime or store them in a file.
+  [ ] Add option for users to enable external sort. This can be an extenstion or improvement over the slidding window PQ.
+  [ ] Add signal handler for graceful shutdown of monitor.
+  [ ] Refactor the monitor to a periodic task implementation. 
 [ ] Web monitor to view the published trace events on browser in realtime.
-[ ] Perfetto generator to convert the published trace events to the format accepted by Perfetto UI.
+[-] Perfetto generator to convert the published trace events to the format accepted by Perfetto UI.
 [ ] Add binding for javascript
 [ ] Add binding for Java
 [ ] Tracers for monitoring CPU, GPU and kernel

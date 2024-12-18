@@ -52,7 +52,7 @@ std::string eventTypeToString(event_type_t type) {
     case EventType::kSyncBeginTag:
       return "SyncBegin";
     case EventType::kSyncEndTag:
-      return "AyncEnd";
+      return "SyncEnd";
     case EventType::kAsyncBeginTag:
       return "AsyncBegin";
     case EventType::kAsyncInstanceTag:
