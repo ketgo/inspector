@@ -77,16 +77,26 @@ python_configure(
     python_interpreter_target = "@python_3_8_host//:python",
 )
 
+# ----------------------------------------
+# Protobuf
+# ----------------------------------------
+
+_PROTO_VERSION="29.1"
+
+http_archive(
+    name = "com_google_protobuf",
+    strip_prefix = "protobuf-{}".format(_PROTO_VERSION),
+    integrity = "sha256-PTKUDpdcStm4umlkDnj1UnB1uuM8ookCdb8muFPAliw=",
+    urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v{}/protobuf-{}.tar.gz".format(_PROTO_VERSION, _PROTO_VERSION)],
+)
+
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
+protobuf_deps()
+
 # --------------------------------------
 # Gtest
 # --------------------------------------
-
-http_archive(
-    name = "com_google_absl",
-    sha256 = "6764f226bd6e2d8ab9fe2f3cab5f45fb1a4a15c04b58b87ba7fa87456054f98b",
-    strip_prefix = "abseil-cpp-273292d1cfc0a94a65082ee350509af1d113344d",
-    urls = ["https://github.com/abseil/abseil-cpp/archive/273292d1cfc0a94a65082ee350509af1d113344d.zip"],
-)
 
 http_archive(
     name = "gtest",
@@ -143,18 +153,16 @@ load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
 boost_deps()
 
 # ----------------------------------------
-# Boost
+# Perfetto
 # ----------------------------------------
 
-_PROTO_VERSION="29.1"
+_PERFETTO_VERSION="48.1"
 
 http_archive(
-    name = "com_google_protobuf",
-    strip_prefix = "protobuf-{}".format(_PROTO_VERSION),
-    integrity = "sha256-PTKUDpdcStm4umlkDnj1UnB1uuM8ookCdb8muFPAliw=",
-    urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v{}/protobuf-{}.tar.gz".format(_PROTO_VERSION, _PROTO_VERSION)],
+    name = "perfetto",
+    strip_prefix = "perfetto-%s" % _PERFETTO_VERSION,
+    urls = [
+        "https://github.com/google/perfetto/archive/refs/tags/v%s.tar.gz" % _PERFETTO_VERSION,
+    ],
+    integrity = "sha256-jRxr9E8b2wmKtwzWDaPOa25zHk6yHdUrJSfL3PhdmE0="
 )
-
-load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-
-protobuf_deps()

@@ -3,11 +3,9 @@
 # This software is released under the MIT License.
 # https://opensource.org/licenses/MIT
 
-# Build using C++11 standards
-build --cxxopt -std=c++11
-build --cxxopt -pedantic
+# Build using C++17 standards
+build --cxxopt=-std=c++17
 build --cxxopt -Wall
-build --copt -pedantic
 build --copt -Wall
 
 # Address Sanitizer
