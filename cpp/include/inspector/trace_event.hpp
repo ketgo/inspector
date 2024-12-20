@@ -16,14 +16,17 @@
 
 #pragma once
 
-#include <vector>
-#include <string>
-
 #include <inspector/debug_args.hpp>
 #include <inspector/types.hpp>
+#include <string>
+#include <vector>
 
 namespace inspector {
 
+/**
+ * @brief Non-mutable view into a recorded trace event.
+ *
+ */
 class TraceEvent {
  public:
   /**

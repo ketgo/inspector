@@ -12,69 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(default_visibility = ["//visibility:public"])
-
 cc_library(
-    name = "random",
-    hdrs = [
-        "random.hpp",
-    ],
-    deps = [],
-)
-
-cc_library(
-    name = "threads",
+    name = "testing",
     srcs = [
-        "threads.cpp",
+        "testing.cpp",
     ],
     hdrs = [
-        "threads.hpp",
-    ],
-    deps = [],
-)
-
-cc_library(
-    name = "chrono",
-    hdrs = [
-        "chrono.hpp",
+        "testing.hpp",
     ],
     deps = [
-        ":random",
-    ],
-)
-
-cc_library(
-    name = "dprint",
-    srcs = [
-        "dprint.cpp",
-    ],
-    hdrs = [
-        "dprint.hpp",
-    ],
-    deps = [],
-)
-
-cc_library(
-    name = "strings",
-    srcs = [
-        "strings.cpp",
-    ],
-    hdrs = [
-        "strings.hpp",
-    ],
-    deps = [],
-)
-
-
-cc_library(
-    name = "tempdir",
-    srcs = [
-        "tempdir.cpp",
-    ],
-    hdrs = [
-        "tempdir.hpp",
-    ],
-    deps = [
+        "//utils:tempdir",
         "@boost//:filesystem",
+    ],
+)
+
+
+cc_library(
+    name = "file_io",
+    srcs = [
+        "file_io.cpp",
+    ],
+    hdrs = [
+        "file_io.hpp",
+    ],
+    deps = [],
+)
+
+cc_test(
+    name = "file_io_test",
+    srcs = [
+        "file_io_test.cpp",
+    ],
+    data = [
+        "file_io_test.data",
+    ],
+    deps = [
+        ":file_io",
+        ":testing",
+        "@gtest//:gtest_main",
     ],
 )
