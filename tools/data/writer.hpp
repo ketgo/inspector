@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "tools/data/common.hpp"
+#include "tools/data/block.hpp"
 
 namespace inspector {
 namespace tools {
@@ -45,16 +45,17 @@ class Writer final {
    */
   Writer(const std::string& path, const std::size_t block_size);
 
-  void write(const int64_t timestamp, std::vector<uint8_t>&& buffer);
+  ~Writer();
+
+  void write(const timestamp_t timestamp, const void* const src,
+             const std::size_t size);
 
   void flush();
 
  private:
-  const std::size_t block_size_;
   const std::string& path_;
-
-  std::size_t data_size_;
-  ChronologicalPriorityQueue<std::vector<uint8_t>> data_;
+  BlockBuilder builder_;
+  std::size_t num_blocks_;
 };
 
 }  // namespace data

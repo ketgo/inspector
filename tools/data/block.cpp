@@ -128,6 +128,7 @@ class BlockBuilder::Impl {
   }
 
   void flush(const File& file) {
+    std::memset(body() + index_head_, 0, freeSpace());
     file.write(buffer_.data(), buffer_.size(), 0);
     reset();
   }

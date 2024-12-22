@@ -16,6 +16,8 @@
 
 #include "tools/data/writer.hpp"
 
+#include <cassert>
+
 #include "tools/data/block.hpp"
 
 namespace inspector {
@@ -23,16 +25,30 @@ namespace tools {
 namespace data {
 
 Writer::Writer(const std::string& path, const std::size_t block_size)
-    : path_(path), block_size_(block_size), data_size_(sizeof(Block::Header)) {}
+    : path_(path), builder_(block_size), num_blocks_(0) {}
 
-void Writer::write(const int64_t timestamp, std::vector<uint8_t>&& buffer) {
-  const auto data_size = data_size_ + Block::storageSize(buffer);
-  if (data_size > block_size_) {
-    // TODO: Pop and create a block to save to file.
+Writer::~Writer() { flush(); }
+
+void Writer::write(const timestamp_t timestamp, const void* const src,
+                   const std::size_t size) {
+  if (builder_.add(timestamp, src, size)) {
+    return;
   }
 
-  data_.emplace(timestamp, std::move(buffer));
-  data_size_ = data_size;
+  flush();
+  assert(builder_.count() == 0);
+  builder_.add(timestamp, src, size);
+}
+
+void Writer::flush() {
+  if (builder_.count() == 0) {
+    return;
+  }
+
+  File file(std::to_string(num_blocks_), path_);
+  builder_.flush(file);
+  file.sync();
+  ++num_blocks_;
 }
 
 }  // namespace data
