@@ -18,6 +18,8 @@
 
 #include <string>
 
+#include "tools/data/common.hpp"
+
 namespace inspector {
 namespace tools {
 namespace data {
@@ -32,8 +34,7 @@ namespace data {
  */
 class File final {
  public:
-  File(const File& other) = delete;
-  File& operator=(const File& other) = delete;
+  NO_COPY(File);
 
   /**
    * @brief Construct a new File object.

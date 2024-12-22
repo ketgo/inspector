@@ -24,7 +24,7 @@ The package contains reader and writer for loading and storing trace events and 
 
 ## Writer
 
-The writer stores chronologically sorted events in chunks of fixed size files. Each file contains a header and body section. The header sction will consist of following metadata information:
+The writer stores chronologically sorted events in blocks of fixed size files. Each file contains a header and body section. The header sction will consist of following metadata information:
 
 - Number of events
 - Time duration associated with the file.

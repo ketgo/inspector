@@ -13,6 +13,13 @@
 # limitations under the License.
 
 cc_library(
+    name = "common",
+    hdrs = [
+        "common.hpp",
+    ],
+)
+
+cc_library(
     name = "testing",
     srcs = [
         "testing.cpp",
@@ -35,7 +42,9 @@ cc_library(
     hdrs = [
         "file_io.hpp",
     ],
-    deps = [],
+    deps = [
+        ":common",
+    ],
 )
 
 cc_test(
@@ -50,5 +59,46 @@ cc_test(
         ":file_io",
         ":testing",
         "@gtest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "block",
+    srcs = [
+        "block.cpp",
+    ],
+    hdrs = [
+        "block.hpp",
+    ],
+    deps = [
+        ":common",
+        ":file_io"
+    ],
+)
+
+cc_test(
+    name = "block_test",
+    srcs = [
+        "block_test.cpp",
+    ],
+    deps = [
+        ":block",
+        ":testing",
+        "@gtest//:gtest_main",
+    ],
+)
+
+cc_library(
+    name = "writer",
+    srcs = [
+        "writer.cpp",
+    ],
+    hdrs = [
+        "writer.hpp",
+    ],
+    deps = [
+        ":block",
+        ":common",
+        ":file_io"
     ],
 )
