@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "tools/data/block.hpp"
+#include "tools/data/block_builder.hpp"
 
 #include <cassert>
 #include <cstring>
@@ -22,43 +22,11 @@
 #include <queue>
 #include <vector>
 
+#include "tools/data/block_impl.hpp"
+
 namespace inspector {
 namespace tools {
 namespace data {
-namespace {
-
-/**
- * @brief Data structure representing a block header.
- */
-struct PACKED BlockHeader {
-  std::size_t count;
-  timestamp_t start_timestamp;
-  timestamp_t end_timestamp;
-};
-
-/**
- * @brief Data structure containing timestamp, offset and size of a record in
- * the block.
- */
-struct PACKED RecordIndex {
-  timestamp_t timestamp;
-  std::size_t offset;
-  std::size_t size;
-};
-
-/**
- * @brief Functor to compare timestamps of two record indecies. It is used to
- * chronologically order indecies.
- *
- */
-class RecordIndexCompare {
- public:
-  bool operator()(const RecordIndex& lhs, const RecordIndex& rhs) const {
-    return lhs.timestamp >= rhs.timestamp;
-  }
-};
-
-}  // namespace
 
 // -------------------------------------------------------------
 // BlockBuilder
@@ -133,25 +101,25 @@ class BlockBuilder::Impl {
     reset();
   }
 
+  const BlockHeader& header() const {
+    return *reinterpret_cast<const BlockHeader*>(buffer_.data());
+  }
+
+  const uint8_t* body() const { return buffer_.data() + sizeof(BlockHeader); }
+
+  const RecordIndex& recordIndex(const std::size_t head) const {
+    return *reinterpret_cast<const RecordIndex*>(body() + head);
+  }
+
  private:
   BlockHeader& header() {
     return *reinterpret_cast<BlockHeader*>(buffer_.data());
   }
 
-  const BlockHeader& header() const {
-    return *reinterpret_cast<const BlockHeader*>(buffer_.data());
-  }
-
   uint8_t* body() { return buffer_.data() + sizeof(BlockHeader); }
-
-  const uint8_t* body() const { return buffer_.data() + sizeof(BlockHeader); }
 
   RecordIndex& recordIndex(const std::size_t head) {
     return *reinterpret_cast<RecordIndex*>(body() + head);
-  }
-
-  const RecordIndex& recordIndex(const std::size_t head) const {
-    return *reinterpret_cast<const RecordIndex*>(body() + head);
   }
 
   std::size_t freeSpace() const {
@@ -192,115 +160,6 @@ bool BlockBuilder::add(const timestamp_t timestamp, const void* const src,
 }
 
 void BlockBuilder::flush(const File& file) { impl_->flush(file); }
-
-// -------------------------------------------------------------
-
-// -------------------------------------------------------------
-// BlockReader
-// -------------------------------------------------------------
-
-class BlockReader::Impl {
-  friend class BlockReader::Iterator;
-
- public:
-  explicit Impl(const File& file) : buffer_(file.size()) {
-    file.read(buffer_.data(), buffer_.size(), 0);
-  }
-
-  std::size_t count() const { return header().count; }
-
-  timestamp_t startTimestamp() const { return header().start_timestamp; }
-
-  timestamp_t endTimestamp() const { return header().end_timestamp; }
-
- private:
-  const BlockHeader& header() const {
-    return *reinterpret_cast<const BlockHeader*>(buffer_.data());
-  }
-
-  const uint8_t* body() const { return buffer_.data() + sizeof(BlockHeader); }
-
-  const RecordIndex& recordIndex(const std::size_t head) const {
-    return *reinterpret_cast<const RecordIndex*>(body() + head);
-  }
-
-  std::vector<uint8_t> buffer_;
-};
-
-// ---
-
-// private
-void BlockReader::Iterator::next() {
-  // Do nothing if we are already at the end.
-  if (index_ == reader_->count()) {
-    return;
-  }
-  ++index_;
-  updateValue();
-}
-
-// private
-void BlockReader::Iterator::updateValue() {
-  const auto& record_index =
-      reader_->impl_->recordIndex(index_ * sizeof(RecordIndex));
-  value_.first = record_index.timestamp;
-  value_.second.first = reader_->impl_->body() + record_index.offset;
-  value_.second.second = record_index.size;
-}
-
-// private
-BlockReader::Iterator::Iterator(const BlockReader& reader,
-                                const std::size_t index)
-    : reader_(std::addressof(reader)), index_(index) {
-  updateValue();
-}
-
-BlockReader::Iterator& BlockReader::Iterator::operator++() {
-  next();
-  return *this;
-}
-
-BlockReader::Iterator BlockReader::Iterator::operator++(int) {
-  Iterator it = *this;
-  next();
-
-  return it;
-}
-
-bool BlockReader::Iterator::operator==(const Iterator& other) const {
-  return index_ == other.index_ && reader_ == other.reader_;
-}
-
-bool BlockReader::Iterator::operator!=(const Iterator& other) const {
-  return !(*this == other);
-}
-
-const BlockReader::Iterator::value_type* BlockReader::Iterator::operator->()
-    const {
-  return std::addressof(value_);
-}
-
-const BlockReader::Iterator::value_type& BlockReader::Iterator::operator*()
-    const {
-  return value_;
-}
-
-BlockReader::BlockReader(const File& file)
-    : impl_(std::make_shared<Impl>(file)) {}
-
-std::size_t BlockReader::count() const { return impl_->count(); }
-
-timestamp_t BlockReader::startTimestamp() const {
-  return impl_->startTimestamp();
-}
-
-timestamp_t BlockReader::endTimestamp() const { return impl_->endTimestamp(); }
-
-BlockReader::Iterator BlockReader::begin() const { return Iterator(*this, 0); }
-
-BlockReader::Iterator BlockReader::end() const {
-  return Iterator(*this, impl_->count());
-}
 
 // -------------------------------------------------------------
 

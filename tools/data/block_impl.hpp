@@ -14,40 +14,35 @@
  * limitations under the License.
  */
 
-#include "tools/data/writer.hpp"
+#pragma once
 
-#include <cassert>
+#include "tools/data/common.hpp"
 
 namespace inspector {
 namespace tools {
 namespace data {
 
-Writer::Writer(const std::string& path, const std::size_t block_size)
-    : path_(path), builder_(block_size), num_blocks_(0) {}
+/**
+ * @brief Data structure representing a block header. It contains information on
+ * the number of records in the block alsong with the oldest and latest
+ * timestamps.
+ */
+struct PACKED BlockHeader {
+  std::size_t count;
+  timestamp_t start_timestamp;
+  timestamp_t end_timestamp;
+};
 
-Writer::~Writer() { flush(); }
-
-void Writer::write(const timestamp_t timestamp, const void* const src,
-                   const std::size_t size) {
-  if (builder_.add(timestamp, src, size)) {
-    return;
-  }
-
-  flush();
-  assert(builder_.count() == 0);
-  builder_.add(timestamp, src, size);
-}
-
-void Writer::flush() {
-  if (builder_.count() == 0) {
-    return;
-  }
-
-  File file(std::to_string(num_blocks_), path_);
-  builder_.flush(file);
-  file.sync();
-  ++num_blocks_;
-}
+/**
+ * @brief Data structure represents a index to a record in a block. It contains
+ * information on timestamp, offset and size of a record in the block. Indecies
+ * are stored right after the block header and in chronological order.
+ */
+struct PACKED RecordIndex {
+  timestamp_t timestamp;
+  std::size_t offset;
+  std::size_t size;
+};
 
 }  // namespace data
 }  // namespace tools

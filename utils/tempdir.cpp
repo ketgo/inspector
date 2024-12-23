@@ -87,6 +87,27 @@ std::string TempDir::readFile(const std::string& path, const size_t offset,
   return data;
 }
 
+std::vector<std::string> TempDir::listFiles(const bool recursive) const {
+  std::vector<std::string> files;
+
+  if (recursive) {
+    for (auto& entry : boost::filesystem::recursive_directory_iterator(
+             boost::filesystem::path(path_))) {
+      if (!boost::filesystem::is_regular_file(entry)) {
+        continue;
+      }
+      files.emplace_back(entry.path().string());
+    }
+  } else {
+    for (auto& entry : boost::filesystem::directory_iterator(
+             boost::filesystem::path(path_))) {
+      files.emplace_back(entry.path().string());
+    }
+  }
+
+  return files;
+}
+
 TempDir::operator std::string() const { return path(); }
 
 // --------------------------

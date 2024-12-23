@@ -44,14 +44,16 @@ constexpr int kNullFileDescriptor = -1;
 int openFile(const std::string& name, const std::string& path) {
   auto status = ::mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
   if (!status && status != EEXIST) {
-    throw std::system_error(errno, std::generic_category(),
-                            "Error calling 'mkdir': ");
+    throw std::system_error(
+        errno, std::generic_category(),
+        "Error calling 'mkdir' for directory '" + path + "': ");
   }
-  auto fd = ::open((path + "/" + name).c_str(), O_CREAT | O_RDWR,
+  const auto file = path + "/" + name;
+  auto fd = ::open(file.c_str(), O_CREAT | O_RDWR,
                    S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
   if (fd < 0) {
     throw std::system_error(errno, std::generic_category(),
-                            "Error calling 'open': ");
+                            "Error calling 'open' for file '" + file + "': ");
   }
   return fd;
 }

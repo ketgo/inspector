@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "tools/data/block.hpp"
+#include "tools/data/block_builder.hpp"
 
 namespace inspector {
 namespace tools {
@@ -45,11 +45,27 @@ class Writer final {
    */
   Writer(const std::string& path, const std::size_t block_size);
 
+  /**
+   * @brief Destory writer object.
+   *
+   * As part of DTOR flush is called.
+   */
   ~Writer();
 
+  /**
+   * @brief Write given record.
+   *
+   * @param timestamp Timestamp associated with the record.
+   * @param src Starting memory address of the record.
+   * @param size Size of the record in bytes.
+   */
   void write(const timestamp_t timestamp, const void* const src,
              const std::size_t size);
 
+  /**
+   * @brief Flush all contents to disk.
+   *
+   */
   void flush();
 
  private:

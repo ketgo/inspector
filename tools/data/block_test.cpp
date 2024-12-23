@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "tools/data/block.hpp"
-
 #include <gtest/gtest.h>
 
 #include <cstring>
 
+#include "tools/data/block_builder.hpp"
+#include "tools/data/block_reader.hpp"
 #include "tools/data/testing.hpp"
 
 using namespace inspector::tools;

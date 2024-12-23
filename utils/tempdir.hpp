@@ -17,6 +17,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace utils {
 
@@ -104,6 +105,14 @@ class TempDir {
    */
   std::string readFile(const std::string& path, const size_t offset,
                        const size_t num) const;
+
+  /**
+   * @brief List all files in the directory.
+   *
+   * @param recursive Flag to list files in subdirectories.
+   * @returns List of file paths.
+   */
+  std::vector<std::string> listFiles(const bool recursive = false) const;
 
   /**
    * @brief Cast as string to get the path of the directory.

@@ -13,3 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include "tools/data/writer.hpp"
+
+#include <gtest/gtest.h>
+
+#include <cstring>
+
+#include "tools/data/testing.hpp"
+
+using namespace inspector::tools;
+
+namespace {
+constexpr auto kBlockSize = 1024;
+}
+
+class WriterTestFixture : public data::TestHarness, public ::testing::Test {};
+
+TEST_F(WriterTestFixture, TestWrite) {
+  constexpr auto kRecordCount = 1000;
+
+  data::Writer writer(tempDir().path(), kBlockSize);
+
+  std::size_t total_size = 0;
+  for (auto i = 0; i < kRecordCount; ++i) {
+    data::timestamp_t timestamp = i * 100 + 1;
+    std::string record = "test-data-" + std::to_string(i);
+    writer.write(timestamp, record.data(), record.size());
+    total_size += record.size();
+  }
+  writer.flush();
+
+  ASSERT_GE(tempDir().listFiles().size(), total_size / kBlockSize);
+}
