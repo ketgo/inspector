@@ -26,7 +26,7 @@
 
 namespace inspector {
 namespace tools {
-namespace data {
+namespace storage {
 
 /**
  * @brief Test harness containing utility methods for unit testing. The harness
@@ -56,6 +56,6 @@ class TestHarness {
   const utils::TempDir temp_dir_;
 };
 
-}  // namespace data
+}  // namespace storage
 }  // namespace tools
 }  // namespace inspector

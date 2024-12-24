@@ -16,34 +16,23 @@
 
 #pragma once
 
-#include "tools/data/common.hpp"
+#include <cstdint>
 
 namespace inspector {
 namespace tools {
-namespace data {
+namespace storage {
+
+using ChecksumType = uint32_t;
 
 /**
- * @brief Data structure representing a block header. It contains information on
- * the number of records in the block alsong with the oldest and latest
- * timestamps.
+ * @brief Compute checksum for the given memory span.
+ *
+ * @param src Starting address of the memory span to compute checksum.
+ * @param size Size in bytes of the memory span.
+ * @returns CHecksum value.
  */
-struct PACKED BlockHeader {
-  std::size_t count;
-  timestamp_t start_timestamp;
-  timestamp_t end_timestamp;
-};
+ChecksumType checksum(const void* src, const std::size_t size);
 
-/**
- * @brief Data structure represents a index to a record in a block. It contains
- * information on timestamp, offset and size of a record in the block. Indecies
- * are stored right after the block header and in chronological order.
- */
-struct PACKED RecordIndex {
-  timestamp_t timestamp;
-  std::size_t offset;
-  std::size_t size;
-};
-
-}  // namespace data
+}  // namespace storage
 }  // namespace tools
 }  // namespace inspector

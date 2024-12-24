@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "tools/data/block_builder.hpp"
+#include "tools/common/storage/block_builder.hpp"
 
 #include <cassert>
 #include <cstring>
@@ -22,11 +22,11 @@
 #include <queue>
 #include <vector>
 
-#include "tools/data/block_impl.hpp"
+#include "tools/common/storage/block_impl.hpp"
 
 namespace inspector {
 namespace tools {
-namespace data {
+namespace storage {
 
 // -------------------------------------------------------------
 // BlockBuilder
@@ -40,10 +40,6 @@ class BlockBuilder::Impl {
   }
 
   std::size_t count() const { return header().count; }
-
-  timestamp_t startTimestamp() const { return header().start_timestamp; }
-
-  timestamp_t endTimestamp() const { return header().end_timestamp; }
 
   bool add(const timestamp_t timestamp, const void* const src,
            const std::size_t size) {
@@ -84,13 +80,7 @@ class BlockBuilder::Impl {
       head = prev;
     }
 
-    // Updating header
     header().count += 1;
-    header().start_timestamp = header().start_timestamp > timestamp
-                                   ? timestamp
-                                   : header().start_timestamp;
-    header().end_timestamp =
-        header().end_timestamp < timestamp ? timestamp : header().end_timestamp;
 
     return true;
   }
@@ -98,6 +88,7 @@ class BlockBuilder::Impl {
   void flush(const File& file) {
     std::memset(body() + index_head_, 0, freeSpace());
     file.write(buffer_.data(), buffer_.size(), 0);
+    file.sync();
     reset();
   }
 
@@ -129,8 +120,6 @@ class BlockBuilder::Impl {
 
   void reset() {
     header().count = 0;
-    header().start_timestamp = std::numeric_limits<timestamp_t>::max();
-    header().end_timestamp = std::numeric_limits<timestamp_t>::min();
     // NOTE: Head values are offseted from body not start of buffer.
     index_head_ = 0;
     record_head_ = buffer_.size() - sizeof(BlockHeader);
@@ -148,12 +137,6 @@ BlockBuilder::BlockBuilder(const std::size_t block_size)
 
 std::size_t BlockBuilder::count() const { return impl_->count(); }
 
-timestamp_t BlockBuilder::startTimestamp() const {
-  return impl_->startTimestamp();
-}
-
-timestamp_t BlockBuilder::endTimestamp() const { return impl_->endTimestamp(); }
-
 bool BlockBuilder::add(const timestamp_t timestamp, const void* const src,
                        const std::size_t size) {
   return impl_->add(timestamp, src, size);
@@ -163,6 +146,6 @@ void BlockBuilder::flush(const File& file) { impl_->flush(file); }
 
 // -------------------------------------------------------------
 
-}  // namespace data
+}  // namespace storage
 }  // namespace tools
 }  // namespace inspector

@@ -14,30 +14,35 @@
  * limitations under the License.
  */
 
-#include "tools/data/file_io.hpp"
+#include "tools/common/storage/file_io.hpp"
 
 #include <gtest/gtest.h>
 
-#include "tools/data/testing.hpp"
+#include "tools/common/storage/testing.hpp"
 
-using namespace inspector::tools;
+using namespace inspector::tools::storage;
 
 namespace {
 
-constexpr auto kTestDataFile = "tools/data/file_io_test.data";
+constexpr auto kTestDataFile = "tools/common/storage/file_io_test.data";
 constexpr auto kTestDataFileSize = 7;  // bytes
 
 }  // namespace
 
-class FileIOTestFixture : public data::TestHarness, public ::testing::Test {
+class FileIOTestFixture : public TestHarness, public ::testing::Test {
  protected:
   static constexpr auto kTestFile = "file_io_test.data";
 
   void SetUp() override { tempDir().copyFile(kTestDataFile, kTestFile); }
 };
 
+TEST_F(FileIOTestFixture, TestExists) {
+  ASSERT_FALSE(File::exists("no_exist.data", tempDir().path()));
+  ASSERT_TRUE(File::exists(kTestFile, tempDir().path()));
+}
+
 TEST_F(FileIOTestFixture, TestCtorAndRemove) {
-  auto file = data::File("temp_test.data", tempDir().path());
+  auto file = File("temp_test.data", tempDir().path());
   // Asserts that file exists
   ASSERT_TRUE(tempDir().fileExists("temp_test.data"));
 
@@ -47,7 +52,7 @@ TEST_F(FileIOTestFixture, TestCtorAndRemove) {
 }
 
 TEST_F(FileIOTestFixture, TestReadAndWrite) {
-  auto file = data::File(kTestFile, tempDir().path());
+  auto file = File(kTestFile, tempDir().path());
 
   ASSERT_EQ(file.size(), kTestDataFileSize);
 
@@ -62,7 +67,7 @@ TEST_F(FileIOTestFixture, TestReadAndWrite) {
 }
 
 TEST_F(FileIOTestFixture, TestResize) {
-  auto file = data::File(kTestFile, tempDir().path());
+  auto file = File(kTestFile, tempDir().path());
 
   ASSERT_EQ(file.size(), kTestDataFileSize);
   file.resize(10);

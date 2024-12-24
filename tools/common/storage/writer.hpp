@@ -16,11 +16,10 @@
 
 #pragma once
 
-#include <cstdint>
+#include <memory>
 #include <string>
-#include <vector>
 
-#include "tools/data/block_builder.hpp"
+#include "tools/common/storage/common.hpp"
 
 namespace inspector {
 namespace tools {
@@ -33,9 +32,6 @@ namespace data {
  */
 class Writer final {
  public:
-  Writer(const Writer& other) = delete;
-  Writer& operator=(const Writer& other) = delete;
-
   /**
    * @brief Construct a new writer.
    *
@@ -69,9 +65,8 @@ class Writer final {
   void flush();
 
  private:
-  const std::string& path_;
-  BlockBuilder builder_;
-  std::size_t num_blocks_;
+  class Impl;
+  std::shared_ptr<Impl> impl_;
 };
 
 }  // namespace data

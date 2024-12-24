@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "tools/reader/reader.hpp"
+#include "tools/common/reader/reader.hpp"
 
 #include <iostream>
 

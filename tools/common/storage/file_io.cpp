@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "tools/data/file_io.hpp"
+#include "tools/common/storage/file_io.hpp"
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -25,7 +25,7 @@
 
 namespace inspector {
 namespace tools {
-namespace data {
+namespace storage {
 namespace {
 
 /**
@@ -59,6 +59,14 @@ int openFile(const std::string& name, const std::string& path) {
 }
 
 }  // namespace
+
+// static
+bool File::exists(const std::string& name, const std::string& path) {
+  const std::string file = path + "/" + name;
+
+  struct stat buffer;
+  return ::stat(file.c_str(), &buffer) == 0;
+}
 
 File::File(const std::string& name, const std::string& path)
     : path_(path + "/" + name), fd_(openFile(name, path)) {}
@@ -129,6 +137,8 @@ void File::remove() const {
   }
 }
 
-}  // namespace data
+const std::string& File::path() const { return path_; }
+
+}  // namespace storage
 }  // namespace tools
 }  // namespace inspector

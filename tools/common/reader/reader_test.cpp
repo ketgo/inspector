@@ -20,7 +20,7 @@
 #include <inspector/trace.hpp>
 
 #include "cpp/tests/testing.hpp"
-#include "tools/reader/reader.hpp"
+#include "tools/common/reader/reader.hpp"
 
 using namespace inspector;
 

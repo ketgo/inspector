@@ -16,29 +16,21 @@
 
 #pragma once
 
-#include <memory>
+#include <queue>
 #include <string>
+#include <vector>
 
-#include "tools/data/common.hpp"
-#include "tools/data/file_io.hpp"
+#include "tools/common/storage/block_reader.hpp"
+#include "tools/common/storage/common.hpp"
 
 namespace inspector {
 namespace tools {
 namespace data {
 
-/**
- * @brief The class `BlockReader` exposes API to read records stored in a block.
- * Reading of records is performed using iterators.
- *
- */
-class BlockReader {
+class Reader {
  public:
-  /**
-   * @brief Forward only iterator for reading records in a block.
-   *
-   */
   class Iterator {
-    friend class BlockReader;
+    friend class Reader;
 
    public:
     using value_type =
@@ -51,57 +43,51 @@ class BlockReader {
     bool operator!=(const Iterator& other) const;
     const value_type* operator->() const;
     const value_type& operator*() const;
+    std::size_t numBlocks() const;
 
    private:
-    Iterator(const BlockReader& reader, const std::size_t index);
+    Iterator(const Reader& reader, const bool begin = true);
 
     void next();
-    void updateValue();
+    void createBlockReaders();
+    bool updateValue();
 
-    const BlockReader* reader_;
-    std::size_t index_;
+    const Reader* reader_;
 
+    struct _BlockReader {
+      BlockReader reader;
+      BlockReader::Iterator iterator;
+
+      explicit _BlockReader(const BlockReader& _reader);
+    };
+
+    struct _BlockReaderCompare {
+      bool operator()(const _BlockReader& lhs, const _BlockReader& rhs) const;
+    };
+
+    using BlockReaderQueue =
+        std::priority_queue<_BlockReader, std::vector<_BlockReader>,
+                            _BlockReaderCompare>;
+    BlockReaderQueue queue_;
+    std::size_t num_blocks_;
     value_type value_;
   };
 
-  explicit BlockReader(const File& file);
+  enum class ReadMode : uint8_t {
+    kAlwaysChronological,
+    kAlmostChronological,
+  };
 
-  /**
-   * @brief Get the number of records in the block.
-   *
-   * @returns Number of records.
-   */
-  std::size_t count() const;
+  Reader(const std::string& path, const std::size_t max_blocks = 1024,
+         const ReadMode mode = ReadMode::kAlwaysChronological);
 
-  /**
-   * @brief Get the timestamp of the oldest record in the block.
-   *
-   * @returns Oldest timestamp in the block.
-   */
-  timestamp_t startTimestamp() const;
-
-  /**
-   * @brief Get the timestamp of the earliest record in the block.
-   *
-   * @returns Earliest timestamp in the block.
-   */
-  timestamp_t endTimestamp() const;
-
-  /**
-   * @brief Get iterator to the first record.
-   *
-   */
   Iterator begin() const;
-
-  /**
-   * @brief Get iterator to one past last record.
-   *
-   */
   Iterator end() const;
 
  private:
-  class Impl;
-  std::shared_ptr<Impl> impl_;
+  const std::string path_;
+  const std::size_t max_blocks_;
+  const ReadMode mode_;
 };
 
 }  // namespace data

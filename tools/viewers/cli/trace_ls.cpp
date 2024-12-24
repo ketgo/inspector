@@ -29,7 +29,7 @@
 #include <inspector/trace.hpp>
 #include <inspector/trace_event.hpp>
 
-#include "tools/reader/reader.hpp"
+#include "tools/common/reader/reader.hpp"
 
 DEFINE_int64(timeout, inspector::Reader::defaultTimeout().count(),
              "Read timeout in microseconds when waiting for trace events.");

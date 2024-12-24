@@ -14,41 +14,37 @@
  * limitations under the License.
  */
 
-#include "tools/data/writer.hpp"
+#include "tools/common/storage/testing.hpp"
 
-#include <cassert>
+#include <boost/filesystem.hpp>
+#include <iostream>
 
 namespace inspector {
 namespace tools {
-namespace data {
+namespace storage {
 
-Writer::Writer(const std::string& path, const std::size_t block_size)
-    : path_(path), builder_(block_size), num_blocks_(0) {}
+namespace {
 
-Writer::~Writer() { flush(); }
-
-void Writer::write(const timestamp_t timestamp, const void* const src,
-                   const std::size_t size) {
-  if (builder_.add(timestamp, src, size)) {
-    return;
-  }
-
-  flush();
-  assert(builder_.count() == 0);
-  builder_.add(timestamp, src, size);
+/**
+ * @brief Construct a path to a temporary directory.
+ *
+ */
+std::string tempPath() {
+  auto path = utils::currentDir() / boost::filesystem::path("_tmp") /
+              boost::filesystem::unique_path();
+  return path.string();
 }
 
-void Writer::flush() {
-  if (builder_.count() == 0) {
-    return;
-  }
+}  // namespace
 
-  File file(std::to_string(num_blocks_), path_);
-  builder_.flush(file);
-  file.sync();
-  ++num_blocks_;
+TestHarness::TestHarness(const bool remove) : temp_dir_(tempPath(), remove) {
+  if (!remove) {
+    std::cout << "Temporary Test Data Directoy: " << temp_dir_.path() << "\n";
+  }
 }
 
-}  // namespace data
+const utils::TempDir& TestHarness::tempDir() const { return temp_dir_; }
+
+}  // namespace storage
 }  // namespace tools
 }  // namespace inspector

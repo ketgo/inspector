@@ -14,37 +14,10 @@
  * limitations under the License.
  */
 
-#include "tools/data/testing.hpp"
-
-#include <boost/filesystem.hpp>
-#include <iostream>
+#pragma once
 
 namespace inspector {
 namespace tools {
-namespace data {
-
-namespace {
-
-/**
- * @brief Construct a path to a temporary directory.
- *
- */
-std::string tempPath() {
-  auto path = utils::currentDir() / boost::filesystem::path("_tmp") /
-              boost::filesystem::unique_path();
-  return path.string();
-}
-
-}  // namespace
-
-TestHarness::TestHarness(const bool remove) : temp_dir_(tempPath(), remove) {
-  if (!remove) {
-    std::cout << "Temporary Test Data Directoy: " << temp_dir_.path() << "\n";
-  }
-}
-
-const utils::TempDir& TestHarness::tempDir() const { return temp_dir_; }
-
-}  // namespace data
+namespace storage {}
 }  // namespace tools
 }  // namespace inspector

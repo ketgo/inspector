@@ -28,6 +28,16 @@ namespace utils {
  * @tparam ChronoUnitType Unit type of the delay.
  */
 template <class ChronoUnitType = std::chrono::microseconds>
-using RandomDelayGenerator = RandomNumberGenerator<ChronoUnitType>;
+class RandomDelayGenerator : public RandomNumberGenerator<std::size_t> {
+  using RandomNumberGenerator<std::size_t>::RandomNumberGenerator;
+
+ public:
+  ChronoUnitType operator()();
+};
+
+template <class ChronoUnitType>
+ChronoUnitType RandomDelayGenerator<ChronoUnitType>::operator()() {
+  return ChronoUnitType{RandomNumberGenerator::operator()};
+}
 
 }  // namespace utils

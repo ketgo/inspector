@@ -20,12 +20,14 @@
 
 namespace inspector {
 namespace tools {
-namespace data {
+namespace storage {
 
 using timestamp_t = int64_t;
 using duration_t = uint64_t;
 
-}  // namespace data
+constexpr auto kFileExtension = ".inspector";
+
+}  // namespace storage
 }  // namespace tools
 }  // namespace inspector
 

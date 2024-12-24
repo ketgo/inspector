@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "tools/data/writer.hpp"
-
 #include <gtest/gtest.h>
 
 #include <cstring>
 
-#include "tools/data/testing.hpp"
+#include "tools/common/storage/reader.hpp"
+#include "tools/common/storage/testing.hpp"
+#include "tools/common/storage/writer.hpp"
 
 using namespace inspector::tools;
 
@@ -28,9 +28,9 @@ namespace {
 constexpr auto kBlockSize = 1024;
 }
 
-class WriterTestFixture : public data::TestHarness, public ::testing::Test {};
+class StorageTestFixture : public data::TestHarness, public ::testing::Test {};
 
-TEST_F(WriterTestFixture, TestWrite) {
+TEST_F(StorageTestFixture, TestWriteAndRead) {
   constexpr auto kRecordCount = 1000;
 
   data::Writer writer(tempDir().path(), kBlockSize);
@@ -45,4 +45,25 @@ TEST_F(WriterTestFixture, TestWrite) {
   writer.flush();
 
   ASSERT_GE(tempDir().listFiles().size(), total_size / kBlockSize);
+
+  data::Reader reader{tempDir().path()};
+  std::size_t count = 0;
+  auto it = reader.begin();
+  while (count < 30) {
+    ASSERT_NE(it, reader.end());
+    std::cout << "[" << it->first << "] - "
+              << std::string{reinterpret_cast<const char*>(it->second.first),
+                             it->second.second}
+              << "\n";
+    ++it;
+    ++count;
+  }
+
+  // for (const auto& entry : reader) {
+  //   std::cout << "[" << entry.first << "] - "
+  //            << std::string{reinterpret_cast<const
+  //            char*>(entry.second.first),
+  //                           entry.second.second}
+  //            << "\n";
+  //}
 }

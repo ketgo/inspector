@@ -23,7 +23,7 @@
 
 #include <inspector/trace_event.hpp>
 
-#include "tools/reader/priority_queue.hpp"
+#include "tools/common/reader/priority_queue.hpp"
 
 namespace inspector {
 

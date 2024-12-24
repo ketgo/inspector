@@ -19,12 +19,12 @@
 #include <memory>
 #include <string>
 
-#include "tools/data/common.hpp"
-#include "tools/data/file_io.hpp"
+#include "tools/common/storage/common.hpp"
+#include "tools/common/storage/file_io.hpp"
 
 namespace inspector {
 namespace tools {
-namespace data {
+namespace storage {
 
 /**
  * @brief The class `BlockBuilder` exposes API to create a block of
@@ -46,20 +46,6 @@ class BlockBuilder {
    * @returns Number of records.
    */
   std::size_t count() const;
-
-  /**
-   * @brief Get the timestamp of the oldest record in the block.
-   *
-   * @returns Oldest timestamp in the block.
-   */
-  timestamp_t startTimestamp() const;
-
-  /**
-   * @brief Get the timestamp of the earliest record in the block.
-   *
-   * @returns Earliest timestamp in the block.
-   */
-  timestamp_t endTimestamp() const;
 
   /**
    * @brief Add the given record in the block.
@@ -86,6 +72,6 @@ class BlockBuilder {
   std::shared_ptr<Impl> impl_;
 };
 
-}  // namespace data
+}  // namespace storage
 }  // namespace tools
 }  // namespace inspector

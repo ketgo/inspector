@@ -18,11 +18,11 @@
 
 #include <string>
 
-#include "tools/data/common.hpp"
+#include "tools/common/storage/common.hpp"
 
 namespace inspector {
 namespace tools {
-namespace data {
+namespace storage {
 
 /**
  * @brief The class `File` represents a block file on disk and can be used to
@@ -35,6 +35,15 @@ namespace data {
 class File final {
  public:
   NO_COPY(File);
+
+  /**
+   * @brief Check if a file with given name and path exists.
+   *
+   * @param name Constant reference to the file name.
+   * @param path Constant reference to the path to the file excluding file name.
+   * @returns `true` if exists else `false`.
+   */
+  static bool exists(const std::string& name, const std::string& path = ".");
 
   /**
    * @brief Construct a new File object.
@@ -117,11 +126,17 @@ class File final {
    */
   void remove() const;
 
+  /**
+   * @brief Get path to file.
+   *
+   */
+  const std::string& path() const;
+
  private:
   std::string path_;
   int fd_;
 };
 
-}  // namespace data
+}  // namespace storage
 }  // namespace tools
 }  // namespace inspector

@@ -20,6 +20,28 @@ cc_library(
 )
 
 cc_library(
+    name = "checksum", 
+    srcs = [
+        "checksum.cpp",
+    ],
+    hdrs = [
+        "checksum.hpp",
+    ],
+    deps= []
+)
+
+cc_test(
+    name = "checksum_test",
+    srcs = [
+        "checksum_test.cpp",
+    ],
+    deps = [
+        ":checksum",
+        "@gtest//:gtest_main",
+    ]
+)
+
+cc_library(
     name = "testing",
     srcs = [
         "testing.cpp",
@@ -101,6 +123,7 @@ cc_test(
         ":block_builder",
         ":block_reader",
         ":testing",
+        "//utils:random",
         "@gtest//:gtest_main",
     ],
 )
@@ -110,6 +133,7 @@ cc_library(
     srcs = [
         "writer.cpp",
     ],
+    visibility = ["//visibility:public"],
     hdrs = [
         "writer.hpp",
     ],
@@ -120,13 +144,30 @@ cc_library(
     ],
 )
 
-cc_test(
-    name = "writer_test",
+cc_library(
+    name = "reader",
     srcs = [
-        "writer_test.cpp",
+        "reader.cpp",
+    ],
+    hdrs = [
+        "reader.hpp",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":block_reader",
+        ":common",
+        ":file_io"
+    ],
+)
+
+cc_test(
+    name = "storage_test",
+    srcs = [
+        "storage_test.cpp",
     ],
     deps = [
         ":writer",
+        ":reader",
         ":testing",
         "@gtest//:gtest_main",
     ],

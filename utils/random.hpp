@@ -34,7 +34,7 @@ class RandomNumberGenerator {
    * @param min Minimum possible value.
    * @param max Maximum possible value.
    */
-  RandomNumberGenerator(const size_t min, const size_t max);
+  RandomNumberGenerator(const T min, const T max);
 
   /**
    * @brief Generate random number.
@@ -44,7 +44,7 @@ class RandomNumberGenerator {
 
  private:
   std::mt19937_64 eng_;
-  std::uniform_int_distribution<size_t> dist_;
+  std::uniform_int_distribution<T> dist_;
 };
 
 // ------------------------------------
@@ -52,8 +52,7 @@ class RandomNumberGenerator {
 // ------------------------------------
 
 template <class T>
-RandomNumberGenerator<T>::RandomNumberGenerator(const size_t min,
-                                                const size_t max)
+RandomNumberGenerator<T>::RandomNumberGenerator(const T min, const T max)
     : eng_(std::random_device{}()), dist_(min, max) {}
 
 template <class T>

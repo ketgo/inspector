@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "tools/data/block_reader.hpp"
+#include "tools/common/storage/block_reader.hpp"
 
 #include <cassert>
 #include <cstring>
@@ -22,11 +22,11 @@
 #include <queue>
 #include <vector>
 
-#include "tools/data/block_impl.hpp"
+#include "tools/common/storage/block_impl.hpp"
 
 namespace inspector {
 namespace tools {
-namespace data {
+namespace storage {
 
 // -------------------------------------------------------------
 // BlockReader
@@ -34,15 +34,13 @@ namespace data {
 
 class BlockReader::Impl {
  public:
-  explicit Impl(const File& file) : buffer_(file.size()) {
+  explicit Impl(const File& file) : path_(file.path()), buffer_(file.size()) {
     file.read(buffer_.data(), buffer_.size(), 0);
   }
 
+  const std::string& path() const { return path_; }
+
   std::size_t count() const { return header().count; }
-
-  timestamp_t startTimestamp() const { return header().start_timestamp; }
-
-  timestamp_t endTimestamp() const { return header().end_timestamp; }
 
   const BlockHeader& header() const {
     return *reinterpret_cast<const BlockHeader*>(buffer_.data());
@@ -55,6 +53,7 @@ class BlockReader::Impl {
   }
 
  private:
+  const std::string path_;
   std::vector<uint8_t> buffer_;
 };
 
@@ -62,8 +61,10 @@ class BlockReader::Impl {
 
 // private
 void BlockReader::Iterator::next() {
+  assert(reader_);
   // Do nothing if we are already at the end.
   if (index_ == reader_->count()) {
+    value_ = {};
     return;
   }
   ++index_;
@@ -72,18 +73,19 @@ void BlockReader::Iterator::next() {
 
 // private
 void BlockReader::Iterator::updateValue() {
-  const auto& record_index =
-      reader_->impl_->recordIndex(index_ * sizeof(RecordIndex));
+  const auto& record_index = reader_->recordIndex(index_ * sizeof(RecordIndex));
   value_.first = record_index.timestamp;
-  value_.second.first = reader_->impl_->body() + record_index.offset;
+  value_.second.first = reader_->body() + record_index.offset;
   value_.second.second = record_index.size;
 }
 
 // private
 BlockReader::Iterator::Iterator(const BlockReader& reader,
                                 const std::size_t index)
-    : reader_(std::addressof(reader)), index_(index) {
-  updateValue();
+    : reader_(reader.impl_.get()), index_(index) {
+  if (index_ < reader_->count()) {
+    updateValue();
+  }
 }
 
 BlockReader::Iterator& BlockReader::Iterator::operator++() {
@@ -99,7 +101,8 @@ BlockReader::Iterator BlockReader::Iterator::operator++(int) {
 }
 
 bool BlockReader::Iterator::operator==(const Iterator& other) const {
-  return index_ == other.index_ && reader_ == other.reader_;
+  return index_ == other.index_ && reader_ && other.reader_ &&
+         reader_->path() == other.reader_->path();
 }
 
 bool BlockReader::Iterator::operator!=(const Iterator& other) const {
@@ -121,12 +124,6 @@ BlockReader::BlockReader(const File& file)
 
 std::size_t BlockReader::count() const { return impl_->count(); }
 
-timestamp_t BlockReader::startTimestamp() const {
-  return impl_->startTimestamp();
-}
-
-timestamp_t BlockReader::endTimestamp() const { return impl_->endTimestamp(); }
-
 BlockReader::Iterator BlockReader::begin() const { return Iterator(*this, 0); }
 
 BlockReader::Iterator BlockReader::end() const {
@@ -135,6 +132,6 @@ BlockReader::Iterator BlockReader::end() const {
 
 // -------------------------------------------------------------
 
-}  // namespace data
+}  // namespace storage
 }  // namespace tools
 }  // namespace inspector

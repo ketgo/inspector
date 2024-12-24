@@ -16,7 +16,7 @@
 
 #include <gtest/gtest.h>
 
-#include "tools/reader/priority_queue.hpp"
+#include "tools/common/reader/priority_queue.hpp"
 
 namespace {
 
