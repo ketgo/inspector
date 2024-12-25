@@ -16,11 +16,11 @@
 
 #include <gflags/gflags.h>
 #include <glog/logging.h>
+#include <stdio.h>
 
 #include <chrono>
 #include <csignal>
 #include <inspector/trace_reader.hpp>
-#include <iostream>
 
 #include "tools/common/storage/storage.hpp"
 
@@ -44,13 +44,14 @@ volatile static std::sig_atomic_t __signal = 0;
 
 void signal_handler(int signal) { __signal = signal; }
 
-void tick() {
+void tick(tools::storage::Writer& writer) {
   while (true) {
     auto event = readTraceEvent();
     if (event.isEmpty()) {
       break;
     }
-    std::cout << event.toJson() << "\n";
+    const auto span = event.span();
+    writer.write({event.timestampNs(), span.first, span.second});
   }
 }
 
@@ -63,10 +64,15 @@ int main(int argc, char* argv[]) {
 
   std::signal(SIGINT, signal_handler);
 
-  LOG(INFO) << "Started monitor";
+  tools::storage::Writer writer(FLAGS_out, kBlockSize);
+  LOG(INFO) << "Starting recorder...";
+  LOG(INFO) << "Recorder started.";
+  // Print to stdout so that the wrapper can know when recording has started.
+  ::printf("Recorder started.\n");
+  ::fflush(stdout);
   while (!__signal) {
     const auto start_time = std::chrono::system_clock::now();
-    tick();
+    tick(writer);
     const unsigned long duration_us =
         (std::chrono::system_clock::now() - start_time).count() / 1000UL;
     if (kTickIntervalUs < duration_us) {
@@ -76,7 +82,11 @@ int main(int argc, char* argv[]) {
       ::usleep(kTickIntervalUs - duration_us);
     }
   }
-  LOG(INFO) << "Stopped monitor";
+  LOG(INFO) << "Stopping recorder...";
+  LOG(INFO) << "Recorder stopped.";
+
+  ::printf("Output: %s\n", FLAGS_out.c_str());
+  ::fflush(stdout);
 
   return 0;
 }

@@ -52,3 +52,6 @@ build:msan --cc_output_directory_tag=msan
 
 # Dont cache test results
 test --cache_test_results=no
+
+# Trace recorder
+run:recorder --run_under="//tools/recorder:wrapper"

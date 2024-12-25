@@ -114,6 +114,14 @@ class TraceEvent {
    */
   std::string toJson() const;
 
+  /**
+   * @brief Get the span of memory containing the event.
+   *
+   * @returns Pair with the first element being starting address and last being
+   * size in bytes.
+   */
+  std::pair<const uint8_t*, std::size_t> span() const;
+
  private:
   std::vector<uint8_t> buffer_;
 };
