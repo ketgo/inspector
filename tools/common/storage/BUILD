@@ -85,32 +85,17 @@ cc_test(
 )
 
 cc_library(
-    name = "block_builder",
+    name = "block",
     srcs = [
-        "block_builder.cpp",
-        "block_impl.hpp",
+        "block.cpp",
     ],
     hdrs = [
-        "block_builder.hpp",
+        "block.hpp",
     ],
     deps = [
         ":common",
-        ":file_io"
-    ],
-)
-
-cc_library(
-    name = "block_reader",
-    srcs = [
-        "block_reader.cpp",
-        "block_impl.hpp",
-    ],
-    hdrs = [
-        "block_reader.hpp",
-    ],
-    deps = [
-        ":common",
-        ":file_io"
+        ":file_io",
+        ":checksum",
     ],
 )
 
@@ -120,8 +105,7 @@ cc_test(
         "block_test.cpp",
     ],
     deps = [
-        ":block_builder",
-        ":block_reader",
+        ":block",
         ":testing",
         "//utils:random",
         "@gtest//:gtest_main",
@@ -129,32 +113,16 @@ cc_test(
 )
 
 cc_library(
-    name = "writer",
+    name = "storage",
     srcs = [
-        "writer.cpp",
+        "storage.cpp",
     ],
     visibility = ["//visibility:public"],
     hdrs = [
-        "writer.hpp",
+        "storage.hpp",
     ],
     deps = [
-        ":block_builder",
-        ":common",
-        ":file_io"
-    ],
-)
-
-cc_library(
-    name = "reader",
-    srcs = [
-        "reader.cpp",
-    ],
-    hdrs = [
-        "reader.hpp",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":block_reader",
+        ":block",
         ":common",
         ":file_io"
     ],
@@ -166,9 +134,9 @@ cc_test(
         "storage_test.cpp",
     ],
     deps = [
-        ":writer",
-        ":reader",
+        ":storage",
         ":testing",
+        "//utils:random",
         "@gtest//:gtest_main",
     ],
 )

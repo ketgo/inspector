@@ -27,6 +27,53 @@ using duration_t = uint64_t;
 
 constexpr auto kFileExtension = ".inspector";
 
+/**
+ * @brief Data structure representing a record stored in storage.
+ *
+ */
+struct Record {
+  timestamp_t timestamp;
+  const void* src;
+  std::size_t size;
+
+  Record() : timestamp(0), src(nullptr), size(0) {}
+
+  Record(const timestamp_t _timestamp, const void* const _src,
+         const std::size_t _size)
+      : timestamp(_timestamp), src(_src), size(_size) {}
+
+  Record(const Record& other)
+      : timestamp(other.timestamp), src(other.src), size(other.size) {}
+
+  Record(Record&& other)
+      : timestamp(other.timestamp), src(other.src), size(other.size) {
+    other.timestamp = 0;
+    other.src = nullptr;
+    other.size = 0;
+  }
+
+  Record& operator=(const Record& other) {
+    if (this != &other) {
+      timestamp = other.timestamp;
+      src = other.src;
+      size = other.size;
+    }
+    return *this;
+  }
+
+  Record& operator=(Record&& other) {
+    if (this != &other) {
+      timestamp = other.timestamp;
+      src = other.src;
+      size = other.size;
+      other.timestamp = 0;
+      other.src = nullptr;
+      other.size = 0;
+    }
+    return *this;
+  }
+};
+
 }  // namespace storage
 }  // namespace tools
 }  // namespace inspector

@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-#include "tools/common/storage/internal/checksum.hpp"
+#include "tools/common/storage/checksum.hpp"
 
 namespace inspector {
 namespace tools {
 namespace storage {
-namespace internal {
 namespace {
 
 constexpr uint32_t kMod = 65521;
@@ -41,7 +40,6 @@ uint32_t checksum(const void* src, const std::size_t size) {
   return (b << 16) | a;
 }
 
-}  // namespace internal
 }  // namespace storage
 }  // namespace tools
 }  // namespace inspector
