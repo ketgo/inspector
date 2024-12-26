@@ -16,6 +16,7 @@
 Load dependencies needed for importing inspector.
 """
 
+load("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -33,10 +34,6 @@ def inspector_deps():
             integrity = "sha256-PTKUDpdcStm4umlkDnj1UnB1uuM8ookCdb8muFPAliw=",
             urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v{}/protobuf-{}.tar.gz".format(_PROTO_VERSION, _PROTO_VERSION)],
         )
-
-        load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-
-        protobuf_deps()
 
     if not native.existing_rule("com_github_gflags_gflags"):
         http_archive(
@@ -62,7 +59,7 @@ def inspector_deps():
         )
 
     if not native.existing_rule("com_github_nelhage_rules_boost"):
-        RULES_BOOST_COMMIT = "ce2b65fd6d1494aadb2d8c99ce26aa222ab72486"
+        _RULES_BOOST_COMMIT = "ce2b65fd6d1494aadb2d8c99ce26aa222ab72486"
 
         http_archive(
             name = "com_github_nelhage_rules_boost",
@@ -72,10 +69,6 @@ def inspector_deps():
                 "https://github.com/nelhage/rules_boost/archive/%s.tar.gz" % _RULES_BOOST_COMMIT,
             ],
         )
-
-        load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
-
-        boost_deps()
 
     if not native.existing_rule("perfetto"):
         _PERFETTO_VERSION="48.1"

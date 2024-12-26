@@ -15,7 +15,7 @@
  */
 
 /**
- * The `trace_ls` utility is a CLI script to print all captured trace events to
+ * The `shm_trace_ls` utility is a CLI script to print all captured trace events to
  * standard output.
  *
  */

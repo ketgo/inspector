@@ -13,14 +13,28 @@
 # limitations under the License.
 
 cc_binary(
-    name = "trace_ls",
+    name = "shm_trace_ls",
     srcs = [
-        "trace_ls.cpp",
+        "shm_trace_ls.cpp",
     ],
     visibility = ["//visibility:public"],
     deps = [
         "//cpp:inspector",
         "//tools/common/reader",
+        "@glog",
+    ],
+)
+
+
+cc_binary(
+    name = "storage_trace_ls",
+    srcs = [
+        "storage_trace_ls.cpp",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cpp:inspector",
+        "//tools/common/storage",
         "@glog",
     ],
 )
