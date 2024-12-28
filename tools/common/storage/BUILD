@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//third_party/pybind11:defs.bzl", "pybind_library")
+
 cc_library(
     name = "common",
     hdrs = [
@@ -138,5 +140,28 @@ cc_test(
         ":testing",
         "//utils:random",
         "@gtest//:gtest_main",
+    ],
+)
+
+
+pybind_library(
+    name = "storage_py",
+    srcs = [
+        "storage_py.cpp",
+    ],
+    soname = "storage_py",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":storage",
+    ],
+)
+
+py_test(
+    name = "storage_py_test",
+    srcs = [
+        "storage_py_test.py",
+    ],
+    deps = [
+        ":storage_py",
     ],
 )

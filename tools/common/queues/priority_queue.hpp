@@ -61,7 +61,14 @@ using ChronologicalPriorityQueue =
 /**
  * @brief Thread-safe priority queue containing chronologically ordered
  * timestamped values where the latest and oldest values have a timestamp
- * difference fall between specified min and max window size.
+ * difference fall between specified min and max window size. There are two
+ * modes of consuming values from the queue: kAlwaysChronological and
+ * kAlmostChronological. In the kAlwaysChronological mode the consumed events
+ * are always in chronological order. In the case where a producer pushes an
+ * earlier event, it will be ignored by the queue. On the other hande, in
+ * kAlmostChronological mode, the pushed event will be put onto the queue such
+ * that the next consume will pop it. This implies the events are mostly
+ * chronological.
  *
  * @tparam T The type of timestamped value. Required to be default
  * constructable.
@@ -91,6 +98,11 @@ class SlidingWindowPriorityQueue {
     kEmpty,
   };
 
+  enum class Mode {
+    kAlwaysChronological = 0,
+    kAlmostChronological = 1,
+  };
+
   /**
    * @brief Construct a new SlidingWindowPriorityQueue object.
    *
@@ -98,9 +110,11 @@ class SlidingWindowPriorityQueue {
    * events is blocked.
    * @param max_window_size Maximum slidding window size above which pusshing of
    * events is blocked.
+   * @param mode Mode in which to operate.
    */
   SlidingWindowPriorityQueue(const duration_t min_window_size,
-                             const duration_t max_window_size);
+                             const duration_t max_window_size,
+                             const Mode mode = Mode::kAlwaysChronological);
 
   /**
    * @brief Destroy the Sliding Window Priority Queue object.
@@ -187,6 +201,7 @@ class SlidingWindowPriorityQueue {
 
   const duration_t min_window_size_;
   const duration_t max_window_size_;
+  const Mode mode_;
   bool closed_;
   timestamp_t lower_;
   timestamp_t upper_;
@@ -216,7 +231,7 @@ SlidingWindowPriorityQueue<T>::waitTillCanPush(
     return Result::kClosed;
   }
 
-  if (timestamp < lower_) {
+  if (timestamp < lower_ && mode_ == Mode::kAlwaysChronological) {
     return Result::kOutOfOrder;
   }
 
@@ -246,9 +261,11 @@ SlidingWindowPriorityQueue<T>::waitTillCanPop(
 
 template <class T>
 SlidingWindowPriorityQueue<T>::SlidingWindowPriorityQueue(
-    const duration_t min_window_size, const duration_t max_window_size)
+    const duration_t min_window_size, const duration_t max_window_size,
+    const Mode mode)
     : min_window_size_(min_window_size),
       max_window_size_(max_window_size),
+      mode_(mode),
       closed_(false),
       lower_(0),
       upper_(0) {}
@@ -325,7 +342,7 @@ SlidingWindowPriorityQueue<T>::tryPush(const value_type& value) {
       return Result::kClosed;
     }
 
-    if (value.first < lower_) {
+    if (value.first < lower_ && mode_ == Mode::kAlwaysChronological) {
       return Result::kOutOfOrder;
     }
 
@@ -357,7 +374,7 @@ SlidingWindowPriorityQueue<T>::pop() {
 
   result.second = std::move(const_cast<value_type&>(queue_.top()));
   queue_.pop();
-  lower_ = result.second.first;
+  lower_ = lower_ < result.second.first ? result.second.first : lower_;
   lock.unlock();
 
   cv_can_push_.notify_all();
@@ -385,7 +402,7 @@ SlidingWindowPriorityQueue<T>::tryPop() {
 
   result.second = std::move(const_cast<value_type&>(queue_.top()));
   queue_.pop();
-  lower_ = result.second.first;
+  lower_ = lower_ < result.second.first ? result.second.first : lower_;
   lock.unlock();
 
   cv_can_push_.notify_all();

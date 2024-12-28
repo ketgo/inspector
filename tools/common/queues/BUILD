@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//third_party/pybind11:defs.bzl", "pybind_library")
-
 cc_library(
     name = "priority_queue",
     hdrs = [
@@ -32,56 +30,5 @@ cc_test(
     deps = [
         ":priority_queue",
         "@gtest//:gtest_main",
-    ],
-)
-
-cc_library(
-    name = "reader",
-    srcs = [
-        "reader.cpp",
-    ],
-    hdrs = [
-        "reader.hpp",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":priority_queue",
-        "//cpp:inspector",
-        "@glog",
-    ],
-)
-
-cc_test(
-    name = "reader_test",
-    srcs = [
-        "reader_test.cpp",
-    ],
-    deps = [
-        ":reader",
-        "//cpp/tests:testing",
-        "@gtest//:gtest_main",
-    ],
-)
-
-pybind_library(
-    name = "reader_py",
-    srcs = [
-        "reader_py.cpp",
-    ],
-    soname = "reader_py",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":reader",
-    ],
-)
-
-py_test(
-    name = "reader_py_test",
-    srcs = [
-        "reader_py_test.py",
-    ],
-    deps = [
-        ":reader_py",
-        "//python:inspector",
     ],
 )

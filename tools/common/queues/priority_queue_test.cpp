@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
+#include "tools/common/queues/priority_queue.hpp"
 
-#include "tools/common/reader/priority_queue.hpp"
+#include <gtest/gtest.h>
 
 namespace {
 
