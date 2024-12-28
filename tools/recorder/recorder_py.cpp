@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
+#include <gflags/gflags.h>
+#include <glog/logging.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "tools/common/storage/storage.hpp"
+#include "tools/recorder/recorder.hpp"
 
 namespace py = pybind11;
 
-
 PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
-  m.doc() = "Storage library to store trace and metrics events to disk.";
+  FLAGS_logtostderr = 0;
+  google::InitGoogleLogging("recorder_py");
 
+  m.doc() = "Recording tool to capture real time application traces.";
+
+  m.def("start_recorder", &inspector::tools::startRecorder, "Start recorder.",
+        py::arg("out"), py::arg("block") = false);
+  m.def("stop_recorder", &inspector::tools::stopRecorder, "Stop recorder.",
+        py::arg("block") = false);
 }

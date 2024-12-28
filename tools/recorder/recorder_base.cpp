@@ -14,40 +14,29 @@
  * limitations under the License.
  */
 
-#include "tools/recorder/base.hpp"
+#include "tools/recorder/recorder_base.hpp"
 
-#include <csignal>
-#include <thread>
-
-//
 #include <glog/logging.h>
+
+#include <thread>
 
 namespace inspector {
 namespace tools {
-namespace {
 
-volatile std::sig_atomic_t __stop = 0;
+RecorderBase::RecorderBase(const std::string& name)
+    : clock_(), name_(name), count_(0), stop_(false) {}
 
-void signalHandler(int signal) { __stop = signal; }
-
-}  // namespace
-
-void initialize() {
-  std::signal(SIGINT, signalHandler);
-  std::signal(SIGTERM, signalHandler);
-}
-
-void RecorderBase::initialize() {}
-
-void RecorderBase::run(const std::chrono::microseconds duration) {
-  while (!static_cast<bool>(__stop)) {
+void RecorderBase::start(const std::chrono::microseconds duration) {
+  while (!static_cast<bool>(stop_)) {
     LOG(INFO) << "[" << this->name_ << "]: Alive";
     const auto start_time = clock_.now();
+    ++count_;
     this->record();
     const auto record_duration = clock_.now() - start_time;
     if (duration < record_duration) {
-      LOG(WARNING) << "Recording took long: " << record_duration.count()
-                   << " > " << duration.count();
+      LOG(WARNING) << "Recording " << count_
+                   << " took long: " << record_duration.count() << " > "
+                   << duration.count();
     } else {
       std::this_thread::sleep_for(duration - record_duration);
     }
@@ -55,7 +44,16 @@ void RecorderBase::run(const std::chrono::microseconds duration) {
   LOG(INFO) << "[" << this->name_ << "]: Stopped";
 }
 
-bool RecorderBase::isTerminating() const { return __stop; }
+bool RecorderBase::isAlive() const { return !stop_ && count_ > 0; }
+
+void RecorderBase::stop() {
+  LOG(INFO) << "[" << this->name_ << "]: Stopping...";
+  stop_ = true;
+}
+
+const std::string& RecorderBase::name() const { return name_; }
+
+uint64_t RecorderBase::recordCount() const { return count_; }
 
 }  // namespace tools
 }  // namespace inspector

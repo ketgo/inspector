@@ -1,15 +1,17 @@
 load("@rules_python//python:defs.bzl", "py_binary")
+load("//third_party/pybind11:defs.bzl", "pybind_library")
+
 
 cc_library(
-    name = "base",
+    name = "recorder_base",
     srcs = [
-        "base.cpp",
+        "recorder_base.cpp",
     ],
     hdrs = [
-        "base.hpp",
+        "recorder_base.hpp",
     ],
     deps = [
-        "@glog",
+         "@glog",
     ],
 )
 
@@ -22,11 +24,39 @@ cc_library(
         "trace_recorder.hpp",
     ],
     deps = [
-        ":base",
+        ":recorder_base",
          "//cpp:inspector",
          "//tools/common/storage",
     ],
 )
+
+cc_library(
+    name = "recorder",
+    srcs = [
+        "recorder.cpp",
+    ],
+    hdrs = [
+        "recorder.hpp",
+    ],
+    deps = [
+        ":trace_recorder",
+        "@glog",
+    ],
+)
+
+pybind_library(
+    name = "recorder_py",
+    srcs = [
+        "recorder_py.cpp",
+    ],
+    imports = ["."],
+    soname = "recorder_py",
+    deps = [
+        ":recorder",
+        "@glog",
+    ],
+)
+
 
 cc_binary(
     name = "run",
@@ -35,8 +65,7 @@ cc_binary(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":base",
-        ":trace_recorder",
+        ":recorder",
         "@glog",
     ],
 )
@@ -46,17 +75,8 @@ py_binary(
     srcs = [
         "wrapper.py",
     ],
-    data = [
-        "@inspector//tools/recorder:recorder",
-    ],
     visibility = ["//visibility:public"],
-    deps = [],
-)
-
-py_binary(
-    name = "experimental",
-    srcs = [
-        "experimental.py",
+    deps = [
+        ":recorder_py",
     ],
-    deps = [],
 )

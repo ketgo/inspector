@@ -40,7 +40,7 @@ TraceRecorder::TraceRecorder(const std::string& out)
     : RecorderBase(kRecorderName), writer_(out, kBlockSize) {}
 
 void TraceRecorder::record() {
-  while (!isTerminating()) {
+  while (isAlive()) {
     auto event = readTraceEvent();
     if (event.isEmpty()) {
       break;

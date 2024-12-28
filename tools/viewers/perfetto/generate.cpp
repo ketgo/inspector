@@ -14,28 +14,14 @@
  * limitations under the License.
  */
 
-#pragma once
-
-#include "tools/common/storage/storage.hpp"
-#include "tools/recorder/recorder_base.hpp"
+#include "external/perfetto/protos/perfetto/trace/trace_packet.pb.h"
 
 namespace inspector {
 namespace tools {
 
-/**
- * @brief The class `TraceRecorder` records captured traces and metrics through
- * the inspector library.
- *
- */
-class TraceRecorder final : public RecorderBase {
- public:
-  explicit TraceRecorder(const std::string& out);
-
-  void record() override;
-
- private:
-  tools::storage::Writer writer_;
-};
+int main(int argc, char* argv[]) { return 0; }
 
 }  // namespace tools
 }  // namespace inspector
+
+int main(int argc, char* argv[]) { return inspector::tools::main(argc, argv); }

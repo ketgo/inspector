@@ -39,6 +39,7 @@ DEFINE_string(
     "'stdout'.");
 
 namespace inspector {
+namespace tools {
 
 int main(int argc, char* argv[]) {
   FLAGS_logtostderr = 1;
@@ -65,11 +66,10 @@ int main(int argc, char* argv[]) {
     out << event.toJson() << "\n";
   }
 
-  LOG(INFO) << "Timeout.";
-
   return 0;
 }
 
+}  // namespace tools
 }  // namespace inspector
 
-int main(int argc, char* argv[]) { return inspector::main(argc, argv); }
+int main(int argc, char* argv[]) { return inspector::tools::main(argc, argv); }

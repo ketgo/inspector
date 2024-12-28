@@ -18,21 +18,20 @@
 #include <glog/logging.h>
 #include <stdio.h>
 
-#include <chrono>
+#include <csignal>
 
-#include "tools/recorder/base.hpp"
-#include "tools/recorder/trace_recorder.hpp"
+#include "tools/recorder/recorder.hpp"
 
 DEFINE_string(out, "", "Path to storage directory.");
 
-/**
- * @brief Tick interval of the monitor.
- *
- */
-constexpr std::chrono::microseconds kTickIntervalUs{99'000};  // 99ms
-
 namespace inspector {
 namespace tools {
+
+void signalHandler(int signal) {
+  ::printf("\tCtrl+C received.\n");
+  ::fflush(stdout);
+  stopRecorder();
+}
 
 int main(int argc, char* argv[]) {
   FLAGS_logtostderr = 1;
@@ -41,10 +40,10 @@ int main(int argc, char* argv[]) {
 
   LOG_IF(FATAL, FLAGS_out.empty()) << "No output file provided.";
 
-  initialize();
+  std::signal(SIGINT, signalHandler);
+  std::signal(SIGTERM, signalHandler);
 
-  TraceRecorder recorder(FLAGS_out);
-  recorder.run(kTickIntervalUs);
+  startRecorder(FLAGS_out, true);
 
   ::printf("Output: %s\n", FLAGS_out.c_str());
   ::fflush(stdout);

@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <string>
 
@@ -23,15 +24,8 @@ namespace inspector {
 namespace tools {
 
 /**
- * @brief Method to initialize recorder tool.
- *
- * The method initializes tool by setting up signal handlers.
- */
-void initialize();
-
-/**
  * @brief The class `RecorderBase` is an abstract base class for implementing a
- * recorder. Its designed to perform unit of work recording periodically at a
+ * recorder. Its designed to perform unit of recording work periodically at a
  * fixed cadance.
  *
  */
@@ -39,13 +33,7 @@ class RecorderBase {
  public:
   virtual ~RecorderBase() = default;
 
-  explicit RecorderBase(const std::string& name) : name_(name) {}
-
-  /**
-   * @brief Initialize the recorder.
-   *
-   */
-  virtual void initialize();
+  explicit RecorderBase(const std::string& name);
 
   /**
    * @brief Recording task performed periodically.
@@ -57,19 +45,39 @@ class RecorderBase {
    * @brief Method to start the recorder. Note that this is a blocking call.
    *
    */
-  void run(const std::chrono::microseconds duration);
+  void start(const std::chrono::microseconds duration);
 
   /**
-   * @brief Flag to check if recorder is terminating.
+   * @brief Check if the recorder is alive.
    *
    */
-  bool isTerminating() const;
+  bool isAlive() const;
+
+  /**
+   * @brief Stop the recorder.
+   *
+   */
+  void stop();
+
+  /**
+   * @brief Get name of the recorder.
+   *
+   */
+  const std::string& name() const;
+
+  /**
+   * @brief Number of times record has been called.
+   *
+   */
+  uint64_t recordCount() const;
 
  protected:
   std::chrono::steady_clock clock_;
 
  private:
   const std::string name_;
+  std::atomic_uint64_t count_;
+  volatile std::atomic_bool stop_;
 };
 
 }  // namespace tools

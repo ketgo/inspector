@@ -13,3 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#pragma once
+
+#include <string>
+
+namespace inspector {
+namespace tools {
+
+/**
+ * @brief Start recorder.
+ *
+ * @param out Path to output directory to store trace and metric records.
+ * @param block Invoke a blocking call.
+ */
+void startRecorder(const std::string& out, const bool block = false);
+
+/**
+ * @brief Stop recorder.
+ *
+ * @param block Block until the recorder has terminated.
+ */
+void stopRecorder(const bool block = false);
+
+}  // namespace tools
+}  // namespace inspector

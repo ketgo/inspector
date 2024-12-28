@@ -21,20 +21,14 @@ Wrapper script to run Bazel binary targets under trace recorder.
 import argparse
 import logging
 import subprocess
-import signal
 import tempfile
 import os
 from pathlib import Path
 from typing import Tuple, List, Union
 
+from tools.recorder import recorder_py
+
 LOG = logging.getLogger(__name__)
-
-
-def sigint_handler(sig, frame) -> None:
-    print("Ctrl+C recivied.")
-
-
-signal.signal(signal.SIGINT, sigint_handler)
 
 
 class Recorder:
@@ -42,14 +36,11 @@ class Recorder:
     Class to record captured trace and metric events.
     """
 
-    def __init__(self, cwd: Path, out_dir: Path) -> None:
+    def __init__(self, out_dir: Path) -> None:
         self._started = False
-        self._process = None
-        self._cwd = cwd
         self._out_dir = out_dir
         if not self._out_dir.exists():
             self._out_dir.mkdir(parents=True)
-        self._stderr = None
 
     @property
     def output_directoy(self) -> Union[None, Path]:
@@ -68,15 +59,7 @@ class Recorder:
             return
 
         LOG.info(f"Starting trace recorder. Data will be stored in {self._out_dir}")
-        self._stderr = open(self._out_dir / "trace.log", "w+")
-        self._process = subprocess.Popen(
-            [
-                "tools/recorder/recorder",
-                f"--out={self._out_dir}",
-            ],
-            cwd=self._cwd,
-            stderr=self._stderr,
-        )
+        recorder_py.start_recorder(str(self._out_dir))
         self._started = True
 
     def stop(self) -> None:
@@ -85,9 +68,7 @@ class Recorder:
             return
 
         LOG.info(f"Stopping trace recorder. Data can be found in {self._out_dir}")
-        self._process.terminate()
-        self._process.wait()
-        self._stderr.close()
+        recorder_py.stop_recorder(True)
         self._started = False
 
 
@@ -119,22 +100,21 @@ def parse_args() -> Tuple[argparse.Namespace, List[str]]:
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
 
-    manifest_file = os.environ.get("RUNFILES_MANIFEST_FILE", None)
-    cwd = (
-        Path(os.getcwd())
-        if not manifest_file
-        else Path(manifest_file.replace(".runfiles_manifest", ".runfiles/_main"))
-    )
-
     recorder_args, target_args = parse_args()
-    recorder = Recorder(cwd=cwd, out_dir=recorder_args.out)
+    recorder = Recorder(out_dir=recorder_args.out)
     with recorder:
-        LOG.info("Running target...")
-        process = subprocess.Popen(
-            [recorder_args.target] + target_args,
-        )
-        LOG.info(f"Target PID: {process.pid}")
-        process.wait()
+        try:
+            LOG.info("Running target...")
+            process = subprocess.Popen(
+                [recorder_args.target] + target_args,
+                start_new_session=True,
+            )
+            LOG.info(f"Target PID: {process.pid}")
+            process.wait()
+        except KeyboardInterrupt:
+            LOG.info("Terminating target...")
+            process.terminate()
+            process.wait()
 
     LOG.info(f"Trace data stored in '{recorder.output_directoy}'.")
 
