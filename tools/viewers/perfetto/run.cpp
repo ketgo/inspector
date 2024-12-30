@@ -14,34 +14,31 @@
  * limitations under the License.
  */
 
-#include "tools/recorder/trace_recorder.hpp"
+#include <gflags/gflags.h>
+#include <glog/logging.h>
 
-#include <inspector/trace_reader.hpp>
+#include "tools/viewers/perfetto/generator.hpp"
+
+DEFINE_string(in, "", "Path to input directory.");
+DEFINE_string(out, "", "Path to output file.");
 
 namespace inspector {
 namespace tools {
-namespace {
 
-/**
- * @brief Name of recorder.
- *
- */
-const auto kRecorderName = "TraceRecorder";
+int main(int argc, char* argv[]) {
+  FLAGS_logtostderr = 1;
+  google::InitGoogleLogging(argv[0]);
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-}  // namespace
+  LOG_IF(FATAL, FLAGS_in.empty()) << "No input directory provided.";
+  LOG_IF(FATAL, FLAGS_out.empty()) << "No output file provided.";
 
-TraceRecorder::TraceRecorder(const std::shared_ptr<CollectorBase>& collector)
-    : RecorderBase(kRecorderName), collector_(collector) {}
+  generatePerfetto(FLAGS_in, FLAGS_out);
 
-void TraceRecorder::record() {
-  while (isAlive()) {
-    auto event = readTraceEvent();
-    if (event.isEmpty()) {
-      break;
-    }
-    collector_->process(event);
-  }
+  return 0;
 }
 
 }  // namespace tools
 }  // namespace inspector
+
+int main(int argc, char* argv[]) { return inspector::tools::main(argc, argv); }

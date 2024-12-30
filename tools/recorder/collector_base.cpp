@@ -14,34 +14,12 @@
  * limitations under the License.
  */
 
-#include "tools/recorder/trace_recorder.hpp"
-
-#include <inspector/trace_reader.hpp>
+#include "tools/recorder/collector_base.hpp"
 
 namespace inspector {
 namespace tools {
-namespace {
 
-/**
- * @brief Name of recorder.
- *
- */
-const auto kRecorderName = "TraceRecorder";
-
-}  // namespace
-
-TraceRecorder::TraceRecorder(const std::shared_ptr<CollectorBase>& collector)
-    : RecorderBase(kRecorderName), collector_(collector) {}
-
-void TraceRecorder::record() {
-  while (isAlive()) {
-    auto event = readTraceEvent();
-    if (event.isEmpty()) {
-      break;
-    }
-    collector_->process(event);
-  }
-}
+void CollectorBase::flush() {}
 
 }  // namespace tools
 }  // namespace inspector

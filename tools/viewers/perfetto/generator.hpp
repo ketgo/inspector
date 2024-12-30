@@ -14,34 +14,22 @@
  * limitations under the License.
  */
 
-#include "tools/recorder/trace_recorder.hpp"
+#pragma once
 
-#include <inspector/trace_reader.hpp>
+#include <string>
 
 namespace inspector {
 namespace tools {
-namespace {
 
 /**
- * @brief Name of recorder.
+ * @brief Method to generate perfetto trace file from events stored in given
+ * storage directoy.
  *
+ * @param input_dir Path to storage directory from where to read events.
+ * @param output_file Path to output file.
  */
-const auto kRecorderName = "TraceRecorder";
-
-}  // namespace
-
-TraceRecorder::TraceRecorder(const std::shared_ptr<CollectorBase>& collector)
-    : RecorderBase(kRecorderName), collector_(collector) {}
-
-void TraceRecorder::record() {
-  while (isAlive()) {
-    auto event = readTraceEvent();
-    if (event.isEmpty()) {
-      break;
-    }
-    collector_->process(event);
-  }
-}
+void generatePerfetto(const std::string& input_dir,
+                      const std::string output_file);
 
 }  // namespace tools
 }  // namespace inspector

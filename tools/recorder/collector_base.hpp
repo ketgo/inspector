@@ -14,34 +14,33 @@
  * limitations under the License.
  */
 
-#include "tools/recorder/trace_recorder.hpp"
+#pragma once
 
-#include <inspector/trace_reader.hpp>
+#include <inspector/trace_event.hpp>
 
 namespace inspector {
 namespace tools {
-namespace {
 
 /**
- * @brief Name of recorder.
+ * @brief Abstract base class for collector.
  *
  */
-const auto kRecorderName = "TraceRecorder";
+class CollectorBase {
+ public:
+  /**
+   * @brief Process the given trace event.
+   *
+   * @param trace_event Constant reference to trace event.
+   */
+  virtual void process(const TraceEvent& trace_event) = 0;
 
-}  // namespace
-
-TraceRecorder::TraceRecorder(const std::shared_ptr<CollectorBase>& collector)
-    : RecorderBase(kRecorderName), collector_(collector) {}
-
-void TraceRecorder::record() {
-  while (isAlive()) {
-    auto event = readTraceEvent();
-    if (event.isEmpty()) {
-      break;
-    }
-    collector_->process(event);
-  }
-}
+  /**
+   * @brief Flush any events buffered. Not all collectors need to implement this
+   * method. Default implementation is a NOP.
+   *
+   */
+  virtual void flush();
+};
 
 }  // namespace tools
 }  // namespace inspector

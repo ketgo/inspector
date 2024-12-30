@@ -21,6 +21,7 @@
 #include <thread>
 #include <vector>
 
+#include "tools/recorder/storage_collector.hpp"
 #include "tools/recorder/trace_recorder.hpp"
 
 namespace inspector {
@@ -44,7 +45,8 @@ class Manager {
     if (!recorders_.empty()) {
       return;
     }
-    recorders_.emplace_back(std::make_shared<TraceRecorder>(out));
+    collector_ = std::make_shared<StorageCollector>(out);
+    recorders_.emplace_back(std::make_shared<TraceRecorder>(collector_));
     threads_.emplace_back(&RecorderBase::start, recorders_.back().get(),
                           kTickIntervalUs);
     if (block) {
@@ -59,6 +61,7 @@ class Manager {
     if (block) {
       wait();
     }
+    collector_->flush();
   }
 
  private:
@@ -70,6 +73,7 @@ class Manager {
     }
   }
 
+  std::shared_ptr<CollectorBase> collector_;
   std::vector<std::shared_ptr<RecorderBase>> recorders_;
   std::vector<std::thread> threads_;
 };

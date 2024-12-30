@@ -14,14 +14,29 @@
  * limitations under the License.
  */
 
-#include "external/perfetto/protos/perfetto/trace/trace_packet.pb.h"
+#include "tools/recorder/storage_collector.hpp"
 
 namespace inspector {
 namespace tools {
+namespace {
 
-int main(int argc, char* argv[]) { return 0; }
+/**
+ * @brief Block size in bytes to use for storage.
+ *
+ */
+constexpr auto kBlockSize = 1024UL * 1024UL * 100UL;  // 100MB
+
+}  // namespace
+
+StorageCollector::StorageCollector(const std::string& out_dir)
+    : writer_(out_dir, kBlockSize) {}
+
+void StorageCollector::process(const TraceEvent& trace_event) {
+  const auto span = trace_event.span();
+  writer_.write({trace_event.timestampNs(), span.first, span.second});
+}
+
+void StorageCollector::flush() { writer_.flush(); }
 
 }  // namespace tools
 }  // namespace inspector
-
-int main(int argc, char* argv[]) { return inspector::tools::main(argc, argv); }

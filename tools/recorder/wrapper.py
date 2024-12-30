@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Tuple, List, Union
 
 from tools.recorder import recorder_py
+from tools.viewers.perfetto import generator_py
 
 LOG = logging.getLogger(__name__)
 
@@ -89,10 +90,30 @@ def parse_args() -> Tuple[argparse.Namespace, List[str]]:
     args, target_args = parser.parse_known_args()
 
     sub_parser = argparse.ArgumentParser(prog="recorder")
-    sub_parser.add_argument("--out", type=Path, default=tempfile.mkdtemp("__inspector"))
+    sub_parser.add_argument(
+        "--out",
+        type=Path,
+        default=tempfile.mkdtemp("__inspector"),
+    )
+    sub_parser.add_argument(
+        "--perfetto",
+        action="store_true",
+        help="Create perfetto trace file.",
+    )
+    sub_parser.add_argument(
+        "--perfetto-out",
+        default=None,
+        help="Output location to store perfetto trace file.",
+    )
 
     recorder_args = sub_parser.parse_args(args.inspector_recorder_args.split())
     recorder_args.target = args.target
+    if not recorder_args.out.is_dir():
+        raise ValueError(f"The output path '{recorder_args.out}' is not a directoy.")
+    if recorder_args.perfetto and not recorder_args.perfetto_out:
+        recorder_args.perfetto_out = str(recorder_args.out / "perfetto.trace")
+    recorder_args.out = recorder_args.out / "storage"
+    recorder_args.out.mkdir(parents=True, exist_ok=True)
 
     return recorder_args, target_args
 
@@ -117,6 +138,13 @@ def main() -> None:
             process.wait()
 
     LOG.info(f"Trace data stored in '{recorder.output_directoy}'.")
+
+    if recorder_args.perfetto and recorder.output_directoy:
+        generator_py.generate_perfetto(
+            str(recorder.output_directoy), recorder_args.perfetto_out
+        )
+
+    LOG.info(f"Done.")
 
 
 if __name__ == "__main__":

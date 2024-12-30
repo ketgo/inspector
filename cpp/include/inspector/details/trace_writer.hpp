@@ -16,18 +16,16 @@
 
 #pragma once
 
-#include <cstdint>
-#include <cstddef>
-#include <chrono>
-#include <vector>
-
 #include <bigcat/circular_queue_a.hpp>
-
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <inspector/config.hpp>
 #include <inspector/details/queue.hpp>
 #include <inspector/details/system.hpp>
 #include <inspector/details/trace_event.hpp>
 #include <inspector/types.hpp>
+#include <vector>
 
 namespace inspector {
 namespace details {

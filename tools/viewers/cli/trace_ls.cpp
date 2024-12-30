@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 
   LOG(INFO) << "Loading trace events...";
 
-  tools::storage::Reader reader(FLAGS_in);
+  storage::Reader reader(FLAGS_in);
   for (auto& record : reader) {
     std::vector<uint8_t> buffer(record.size);
     std::memcpy(buffer.data(), record.src, record.size);

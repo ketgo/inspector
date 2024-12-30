@@ -14,30 +14,18 @@
  * limitations under the License.
  */
 
-#pragma once
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
-#include <memory>
+#include "tools/viewers/perfetto/generator.hpp"
 
-#include "tools/recorder/collector_base.hpp"
-#include "tools/recorder/recorder_base.hpp"
+namespace py = pybind11;
 
-namespace inspector {
-namespace tools {
+PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
+  m.doc() = "Module to generate perfetto trace file.";
 
-/**
- * @brief The class `TraceRecorder` records captured traces and metrics through
- * the inspector library.
- *
- */
-class TraceRecorder final : public RecorderBase {
- public:
-  explicit TraceRecorder(const std::shared_ptr<CollectorBase>& collector);
-
-  void record() override;
-
- private:
-  std::shared_ptr<CollectorBase> collector_;
-};
-
-}  // namespace tools
-}  // namespace inspector
+  m.def("generate_perfetto", &inspector::tools::generatePerfetto,
+        "Method to generate perfetto trace file from events stored in given "
+        "storage directoy.",
+        py::arg("input_dir"), py::arg("output_file"));
+}

@@ -12,16 +12,62 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cc_binary(
-    name = "generate",
+load("//third_party/pybind11:defs.bzl", "pybind_library")
+
+cc_library(
+    name = "common",
     srcs = [
-        "generate.cpp",
+        "common.cpp",
+    ],
+    hdrs = [
+        "common.hpp",
+    ],
+    deps = [
+        "@perfetto//:trace_cc_proto",
+    ],
+)
+
+
+cc_library(
+    name = "generator",
+    srcs = [
+        "generator.cpp",
+    ],
+    hdrs = [
+        "generator.hpp",
     ],
     visibility = ["//visibility:public"],
     deps = [
+        ":common",
         "//cpp:inspector",
         "//tools/common/storage",
-        "@perfetto//:trace_cc_proto",
+        "@glog",
+    ],
+)
+
+pybind_library(
+    name = "generator_py",
+    srcs = [
+        "generator_py.cpp",
+    ],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+    soname = "generator_py",
+    deps = [
+        ":generator",
+        "@glog",
+    ],
+)
+
+
+cc_binary(
+    name = "run",
+    srcs = [
+        "run.cpp",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "generator",
         "@glog",
     ],
 )

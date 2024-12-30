@@ -18,7 +18,7 @@ The file contains itemized tasks to be completed in the different parts of the r
 
 ## Core Lib
 
-[X] Extend trace event data struct in order to support implementing different types of events published from other tracers (CPU, GPU, kernel, etc).
+[x] Extend trace event data struct in order to support implementing different types of events published from other tracers (CPU, GPU, kernel, etc).
 [x] BUG: in DebugArg implementation causing the following error:
 ```
 {"timestamp":1703024038022413286,"pid":66486,"tid":66773,"type":"AsyncEnd","name":"boost::async_wait"}
@@ -26,15 +26,16 @@ terminate called after throwing an instance of 'std::runtime_error'
   what():  Invalid type specified for argument of type '0'.
 ```
 [x] BUG: `tools/reader/reader_test` stuck
+[ ] A complete scope needs begin and end events to be present. Its however possible for one of the two to get dropped when writing to SHM. In such a case we need a way to detect un-paired begin or end events during offline processing. Proposal: Add a new depth field for sync events. That in combination with counter can be used to detect dropped call stacks.
 [ ] Debugging events desing and implementation. These events can be emitted by an application for debugging purposes. Thus we need to allow filtering based on different levels of info. 
 [ ] Config to add file name and line number in debug events.
 
 ## Monitors
 
+[ ] Detect and handle dropped events.
 [x] CLI monitor to view the published trace events on stdout in realtime or store them in a file.
-  [ ] Add option for users to enable external sort. This can be an extenstion or improvement over the slidding window PQ.
-  [ ] Add signal handler for graceful shutdown of monitor.
-  [ ] Refactor the monitor to a periodic task implementation. 
+  [x] Add option for users to enable external sort. This can be an extenstion or improvement over the slidding window PQ.
+  [x] Refactor the monitor to a periodic task implementation. 
 [ ] Web monitor to view the published trace events on browser in realtime.
 [-] Perfetto generator to convert the published trace events to the format accepted by Perfetto UI.
 [ ] Add binding for javascript

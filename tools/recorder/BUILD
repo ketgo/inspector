@@ -3,6 +3,34 @@ load("//third_party/pybind11:defs.bzl", "pybind_library")
 
 
 cc_library(
+    name = "collector_base",
+    srcs = [
+        "collector_base.cpp",
+    ],
+    hdrs = [
+        "collector_base.hpp",
+    ],
+    deps = [
+        "//cpp:inspector",
+    ],
+)
+
+cc_library(
+    name = "storage_collector",
+    srcs = [
+        "storage_collector.cpp",
+    ],
+    hdrs = [
+        "storage_collector.hpp",
+    ],
+    deps = [
+        "collector_base",
+        "//tools/common/storage",
+    ],
+)
+
+
+cc_library(
     name = "recorder_base",
     srcs = [
         "recorder_base.cpp",
@@ -25,8 +53,8 @@ cc_library(
     ],
     deps = [
         ":recorder_base",
-         "//cpp:inspector",
-         "//tools/common/storage",
+        ":collector_base",
+        "//cpp:inspector",
     ],
 )
 
@@ -40,6 +68,7 @@ cc_library(
     ],
     deps = [
         ":trace_recorder",
+        ":storage_collector",
         "@glog",
     ],
 )
@@ -78,5 +107,6 @@ py_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":recorder_py",
+        "//tools/viewers/perfetto:generator_py",
     ],
 )
