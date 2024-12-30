@@ -15,73 +15,59 @@
 load("//third_party/pybind11:defs.bzl", "pybind_library")
 
 cc_library(
-    name = "priority_queue",
+    name = "common",
+    srcs = [
+        "common.cpp",
+    ],
     hdrs = [
-        "priority_queue.hpp",
+        "common.hpp",
     ],
     deps = [
-        "@glog",
+        "@perfetto//:trace_cc_proto",
     ],
 )
 
-cc_test(
-    name = "priority_queue_test",
-    srcs = [
-        "priority_queue_test.cpp",
-    ],
-    deps = [
-        ":priority_queue",
-        "@gtest//:gtest_main",
-    ],
-)
 
 cc_library(
-    name = "reader",
+    name = "generator",
     srcs = [
-        "reader.cpp",
+        "generator.cpp",
     ],
     hdrs = [
-        "reader.hpp",
+        "generator.hpp",
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":priority_queue",
+        ":common",
         "//cpp:inspector",
+        "//tools/common/storage",
         "@glog",
-    ],
-)
-
-cc_test(
-    name = "reader_test",
-    srcs = [
-        "reader_test.cpp",
-    ],
-    deps = [
-        ":reader",
-        "//cpp/tests:testing",
-        "@gtest//:gtest_main",
     ],
 )
 
 pybind_library(
-    name = "reader_py",
+    name = "generator_py",
     srcs = [
-        "reader_py.cpp",
+        "generator_py.cpp",
     ],
-    soname = "reader_py",
+    imports = ["."],
     visibility = ["//visibility:public"],
+    soname = "generator_py",
     deps = [
-        ":reader",
+        ":generator",
+        "@glog",
     ],
 )
 
-py_test(
-    name = "reader_py_test",
+
+cc_binary(
+    name = "run",
     srcs = [
-        "reader_py_test.py",
+        "run.cpp",
     ],
+    visibility = ["//visibility:public"],
     deps = [
-        ":reader_py",
-        "//python:inspector",
+        "generator",
+        "@glog",
     ],
 )

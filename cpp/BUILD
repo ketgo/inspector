@@ -24,6 +24,7 @@ cc_library(
         "include/**/*.hpp",
     ]),
     includes = ["include"],
+    copts = ["-std=c++17"],
     linkopts = select({
         "@platforms//os:linux": ["-lrt"],
         "//conditions:default": [],

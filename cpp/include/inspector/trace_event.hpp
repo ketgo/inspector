@@ -16,14 +16,17 @@
 
 #pragma once
 
-#include <vector>
-#include <string>
-
 #include <inspector/debug_args.hpp>
 #include <inspector/types.hpp>
+#include <string>
+#include <vector>
 
 namespace inspector {
 
+/**
+ * @brief Non-mutable view into a recorded trace event.
+ *
+ */
 class TraceEvent {
  public:
   /**
@@ -110,6 +113,14 @@ class TraceEvent {
    * @returns JSON string representation.
    */
   std::string toJson() const;
+
+  /**
+   * @brief Get the span of memory containing the event.
+   *
+   * @returns Pair with the first element being starting address and last being
+   * size in bytes.
+   */
+  std::pair<const uint8_t*, std::size_t> span() const;
 
  private:
   std::vector<uint8_t> buffer_;

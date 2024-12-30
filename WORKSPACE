@@ -23,27 +23,28 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "rules_python",
-    sha256 = "9d04041ac92a0985e344235f5d946f71ac543f1b1565f2cdbc9a2aaee8adf55b",
-    strip_prefix = "rules_python-0.26.0",
-    url = "https://github.com/bazelbuild/rules_python/releases/download/0.26.0/rules_python-0.26.0.tar.gz",
+    sha256 = "4f7e2aa1eb9aa722d96498f5ef514f426c1f55161c3c9ae628c857a7128ceb07",
+    strip_prefix = "rules_python-1.0.0",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/1.0.0/rules_python-1.0.0.tar.gz",
 )
 
-load("@rules_python//python:repositories.bzl", "py_repositories", "python_register_toolchains")
-
-python_register_toolchains(
-    name = "python_interpreter",
-    python_version = "3.8",
-)
+load("@rules_python//python:repositories.bzl", "py_repositories")
 
 py_repositories()
 
-load("@python_interpreter//:defs.bzl", "interpreter")
+load("@rules_python//python:repositories.bzl", "python_register_toolchains")
+
+python_register_toolchains(
+    name = "python_3_8",
+    python_version = "3.8.10",
+)
+
 load("@rules_python//python:pip.bzl", "pip_parse")
 
 pip_parse(
     name = "deps_python",
-    python_interpreter_target = interpreter,
-    requirements = "//third_party/python:requirements_lock.txt",
+    python_interpreter_target = "@python_3_8_host//:python",
+    requirements_lock = "//third_party/python:requirements_lock.txt",
 )
 
 load("@deps_python//:requirements.bzl", "install_deps")
@@ -73,19 +74,29 @@ load("@pybind11_bazel//:python_configure.bzl", "python_configure")
 
 python_configure(
     name = "local_config_python",
-    python_interpreter_target = interpreter,
+    python_interpreter_target = "@python_3_8_host//:python",
 )
+
+# ----------------------------------------
+# Protobuf
+# ----------------------------------------
+
+_PROTO_VERSION="29.1"
+
+http_archive(
+    name = "com_google_protobuf",
+    strip_prefix = "protobuf-{}".format(_PROTO_VERSION),
+    integrity = "sha256-PTKUDpdcStm4umlkDnj1UnB1uuM8ookCdb8muFPAliw=",
+    urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v{}/protobuf-{}.tar.gz".format(_PROTO_VERSION, _PROTO_VERSION)],
+)
+
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
+protobuf_deps()
 
 # --------------------------------------
 # Gtest
 # --------------------------------------
-
-http_archive(
-    name = "com_google_absl",
-    sha256 = "6764f226bd6e2d8ab9fe2f3cab5f45fb1a4a15c04b58b87ba7fa87456054f98b",
-    strip_prefix = "abseil-cpp-273292d1cfc0a94a65082ee350509af1d113344d",
-    urls = ["https://github.com/abseil/abseil-cpp/archive/273292d1cfc0a94a65082ee350509af1d113344d.zip"],
-)
 
 http_archive(
     name = "gtest",
@@ -140,3 +151,23 @@ http_archive(
 load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
 
 boost_deps()
+
+# ----------------------------------------
+# Perfetto
+# ----------------------------------------
+
+_PERFETTO_VERSION="48.1"
+
+http_archive(
+    name = "perfetto",
+    strip_prefix = "perfetto-%s" % _PERFETTO_VERSION,
+    urls = [
+        "https://github.com/google/perfetto/archive/refs/tags/v%s.tar.gz" % _PERFETTO_VERSION,
+    ],
+    integrity = "sha256-jRxr9E8b2wmKtwzWDaPOa25zHk6yHdUrJSfL3PhdmE0="
+)
+
+local_repository(
+    name = "perfetto_cfg",
+    path = "third_party/perfetto/overrides",
+)

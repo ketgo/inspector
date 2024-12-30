@@ -16,10 +16,9 @@
 
 #pragma once
 
+#include <inspector/details/trace_writer.hpp>
 #include <string>
 #include <type_traits>
-
-#include <inspector/details/trace_writer.hpp>
 
 namespace inspector {
 
@@ -235,26 +234,48 @@ void counter(const char* name, const T& arg) {
  * @brief Synchronous trace events.
  *
  */
-#define TRACE(...) \
+
+#define TRACE() inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(__func__)
+#define TRACE_WITH_ARGS(...) \
   inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(__func__, __VA_ARGS__)
-#define TRACE_SCOPE(...) \
-  inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(__VA_ARGS__)
+
+#define TRACE_SCOPE(name) inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(name)
+#define TRACE_SCOPE_WITH_ARGS(name, ...) \
+  inspector::SyncScope __MAKE_UNIQUE__(sync_scope)(name, __VA_ARGS__)
 
 /**
  * @brief Asynchronous trace events.
  *
  */
-#define TRACE_ASYNC_BEGIN(...) inspector::asyncBegin(__VA_ARGS__)
-#define TRACE_ASYNC_INSTANCE(...) inspector::asyncInstance(__VA_ARGS__)
-#define TRACE_ASYNC_END(...) inspector::asyncEnd(__VA_ARGS__)
+
+#define TRACE_ASYNC_BEGIN(name) inspector::asyncBegin(name)
+#define TRACE_ASYNC_BEGIN_WITH_ARGS(name, ...) \
+  inspector::asyncBegin(name, __VA_ARGS__)
+
+#define TRACE_ASYNC_INSTANCE(name) inspector::asyncInstance(name)
+#define TRACE_ASYNC_INSTANCE_WITH_ARGS(name, ...) \
+  inspector::asyncInstance(name, __VA_ARGS__)
+
+#define TRACE_ASYNC_END(name) inspector::asyncEnd(name)
+#define TRACE_ASYNC_END_WITH_ARGS(name, ...) \
+  inspector::asyncEnd(name, __VA_ARGS__)
 
 /**
  * @brief Flow trace events
  *
  */
-#define TRACE_FLOW_BEGIN(...) inspector::flowBegin(__VA_ARGS__)
-#define TRACE_FLOW_INSTANCE(...) inspector::flowInstance(__VA_ARGS__)
-#define TRACE_FLOW_END(...) inspector::flowEnd(__VA_ARGS__)
+
+#define TRACE_FLOW_BEGIN(name, ...) inspector::flowBegin(name)
+#define TRACE_FLOW_BEGIN_WITH_ARGS(name, ...) \
+  inspector::flowBegin(name, __VA_ARGS__)
+
+#define TRACE_FLOW_INSTANCE(name) inspector::flowInstance(name)
+#define TRACE_FLOW_INSTANCE_WITH_ARGS(name, ...) \
+  inspector::flowInstance(name, __VA_ARGS__)
+
+#define TRACE_FLOW_END(name) inspector::flowEnd(name)
+#define TRACE_FLOW_END_WITH_ARGS(name, ...) \
+  inspector::flowEnd(name, __VA_ARGS__)
 
 /**
  * @brief Counter trace events

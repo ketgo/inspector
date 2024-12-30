@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 Ketan Goyal
+ * Copyright 2023 Ketan Goyal
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,28 @@
 
 #pragma once
 
-#include <chrono>
+#include <memory>
 
-#include "utils/random.hpp"
+#include "tools/recorder/collector_base.hpp"
+#include "tools/recorder/recorder_base.hpp"
 
-namespace utils {
+namespace inspector {
+namespace tools {
 
 /**
- * @brief Random delay generator.
+ * @brief The class `TraceRecorder` records captured traces and metrics through
+ * the inspector library.
  *
- * @tparam ChronoUnitType Unit type of the delay.
  */
-template <class ChronoUnitType = std::chrono::microseconds>
-class RandomDelayGenerator : public RandomNumberGenerator<std::size_t> {
-  using RandomNumberGenerator<std::size_t>::RandomNumberGenerator;
-
+class TraceRecorder final : public RecorderBase {
  public:
-  ChronoUnitType operator()();
+  explicit TraceRecorder(const std::shared_ptr<CollectorBase>& collector);
+
+  void record() override;
+
+ private:
+  std::shared_ptr<CollectorBase> collector_;
 };
 
-template <class ChronoUnitType>
-ChronoUnitType RandomDelayGenerator<ChronoUnitType>::operator()() {
-  return ChronoUnitType{RandomNumberGenerator::operator()};
-}
-
-}  // namespace utils
+}  // namespace tools
+}  // namespace inspector

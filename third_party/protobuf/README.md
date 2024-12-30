@@ -14,6 +14,6 @@
  limitations under the License.
 -->
 
-# External Dependencies
+# Protobuf Bazel BUILD Rule
 
-The folder contains Bazel build rules and import tests for external dependencies.
+Import test taken from https://github.com/protocolbuffers/protobuf/tree/main/examples

@@ -20,7 +20,7 @@ cc_binary(
     visibility = ["//visibility:public"],
     deps = [
         "//cpp:inspector",
-        "//tools/reader",
+        "//tools/common/storage",
         "@glog",
     ],
 )

@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 
-#include <inspector/trace_event.hpp>
-
-#include <stdexcept>
-#include <sstream>
-
 #include <inspector/trace.hpp>
+#include <inspector/trace_event.hpp>
+#include <sstream>
+#include <stdexcept>
 
 #include "cpp/src/details/trace_event_header.hpp"
 
@@ -52,7 +50,7 @@ std::string eventTypeToString(event_type_t type) {
     case EventType::kSyncBeginTag:
       return "SyncBegin";
     case EventType::kSyncEndTag:
-      return "AyncEnd";
+      return "SyncEnd";
     case EventType::kAsyncBeginTag:
       return "AsyncBegin";
     case EventType::kAsyncInstanceTag:
@@ -197,6 +195,10 @@ std::string TraceEvent::toJson() const {
   out << "}";
 
   return out.str();
+}
+
+std::pair<const uint8_t *, std::size_t> TraceEvent::span() const {
+  return {buffer_.data(), buffer_.size()};
 }
 
 }  // namespace inspector

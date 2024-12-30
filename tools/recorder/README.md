@@ -14,6 +14,6 @@
  limitations under the License.
 -->
 
-# External Dependencies
+# Trace Recorder
 
-The folder contains Bazel build rules and import tests for external dependencies.
+The package contains implementation of the trace recorder. It can be used to store trace events instrumented through the inspector library onto the disk.

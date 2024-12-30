@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 Ketan Goyal
+ * Copyright 2023 Ketan Goyal
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,31 @@
 
 #pragma once
 
-#include <chrono>
+#include <inspector/trace_event.hpp>
 
-#include "utils/random.hpp"
-
-namespace utils {
+namespace inspector {
+namespace tools {
 
 /**
- * @brief Random delay generator.
+ * @brief Abstract base class for collector.
  *
- * @tparam ChronoUnitType Unit type of the delay.
  */
-template <class ChronoUnitType = std::chrono::microseconds>
-class RandomDelayGenerator : public RandomNumberGenerator<std::size_t> {
-  using RandomNumberGenerator<std::size_t>::RandomNumberGenerator;
-
+class CollectorBase {
  public:
-  ChronoUnitType operator()();
+  /**
+   * @brief Process the given trace event.
+   *
+   * @param trace_event Constant reference to trace event.
+   */
+  virtual void process(const TraceEvent& trace_event) = 0;
+
+  /**
+   * @brief Flush any events buffered. Not all collectors need to implement this
+   * method. Default implementation is a NOP.
+   *
+   */
+  virtual void flush();
 };
 
-template <class ChronoUnitType>
-ChronoUnitType RandomDelayGenerator<ChronoUnitType>::operator()() {
-  return ChronoUnitType{RandomNumberGenerator::operator()};
-}
-
-}  // namespace utils
+}  // namespace tools
+}  // namespace inspector

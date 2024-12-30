@@ -64,3 +64,17 @@ cc_library(
     ],
     deps = [],
 )
+
+
+cc_library(
+    name = "tempdir",
+    srcs = [
+        "tempdir.cpp",
+    ],
+    hdrs = [
+        "tempdir.hpp",
+    ],
+    deps = [
+        "@boost//:filesystem",
+    ],
+)
