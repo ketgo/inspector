@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-#include <inspector/details/debug_args.hpp>
-
 #include <cstring>
+#include <inspector/details/debug_args.hpp>
 #include <string>
 
 namespace inspector {

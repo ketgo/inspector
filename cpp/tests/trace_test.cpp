@@ -36,7 +36,7 @@ class TracerTestFixture : public ::testing::Test {
 };
 
 TEST_F(TracerTestFixture, TestSyncBegin) {
-  syncBegin("TestSync", "testing", 'a', 1, 3.54);
+  syncBegin("TestSync", "testing", 'a', 1, 3.54, KWARG("test", 50));
 
   auto event = readTraceEvent();
   ASSERT_EQ(event.type(), static_cast<event_type_t>(EventType::kSyncBeginTag));
@@ -45,7 +45,7 @@ TEST_F(TracerTestFixture, TestSyncBegin) {
   ASSERT_EQ(event.pid(), details::getPID());
   ASSERT_EQ(event.tid(), details::getTID());
   ASSERT_EQ(std::string{event.name()}, "TestSync");
-  ASSERT_EQ(event.debugArgs().size(), 4);
+  ASSERT_EQ(event.debugArgs().size(), 5);
   auto it = event.debugArgs().begin();
   ASSERT_EQ(it->type(), DebugArg::Type::TYPE_STRING);
   ASSERT_EQ(it->value<std::string>(), "testing");
@@ -58,6 +58,12 @@ TEST_F(TracerTestFixture, TestSyncBegin) {
   ++it;
   ASSERT_EQ(it->type(), DebugArg::Type::TYPE_DOUBLE);
   ASSERT_EQ(it->value<double>(), 3.54);
+  ++it;
+  ASSERT_EQ(it->type(), DebugArg::Type::TYPE_KWARG);
+  const auto kwarg = it->value<KeywordArg>();
+  ASSERT_EQ(std::strcmp("test", kwarg.name()), 0);
+  ASSERT_EQ(kwarg.type(), DebugArg::Type::TYPE_INT32);
+  ASSERT_EQ(kwarg.value<int32_t>(), 50);
   ++it;
   ASSERT_EQ(it, event.debugArgs().end());
 }

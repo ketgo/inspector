@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-#include <inspector/details/trace_event.hpp>
-
 #include <cstring>
+#include <inspector/details/trace_event.hpp>
 #include <string>
 
 #include "cpp/src/details/trace_event_header.hpp"
@@ -71,7 +70,8 @@ void MutableTraceEvent::appendDebugArg(const T &arg) {
 
   *static_cast<uint8_t *>(debug_args_head_) =
       static_cast<uint8_t>(TypeId<T>::value);
-  std::memcpy(static_cast<void *>(static_cast<uint8_t *>(debug_args_head_) + 1),
+  std::memcpy(static_cast<void *>(static_cast<uint8_t *>(debug_args_head_) +
+                                  sizeof(uint8_t)),
               static_cast<const void *>(&arg), sizeof(arg));
   static_cast<TraceEventHeader *>(address_)->args_count += 1;
   debug_args_head_ = static_cast<void *>(
@@ -102,7 +102,8 @@ void MutableTraceEvent::appendDebugArg<const char *>(const char *const &arg) {
   *static_cast<uint8_t *>(debug_args_head_) =
       static_cast<uint8_t>(TypeId<const char *>::value);
   const size_t str_size = std::strlen(arg) * sizeof(char) + sizeof(char);
-  std::memcpy(static_cast<void *>(static_cast<uint8_t *>(debug_args_head_) + 1),
+  std::memcpy(static_cast<void *>(static_cast<uint8_t *>(debug_args_head_) +
+                                  sizeof(uint8_t)),
               static_cast<const void *>(arg), str_size);
   static_cast<TraceEventHeader *>(address_)->args_count += 1;
   debug_args_head_ = static_cast<void *>(
@@ -113,6 +114,23 @@ void MutableTraceEvent::appendDebugArg<const char *>(const char *const &arg) {
 template <>
 void MutableTraceEvent::appendDebugArg<std::string>(const std::string &arg) {
   return appendDebugArg(arg.c_str());
+}
+
+// private
+void MutableTraceEvent::appendKeywordName(const char *const name) {
+  // Skip appending argument if the buffer is full.
+  if (static_cast<void *>(static_cast<uint8_t *>(address_) + size_) <=
+      debug_args_head_) {
+    return;
+  }
+  *static_cast<uint8_t *>(debug_args_head_) =
+      static_cast<uint8_t>(TypeId<inspector::KeywordArg>::value);
+  const size_t str_size = std::strlen(name) * sizeof(char) + sizeof(char);
+  std::memcpy(static_cast<void *>(static_cast<uint8_t *>(debug_args_head_) +
+                                  sizeof(uint8_t)),
+              static_cast<const void *>(name), str_size);
+  debug_args_head_ = static_cast<void *>(
+      static_cast<uint8_t *>(debug_args_head_) + str_size + sizeof(uint8_t));
 }
 
 }  // namespace details

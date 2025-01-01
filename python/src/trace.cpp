@@ -26,11 +26,13 @@ namespace py = pybind11;
 // -------------------------------
 
 template <inspector::EventType T>
-void pythonTraceEvent(const std::string &name, const py::args &args) {
+void pythonTraceEvent(const std::string &name, const py::args &args,
+                      const py::kwargs &kwargs) {
   if (inspector::Config::isTraceDisabled()) {
     return;
   }
 
+  // Computing storage size
   size_t storage_size = inspector::details::traceEventStorageSize() +
                         inspector::details::debugArgsStorageSize(name);
   for (auto &arg : args) {
@@ -48,7 +50,30 @@ void pythonTraceEvent(const std::string &name, const py::args &args) {
           "Argument type not supported as debug argument.");
     }
   }
+  for (auto &kwarg : kwargs) {
+    if (!py::isinstance<py::str>(kwarg.first)) {
+      throw std::runtime_error("Keyword argument name must be string.");
+    }
+    const auto name = py::cast<std::string>(kwarg.first);
+    if (py::isinstance<py::str>(kwarg.second)) {
+      storage_size += inspector::details::debugArgStorageSize(
+          inspector::details::makeKeywordArg(
+              name.c_str(), py::cast<std::string>(kwarg.second)));
+    } else if (py::isinstance<py::int_>(kwarg.second)) {
+      storage_size += inspector::details::debugArgStorageSize(
+          inspector::details::makeKeywordArg(name.c_str(),
+                                             py::cast<int64_t>(kwarg.second)));
+    } else if (py::isinstance<py::float_>(kwarg.second)) {
+      storage_size += inspector::details::debugArgStorageSize(
+          inspector::details::makeKeywordArg(name.c_str(),
+                                             py::cast<double>(kwarg.second)));
+    } else {
+      throw std::runtime_error(
+          "Argument type not supported as debug argument.");
+    }
+  }
 
+  // Creating trace event
   std::vector<uint8_t> buffer(storage_size);
   auto event =
       inspector::details::MutableTraceEvent(buffer.data(), buffer.size());
@@ -66,15 +91,23 @@ void pythonTraceEvent(const std::string &name, const py::args &args) {
       event.appendDebugArg(py::cast<int64_t>(arg));
     } else if (py::isinstance<py::float_>(arg)) {
       event.appendDebugArg(py::cast<double>(arg));
-    } else {
-      // This block will never be called as the below error is already raised
-      // above when the storage size is computed. It is still however left for
-      // readability.
-      throw std::runtime_error(
-          "Argument type not supported as debug argument.");
+    }
+  }
+  for (auto &kwarg : kwargs) {
+    const auto name = py::cast<std::string>(kwarg.first);
+    if (py::isinstance<py::str>(kwarg.second)) {
+      event.appendDebugArg(inspector::details::makeKeywordArg(
+          name.c_str(), py::cast<std::string>(kwarg.second)));
+    } else if (py::isinstance<py::int_>(kwarg.second)) {
+      event.appendDebugArg(inspector::details::makeKeywordArg(
+          name.c_str(), py::cast<int64_t>(kwarg.second)));
+    } else if (py::isinstance<py::float_>(kwarg.second)) {
+      event.appendDebugArg(inspector::details::makeKeywordArg(
+          name.c_str(), py::cast<double>(kwarg.second)));
     }
   }
 
+  // Publishing created trace event
   inspector::details::eventQueue().publish(buffer);
 }
 

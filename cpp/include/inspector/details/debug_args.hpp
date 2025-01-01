@@ -23,6 +23,28 @@ namespace inspector {
 namespace details {
 
 /**
+ * @brief Wrapper struct for appending keyword arguments.
+ *
+ */
+template <class T>
+struct KeywordArg {
+  const char* name;
+  T value;
+
+  KeywordArg(const char* const _name, const T& _value)
+      : name(_name), value(_value) {}
+};
+
+/**
+ * @brief Utility method to create keyword argument.
+ *
+ */
+template <class T>
+KeywordArg<T> makeKeywordArg(const char* const name, const T& value) {
+  return {name, value};
+}
+
+/**
  * @brief Get the storage size in bytes required to store given debug argument.
  *
  * @tparam T Type of argument to store.
@@ -43,6 +65,21 @@ size_t debugArgStorageSize(const T& arg);
 template <std::size_t N>
 size_t debugArgStorageSize(const char (&arg)[N]) {
   return sizeof(uint8_t) + sizeof(arg);
+}
+
+/**
+ * @brief Get the storage size in bytes required to store given keyword
+ * debug argument.
+ *
+ * @tparam T Type of value.
+ * @param arg Constant reference to argument.
+ * @returns Size in bytes.
+ */
+template <class T>
+size_t debugArgStorageSize(const KeywordArg<T>& arg) {
+  // NOTE: The type marker for name is used for keyword argument type instead of
+  // using another byte. This saves space.
+  return debugArgStorageSize(arg.name) + debugArgStorageSize(arg.value);
 }
 
 /**

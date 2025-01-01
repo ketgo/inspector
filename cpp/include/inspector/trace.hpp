@@ -231,6 +231,11 @@ void counter(const char* name, const T& arg) {
 #define __MAKE_UNIQUE__(name) __UNIQUE_MAKER__(name, __COUNTER__)
 
 /**
+ * @brief Macro to create a keyword debug argument.
+ */
+#define KWARG(name, value) inspector::details::makeKeywordArg(name, value)
+
+/**
  * @brief Synchronous trace events.
  *
  */

@@ -16,8 +16,8 @@
 
 #pragma once
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 namespace inspector {
 
@@ -45,6 +45,7 @@ class DebugArg {
     TYPE_DOUBLE,
     TYPE_CHAR,
     TYPE_STRING,
+    TYPE_KWARG,
   };
 
   /**
@@ -70,7 +71,7 @@ class DebugArg {
    */
   const void* address() const;
 
- private:
+ protected:
   /**
    * @brief Construct a new DebugArg object.
    *
@@ -79,6 +80,33 @@ class DebugArg {
   explicit DebugArg(const void* const address);
 
   const void* address_;
+};
+
+/**
+ * @brief The class `KeywordArg` represents a keyword debug argument. Keyword
+ * arguments having a name.
+ *
+ */
+class KeywordArg final : public DebugArg {
+  friend class DebugArg;
+
+ public:
+  /**
+   * @brief Get name of the argument.
+   *
+   * @returns Name of the argument.
+   */
+  const char* name() const;
+
+ private:
+  /**
+   * @brief Construct a new KeywordArg object.
+   *
+   * @param address Memory location where the argument is stored.
+   */
+  explicit KeywordArg(const void* const address);
+
+  const char* name_;
 };
 
 /**

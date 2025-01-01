@@ -113,6 +113,17 @@ class MutableTraceEvent {
   }
 
   /**
+   * @brief Apeend the given keyword debug argument.
+   *
+   * @tparam T Type of argument value.
+   */
+  template <class T>
+  void appendDebugArg(const KeywordArg<T>& arg) {
+    appendKeywordName(arg.name);
+    appendDebugArg(arg.value);
+  }
+
+  /**
    * @brief Append the given multiple debug arguments to the trace event.
    *
    * @tparam T Type of first debug argument.
@@ -129,6 +140,8 @@ class MutableTraceEvent {
  private:
   // Dummy method to facilitate template parameter expansion
   void appendDebugArgs() {}
+  // Append keyword argument name.
+  void appendKeywordName(const char* const name);
 
   void* address_;
   const size_t size_;

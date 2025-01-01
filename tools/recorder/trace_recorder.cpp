@@ -34,7 +34,7 @@ TraceRecorder::TraceRecorder(const std::shared_ptr<CollectorBase>& collector)
     : RecorderBase(kRecorderName), collector_(collector) {}
 
 void TraceRecorder::record() {
-  while (isAlive()) {
+  while (true) {
     auto event = readTraceEvent();
     if (event.isEmpty()) {
       break;

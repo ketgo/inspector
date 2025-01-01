@@ -86,5 +86,10 @@ struct TypeId<const char *> {
   static constexpr auto value = DebugArg::Type::TYPE_STRING;
 };
 
+template <>
+struct TypeId<inspector::KeywordArg> {
+  static constexpr auto value = DebugArg::Type::TYPE_KWARG;
+};
+
 }  // namespace details
 }  // namespace inspector

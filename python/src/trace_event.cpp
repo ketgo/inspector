@@ -22,6 +22,58 @@
 
 namespace py = pybind11;
 
+namespace {
+
+/**
+ * @brief Utility method to get python compatible value from a debug argument
+ * object.
+ */
+py::object pyDebugArgValue(const inspector::DebugArg &self) {
+  switch (self.type()) {
+    case inspector::DebugArg::Type::TYPE_INT16: {
+      return py::cast(self.value<int16_t>());
+    }
+    case inspector::DebugArg::Type::TYPE_INT32: {
+      return py::cast(self.value<int32_t>());
+    }
+    case inspector::DebugArg::Type::TYPE_INT64: {
+      return py::cast(self.value<int64_t>());
+    }
+    case inspector::DebugArg::Type::TYPE_UINT8: {
+      return py::cast(self.value<uint8_t>());
+    }
+    case inspector::DebugArg::Type::TYPE_UINT16: {
+      return py::cast(self.value<uint16_t>());
+    }
+    case inspector::DebugArg::Type::TYPE_UINT32: {
+      return py::cast(self.value<uint32_t>());
+    }
+    case inspector::DebugArg::Type::TYPE_UINT64: {
+      return py::cast(self.value<uint64_t>());
+    }
+    case inspector::DebugArg::Type::TYPE_FLOAT: {
+      return py::cast(self.value<float>());
+    }
+    case inspector::DebugArg::Type::TYPE_DOUBLE: {
+      return py::cast(self.value<double>());
+    }
+    case inspector::DebugArg::Type::TYPE_CHAR: {
+      return py::cast(self.value<char>());
+    }
+    case inspector::DebugArg::Type::TYPE_STRING: {
+      return py::cast(self.value<std::string>());
+    }
+    case inspector::DebugArg::Type::TYPE_KWARG: {
+      const auto kwarg = self.value<inspector::KeywordArg>();
+      return py::make_tuple(std::string{kwarg.name()}, pyDebugArgValue(kwarg));
+    }
+  }
+
+  throw std::runtime_error("Invalid debug argument type observed.");
+}
+
+}  // namespace
+
 /**
  * @brief Binding the C++ trace event module to the given python module.
  *
@@ -42,6 +94,7 @@ void bindTraceEvent(py::module &m) {
       .value("TYPE_DOUBLE", inspector::DebugArg::Type::TYPE_DOUBLE)
       .value("TYPE_CHAR", inspector::DebugArg::Type::TYPE_CHAR)
       .value("TYPE_STRING", inspector::DebugArg::Type::TYPE_STRING)
+      .value("TYPE_KWARG", inspector::DebugArg::Type::TYPE_KWARG)
       .export_values();
 
   debug_arg
@@ -49,45 +102,7 @@ void bindTraceEvent(py::module &m) {
            "Get the type of the debug argument.")
       .def(
           "value",
-          [](const inspector::DebugArg &self) {
-            switch (self.type()) {
-              case inspector::DebugArg::Type::TYPE_INT16: {
-                return py::cast(self.value<int16_t>());
-              }
-              case inspector::DebugArg::Type::TYPE_INT32: {
-                return py::cast(self.value<int32_t>());
-              }
-              case inspector::DebugArg::Type::TYPE_INT64: {
-                return py::cast(self.value<int64_t>());
-              }
-              case inspector::DebugArg::Type::TYPE_UINT8: {
-                return py::cast(self.value<uint8_t>());
-              }
-              case inspector::DebugArg::Type::TYPE_UINT16: {
-                return py::cast(self.value<uint16_t>());
-              }
-              case inspector::DebugArg::Type::TYPE_UINT32: {
-                return py::cast(self.value<uint32_t>());
-              }
-              case inspector::DebugArg::Type::TYPE_UINT64: {
-                return py::cast(self.value<uint64_t>());
-              }
-              case inspector::DebugArg::Type::TYPE_FLOAT: {
-                return py::cast(self.value<float>());
-              }
-              case inspector::DebugArg::Type::TYPE_DOUBLE: {
-                return py::cast(self.value<double>());
-              }
-              case inspector::DebugArg::Type::TYPE_CHAR: {
-                return py::cast(self.value<char>());
-              }
-              case inspector::DebugArg::Type::TYPE_STRING: {
-                return py::cast(self.value<std::string>());
-              }
-            }
-
-            throw std::runtime_error("Invalid debug argument type observed.");
-          },
+          [](const inspector::DebugArg &self) { return pyDebugArgValue(self); },
           "Get the value of the debug argument.");
 
   py::class_<inspector::DebugArgs>(m, "DebugArgs")

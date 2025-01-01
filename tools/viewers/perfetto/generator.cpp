@@ -32,6 +32,73 @@ namespace inspector {
 namespace tools {
 namespace {
 
+void createDebugAnnotation(perfetto::protos::DebugAnnotation& debug_annotation,
+                           const DebugArg& arg) {
+  switch (arg.type()) {
+    case DebugArg::Type::TYPE_STRING:
+    case DebugArg::Type::TYPE_CHAR: {
+      debug_annotation.set_string_value(arg.value<std::string>());
+      break;
+    }
+
+    case DebugArg::Type::TYPE_INT16: {
+      debug_annotation.set_int_value(arg.value<int16_t>());
+      break;
+    }
+
+    case DebugArg::Type::TYPE_INT32: {
+      debug_annotation.set_int_value(arg.value<int32_t>());
+      break;
+    }
+
+    case DebugArg::Type::TYPE_INT64: {
+      debug_annotation.set_int_value(arg.value<int64_t>());
+      break;
+    }
+
+    case DebugArg::Type::TYPE_UINT8: {
+      debug_annotation.set_uint_value(arg.value<uint8_t>());
+      break;
+    }
+
+    case DebugArg::Type::TYPE_UINT16: {
+      debug_annotation.set_uint_value(arg.value<uint16_t>());
+      break;
+    }
+
+    case DebugArg::Type::TYPE_UINT32: {
+      debug_annotation.set_uint_value(arg.value<uint32_t>());
+      break;
+    }
+
+    case DebugArg::Type::TYPE_UINT64: {
+      debug_annotation.set_uint_value(arg.value<uint64_t>());
+      break;
+    }
+
+    case DebugArg::Type::TYPE_FLOAT: {
+      debug_annotation.set_double_value(arg.value<float>());
+      break;
+    }
+
+    case DebugArg::Type::TYPE_DOUBLE: {
+      debug_annotation.set_double_value(arg.value<double>());
+      break;
+    }
+
+    case DebugArg::Type::TYPE_KWARG: {
+      const auto kwarg = arg.value<KeywordArg>();
+      auto* debug_annotation_ptr = debug_annotation.add_dict_entries();
+      debug_annotation_ptr->set_name(kwarg.name());
+      createDebugAnnotation(*debug_annotation_ptr, kwarg);
+      break;
+    }
+
+    default:
+      break;
+  }
+}
+
 /**
  * @brief Utility method to create debug annotations.
  *
@@ -42,71 +109,7 @@ void createDebugAnnotations(perfetto::protos::TrackEvent& track_event,
   auto* debug_annotation_ptr = track_event.add_debug_annotations();
   debug_annotation_ptr->set_name("args");
   for (const auto& arg : debug_args) {
-    switch (arg.type()) {
-      case DebugArg::Type::TYPE_STRING:
-      case DebugArg::Type::TYPE_CHAR: {
-        debug_annotation_ptr->add_array_values()->set_string_value(
-            arg.value<std::string>());
-        break;
-      }
-
-      case DebugArg::Type::TYPE_INT16: {
-        debug_annotation_ptr->add_array_values()->set_int_value(
-            arg.value<int16_t>());
-        break;
-      }
-
-      case DebugArg::Type::TYPE_INT32: {
-        debug_annotation_ptr->add_array_values()->set_int_value(
-            arg.value<int32_t>());
-        break;
-      }
-
-      case DebugArg::Type::TYPE_INT64: {
-        debug_annotation_ptr->add_array_values()->set_int_value(
-            arg.value<int64_t>());
-        break;
-      }
-
-      case DebugArg::Type::TYPE_UINT8: {
-        debug_annotation_ptr->add_array_values()->set_uint_value(
-            arg.value<uint8_t>());
-        break;
-      }
-
-      case DebugArg::Type::TYPE_UINT16: {
-        debug_annotation_ptr->add_array_values()->set_uint_value(
-            arg.value<uint16_t>());
-        break;
-      }
-
-      case DebugArg::Type::TYPE_UINT32: {
-        debug_annotation_ptr->add_array_values()->set_uint_value(
-            arg.value<uint32_t>());
-        break;
-      }
-
-      case DebugArg::Type::TYPE_UINT64: {
-        debug_annotation_ptr->add_array_values()->set_uint_value(
-            arg.value<uint64_t>());
-        break;
-      }
-
-      case DebugArg::Type::TYPE_FLOAT: {
-        debug_annotation_ptr->add_array_values()->set_double_value(
-            arg.value<float>());
-        break;
-      }
-
-      case DebugArg::Type::TYPE_DOUBLE: {
-        debug_annotation_ptr->add_array_values()->set_double_value(
-            arg.value<double>());
-        break;
-      }
-
-      default:
-        break;
-    }
+    createDebugAnnotation(*(debug_annotation_ptr->add_array_values()), arg);
   }
 }
 

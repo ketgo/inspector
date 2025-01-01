@@ -41,6 +41,8 @@ void RecorderBase::start(const std::chrono::microseconds duration) {
       std::this_thread::sleep_for(duration - record_duration);
     }
   }
+  // Performing last record operation to ensure all traces are recorded.
+  this->record();
   LOG(INFO) << "[" << this->name_ << "]: Stopped";
 }
 

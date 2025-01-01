@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-#include <inspector/debug_args.hpp>
-
 #include <cstring>
+#include <inspector/debug_args.hpp>
+#include <inspector/details/debug_args.hpp>
 #include <stdexcept>
 #include <string>
 
 #include "cpp/src/details/type_traits.hpp"
-#include <inspector/details/debug_args.hpp>
 
 namespace inspector {
 
@@ -74,7 +73,31 @@ std::string DebugArg::value<std::string>() const {
   return std::string{value<const char *>()};
 }
 
+// Template specialization for KeywordArg
+template <>
+KeywordArg DebugArg::value<KeywordArg>() const {
+  if (type() != details::TypeId<KeywordArg>::value) {
+    throw std::runtime_error("Invalid type specified for argument of type '" +
+                             std::to_string(static_cast<int>(type())) + "'.");
+  }
+  return KeywordArg(static_cast<const void *>(
+      static_cast<const uint8_t *>(address_) + sizeof(uint8_t)));
+}
+
 const void *DebugArg::address() const { return address_; }
+
+// ---
+// `KeywordArg` Implementation
+// ---
+
+KeywordArg::KeywordArg(const void *const address)
+    : DebugArg(nullptr), name_(nullptr) {
+  name_ = static_cast<const char *>(address);
+  address_ = static_cast<const void *>(static_cast<const uint8_t *>(address) +
+                                       std::strlen(name_) + sizeof(char));
+}
+
+const char *KeywordArg::name() const { return name_; }
 
 // ---
 // `DebugArgs::Iterator` Implementation
@@ -120,6 +143,10 @@ size_t storageSize(const DebugArg &debug_arg) {
     }
     case DebugArg::Type::TYPE_STRING: {
       return details::debugArgStorageSize(debug_arg.value<const char *>());
+    }
+    case DebugArg::Type::TYPE_KWARG: {
+      const auto arg = debug_arg.value<KeywordArg>();
+      return details::debugArgStorageSize(arg.name()) + storageSize(arg);
     }
   }
 

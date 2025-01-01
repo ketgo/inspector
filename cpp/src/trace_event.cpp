@@ -101,6 +101,11 @@ std::string debugArgToString(const DebugArg &arg) {
       return std::to_string(arg.value<float>());
     case DebugArg::Type::TYPE_DOUBLE:
       return std::to_string(arg.value<double>());
+    case DebugArg::Type::TYPE_KWARG: {
+      const auto kwarg = arg.value<KeywordArg>();
+      return "{\"" + std::string{kwarg.name()} +
+             "\":" + debugArgToString(kwarg) + "}";
+    }
     default:
       break;
   }

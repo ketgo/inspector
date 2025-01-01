@@ -14,27 +14,27 @@
  limitations under the License.
 """
 
-from typing import List, Any
+from typing import Dict, List, Any, Tuple
 
 import pytest
 import inspector
 
 
-def has_debug_args(event: inspector.TraceEvent, args: List[Any]) -> bool:
+def extract_debug_args(event: inspector.TraceEvent) -> Tuple[List[Any], Dict[str, Any]]:
     """
-    Utility method to check if the given trace event `event` has the debug
-    arguments specified in `args`.
+    Utility method to extract debug arguments in the given trace event.
     """
     debug_args = event.debug_args()
-    if len(args) != len(debug_args):
-        return False
-    idx = 0
+    args = []
+    kwargs = {}
     for arg in debug_args:
-        if arg.value() != args[idx]:
-            return False
-        idx += 1
+        value = arg.value()
+        if arg.type() == inspector.DebugArg.Type.TYPE_KWARG:
+            kwargs[value[0]] = value[1]
+        else:
+            args.append(value)
 
-    return True
+    return args, kwargs
 
 
 def setup_module():
@@ -50,13 +50,14 @@ def setup_function():
 
 
 @pytest.mark.parametrize(
-    "func,type,name,debug_args,invalid_debug_args",
+    "func,type,name,debug_args,debug_kwargs,invalid_debug_args",
     [
         (
             inspector.sync_begin,
             inspector.EventType.kSyncBeginTag,
             "test_sync",
             [1, "one"],
+            {"arg_1": 1, "arg_2": 2},
             [1, "one", []],
         ),
         (
@@ -64,6 +65,7 @@ def setup_function():
             inspector.EventType.kSyncEndTag,
             "test_sync",
             [],
+            {},
             [1],
         ),
         (
@@ -71,6 +73,7 @@ def setup_function():
             inspector.EventType.kAsyncBeginTag,
             "test_async",
             [1, "one"],
+            {},
             [1, "one", []],
         ),
         (
@@ -78,6 +81,7 @@ def setup_function():
             inspector.EventType.kAsyncInstanceTag,
             "test_async",
             [1, "one"],
+            {},
             [1, "one", []],
         ),
         (
@@ -85,6 +89,7 @@ def setup_function():
             inspector.EventType.kAsyncEndTag,
             "test_async",
             [1, "one"],
+            {},
             [1, "one", []],
         ),
         (
@@ -92,6 +97,7 @@ def setup_function():
             inspector.EventType.kFlowBeginTag,
             "test_flow",
             [1, "one"],
+            {},
             [1, "one", []],
         ),
         (
@@ -99,6 +105,7 @@ def setup_function():
             inspector.EventType.kFlowInstanceTag,
             "test_flow",
             [1, "one"],
+            {},
             [1, "one", []],
         ),
         (
@@ -106,6 +113,7 @@ def setup_function():
             inspector.EventType.kFlowEndTag,
             "test_flow",
             [1, "one"],
+            {},
             [1, "one", []],
         ),
         (
@@ -113,32 +121,38 @@ def setup_function():
             inspector.EventType.kCounterTag,
             "test_flow",
             [1],
+            {},
             ["one"],
         ),
     ],
 )
-def test_core(func, type, name, debug_args, invalid_debug_args):
-    func(name, *debug_args)
+def test_core(func, type, name, debug_args, debug_kwargs, invalid_debug_args):
+    func(name, *debug_args, **debug_kwargs)
 
     event = inspector.read_trace_event()
     assert event.type() == type.value
     assert event.name() == name
-    assert has_debug_args(event, debug_args)
+    args, kwargs = extract_debug_args(event)
+    assert debug_args == args
+    assert debug_kwargs == kwargs
 
     with pytest.raises((RuntimeError, TypeError)):
         func(name, *invalid_debug_args)
 
 
 def test_trace_decorator():
-    @inspector.trace(scope_name="test-scope")
+    @inspector.trace(scope_name="test-scope", args_idx=[0], kwargs_keys=["b"])
     def add(a: int, b: int) -> int:
         return a + b
 
-    assert add(1, 2) == 3
+    assert add(1, b=2) == 3
 
     event = inspector.read_trace_event()
     assert event.type() == inspector.EventType.kSyncBeginTag.value
     assert event.name() == "test-scope"
+    args, kwargs = extract_debug_args(event)
+    assert args == [1]
+    assert kwargs == {"b": 2}
 
     event = inspector.read_trace_event()
     assert event.type() == inspector.EventType.kSyncEndTag.value

@@ -68,7 +68,7 @@ class Recorder:
             LOG.warning("Recorder not running. Ignoring request.")
             return
 
-        LOG.info(f"Stopping trace recorder. Data can be found in {self._out_dir}")
+        LOG.info(f"Stopping trace recorder.")
         recorder_py.stop_recorder(True)
         self._started = False
 

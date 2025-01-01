@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <gflags/gflags.h>
+#include <glog/logging.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -22,6 +24,9 @@
 namespace py = pybind11;
 
 PYBIND11_MODULE(INSPECTOR_PYTHON_MODULE, m) {
+  FLAGS_logtostderr = 1;
+  google::InitGoogleLogging("generator_py");
+
   m.doc() = "Module to generate perfetto trace file.";
 
   m.def("generate_perfetto", &inspector::tools::generatePerfetto,
