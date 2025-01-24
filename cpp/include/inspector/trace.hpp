@@ -227,7 +227,9 @@ void counter(const char* name, const T& arg) {
 // ------------------------------------
 
 // Utility macros to get unique scope name. These are meant for internal use.
-#define __UNIQUE_MAKER__(name, counter) __##name##__##counter##__
+// Note that one level of indirection required to resolve __COUNTER__.
+#define __UNIQUE_MAKER__(name, counter) __UNIQUE_MAKER_IMPL__(name, counter)
+#define __UNIQUE_MAKER_IMPL__(name, counter) __##name##__##counter##__
 #define __MAKE_UNIQUE__(name) __UNIQUE_MAKER__(name, __COUNTER__)
 
 /**

@@ -108,7 +108,7 @@ def parse_args() -> Tuple[argparse.Namespace, List[str]]:
 
     recorder_args = sub_parser.parse_args(args.inspector_recorder_args.split())
     recorder_args.target = args.target
-    if not recorder_args.out.is_dir():
+    if recorder_args.out.exists() and not recorder_args.out.is_dir():
         raise ValueError(f"The output path '{recorder_args.out}' is not a directoy.")
     if recorder_args.perfetto and not recorder_args.perfetto_out:
         recorder_args.perfetto_out = str(recorder_args.out / "perfetto.trace")
