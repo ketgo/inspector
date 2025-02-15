@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//third_party/pybind11:defs.bzl", "pybind_library")
-
 cc_library(
     name = "common",
     hdrs = [
@@ -22,14 +20,14 @@ cc_library(
 )
 
 cc_library(
-    name = "checksum", 
+    name = "checksum",
     srcs = [
         "checksum.cpp",
     ],
     hdrs = [
         "checksum.hpp",
     ],
-    deps= []
+    deps = [],
 )
 
 cc_test(
@@ -40,7 +38,7 @@ cc_test(
     deps = [
         ":checksum",
         "@gtest//:gtest_main",
-    ]
+    ],
 )
 
 cc_library(
@@ -56,7 +54,6 @@ cc_library(
         "@boost//:filesystem",
     ],
 )
-
 
 cc_library(
     name = "file_io",
@@ -95,9 +92,9 @@ cc_library(
         "block.hpp",
     ],
     deps = [
+        ":checksum",
         ":common",
         ":file_io",
-        ":checksum",
     ],
 )
 
@@ -119,14 +116,14 @@ cc_library(
     srcs = [
         "storage.cpp",
     ],
-    visibility = ["//visibility:public"],
     hdrs = [
         "storage.hpp",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         ":block",
         ":common",
-        ":file_io"
+        ":file_io",
     ],
 )
 
@@ -140,28 +137,5 @@ cc_test(
         ":testing",
         "//utils:random",
         "@gtest//:gtest_main",
-    ],
-)
-
-
-pybind_library(
-    name = "storage_py",
-    srcs = [
-        "storage_py.cpp",
-    ],
-    soname = "storage_py",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":storage",
-    ],
-)
-
-py_test(
-    name = "storage_py_test",
-    srcs = [
-        "storage_py_test.py",
-    ],
-    deps = [
-        ":storage_py",
     ],
 )

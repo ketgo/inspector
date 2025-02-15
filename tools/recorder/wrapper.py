@@ -44,7 +44,7 @@ class Recorder:
             self._out_dir.mkdir(parents=True)
 
     @property
-    def output_directoy(self) -> Union[None, Path]:
+    def output_directory(self) -> Union[None, Path]:
         return self._out_dir
 
     def __enter__(self) -> "Recorder":
@@ -137,11 +137,11 @@ def main() -> None:
             process.terminate()
             process.wait()
 
-    LOG.info(f"Trace data stored in '{recorder.output_directoy}'.")
+    LOG.info(f"Trace data stored in '{recorder.output_directory}'.")
 
-    if recorder_args.perfetto and recorder.output_directoy:
+    if recorder_args.perfetto and recorder.output_directory:
         generator_py.generate_perfetto(
-            str(recorder.output_directoy), recorder_args.perfetto_out
+            str(recorder.output_directory), recorder_args.perfetto_out
         )
 
     LOG.info(f"Done.")
