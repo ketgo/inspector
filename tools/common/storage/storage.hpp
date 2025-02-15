@@ -38,7 +38,7 @@ class Writer final {
    * @brief Construct a new writer.
    *
    * @param path Path to output directory.
-   * @param block_size Maximum size of each file stored in that directoy.
+   * @param block_size Maximum size of each file stored in the output directory.
    *
    */
   Writer(const std::string& path, const std::size_t block_size);

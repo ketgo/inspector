@@ -28,8 +28,9 @@ terminate called after throwing an instance of 'std::runtime_error'
 [x] BUG: `tools/reader/reader_test` stuck
 [x] Keyword debug arguments
 [ ] A complete scope needs begin and end events to be present. Its however possible for one of the two to get dropped when writing to SHM. In such a case we need a way to detect un-paired begin or end events during offline processing. Proposal: Add a new depth field for sync events. That in combination with counter can be used to detect dropped call stacks.
-[ ] Debugging events desing and implementation. These events can be emitted by an application for debugging purposes. Thus we need to allow filtering based on different levels of info. 
+[ ] Debugging events design and implementation. These events can be emitted by an application for debugging purposes. Thus we need to allow filtering based on different levels of info. 
 [ ] Config to add file name and line number in debug events.
+[ ] String table caching in order to reduce logging bandwidth
 
 ## Monitors
 
